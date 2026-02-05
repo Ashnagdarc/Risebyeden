@@ -9,8 +9,10 @@ A minimal dark-themed property investment portfolio dashboard built with Next.js
 - ✨ Sleek obsidian-inspired dark UI with vitreous glass effects
 - 📊 Real-time portfolio metrics and analytics
 - 🏢 Property asset distribution with detailed metrics
+- 📈 Performance tracking with interactive charts
 - 🎨 Smooth animations and 3D hover effects
 - 📱 Fully responsive design
+- 🧭 Multi-page navigation (Dashboard, Analytics, Performance, Acquire Property)
 - ⚡ Built with Next.js App Router and TypeScript
 
 ## Tech Stack
@@ -56,23 +58,44 @@ pnpm dev
 
 ```
 ├── app/
-│   ├── layout.tsx          # Root layout with font configuration
-│   ├── page.tsx            # Main dashboard page
-│   ├── page.module.css     # Page-specific styles
-│   └── globals.css         # Global styles and CSS variables
+│   ├── layout.tsx              # Root layout with font configuration
+│   ├── page.tsx                # Main dashboard page
+│   ├── page.module.css         # Dashboard styles
+│   ├── globals.css             # Global styles and CSS variables
+│   ├── acquire/
+│   │   ├── page.tsx            # Acquire property form page
+│   │   └── page.module.css
+│   ├── analytics/
+│   │   ├── page.tsx            # Analytics dashboard with pie chart
+│   │   └── page.module.css
+│   └── performance/
+│       ├── page.tsx            # Performance tracking with bar chart
+│       └── page.module.css
 ├── components/
-│   ├── Sidebar.tsx         # Navigation sidebar component
-│   ├── Header.tsx          # Dashboard header with portfolio total
-│   ├── StatSlab.tsx        # Stat card with 3D hover effect
-│   └── PropertyRow.tsx     # Property list item component
-├── public/                 # Static assets
-└── package.json
-```
+│   ├── Sidebar.tsx             # Navigation sidebar component
+│   Main Dashboard
+- **Total Managed Assets**: Portfolio value with percentage change
+- **Net Annual Yield**: Investment return percentage
+- **Portfolio LTV**: Loan-to-value ratio visualization
+- **Occupancy Rate**: Real-time occupancy status
+- **Property List**: Asset distribution with detailed metrics
 
-## Features Breakdown
+### Analytics Page
+- **Portfolio Distribution**: Interactive pie chart showing asset allocation
+- **Performance Metrics**: YoY growth, ROI, and portfolio statistics
+- **Top Performers**: Ranking of best-performing properties
+- **Market Insights**: AI-driven recommendations and alerts
 
-### Dashboard Metrics
-- **Total Managed Assets:** Portfolio value with percentage change
+### Performance Page
+- **Revenue/Expense Tracking**: Monthly comparison bar chart
+- **Property Performance Table**: Occupancy rates and revenue by property
+- **Quick Stats**: Key performance indicators at a glance
+
+### Acquire Property Page
+- **Comprehensive Form**: Add new properties to your portfolio
+- **Financial Metrics**: Purchase price, valuation, cap rate tracking
+- **Property Details**: Full specifications including location, type, and amenities
+- **Smart Validation**: Form validation with helpful input guidancessets:** Portfolio value with percentage change
 - **Net Annual Yield:** Investment return percentage
 - **Portfolio LTV:** Loan-to-value ratio visualization
 - **Occupancy Rate:** Real-time occupancy status

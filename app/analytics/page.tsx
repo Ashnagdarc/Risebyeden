@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import Sidebar from '@/components/Sidebar';
 import PieChart from '@/components/PieChart';
 import styles from './page.module.css';
@@ -32,7 +33,9 @@ export default function Analytics() {
       <main className={styles.main}>
         <header className={styles.header}>
           <div>
-            <span className={styles.backLink}>← Back to Dashboard</span>
+            <Link href="/" className={styles.backLink}>
+              ← Back to Dashboard
+            </Link>
             <h1 className={styles.pageTitle}>Portfolio Analytics</h1>
             <p className={styles.subtitle}>Comprehensive analysis of your investment performance</p>
           </div>

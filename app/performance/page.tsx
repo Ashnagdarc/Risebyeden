@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import Sidebar from '@/components/Sidebar';
 import BarChart from '@/components/BarChart';
 import styles from './page.module.css';
@@ -40,7 +41,9 @@ export default function Performance() {
       <main className={styles.main}>
         <header className={styles.header}>
           <div>
-            <span className={styles.backLink}>← Back to Dashboard</span>
+            <Link href="/" className={styles.backLink}>
+              ← Back to Dashboard
+            </Link>
             <h1 className={styles.pageTitle}>Performance Overview</h1>
             <p className={styles.subtitle}>Track revenue, expenses, and property performance metrics</p>
           </div>
