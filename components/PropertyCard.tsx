@@ -1,5 +1,6 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import styles from './PropertyCard.module.css';
 
 interface Property {
@@ -21,12 +22,18 @@ interface PropertyCardProps {
 }
 
 export default function PropertyCard({ property }: PropertyCardProps) {
+  const router = useRouter();
+
   const formatPrice = (price: number) => {
     return `$${(price / 1000000).toFixed(1)}M`;
   };
 
   const formatNumber = (num: number) => {
     return num.toLocaleString();
+  };
+
+  const handleViewDetails = () => {
+    router.push(`/acquire/${property.id}`);
   };
 
   return (
@@ -67,7 +74,7 @@ export default function PropertyCard({ property }: PropertyCardProps) {
         )}
       </div>
 
-      <button className={styles.investButton}>
+      <button className={styles.investButton} onClick={handleViewDetails}>
         View Details
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
           <path d="M5 12h14M12 5l7 7-7 7"/>
