@@ -47,6 +47,29 @@
   animation: revealSlab 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
+.propertiesGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 24px;
+  animation: revealSlab 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@media (max-width: 1600px) {
+  .propertiesGrid {
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  }
+}
+
+@media (max-width: 1024px) {
+  .propertiesGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .main {
+    padding: 40px;
+  }
+}
+
 .formGrid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
