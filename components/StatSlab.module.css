@@ -1,0 +1,43 @@
+.statSlab {
+  background: linear-gradient(135deg, #121212 0%, #080808 100%);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 24px;
+  padding: 32px;
+  box-shadow: var(--relief-shadow);
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.6s ease;
+  grid-column: span 4;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 200px;
+  animation: revealSlab 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.statSlab::before {
+  content: '';
+  position: absolute;
+  top: 0; 
+  left: 0; 
+  right: 0; 
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.05) 0%, transparent 50%);
+  pointer-events: none;
+}
+
+.statSlab:hover {
+  box-shadow: 20px 20px 40px #000, -4px -4px 15px rgba(255,255,255,0.02);
+}
+
+.label {
+  font-family: var(--mono-font);
+  font-size: 11px;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+}
+
+.value {
+  font-size: 28px;
+  font-weight: 500;
+}

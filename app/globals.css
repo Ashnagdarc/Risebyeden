@@ -1,0 +1,53 @@
+:root {
+  --obsidian-base: #050505;
+  --obsidian-surface: #0a0a0a;
+  --obsidian-elevated: #111111;
+  --glass-sheen: rgba(255, 255, 255, 0.03);
+  --accent-gold: #c5a368;
+  --text-primary: #e5e5e5;
+  --text-secondary: #707070;
+  --mono-font: 'JetBrains Mono', monospace;
+  --sans-font: 'Inter', sans-serif;
+  --relief-shadow: 12px 12px 24px #000, -4px -4px 12px rgba(255,255,255,0.01);
+  --inner-relief: inset 2px 2px 5px rgba(0,0,0,0.8), inset -1px -1px 2px rgba(255,255,255,0.05);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  background-color: var(--obsidian-base);
+  color: var(--text-primary);
+  font-family: var(--sans-font);
+  overflow: hidden;
+  height: 100vh;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.05);
+  border-radius: 10px;
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(40px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes revealSlab {
+  from { opacity: 0; transform: translateY(30px) rotateX(-10deg); }
+  to { opacity: 1; transform: translateY(0) rotateX(0); }
+}
+
+@keyframes glow {
+  0% { opacity: 0.5; }
+  50% { opacity: 1; box-shadow: 0 0 15px #4ade80; }
+  100% { opacity: 0.5; }
+}

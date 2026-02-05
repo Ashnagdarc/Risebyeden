@@ -1,0 +1,72 @@
+.container {
+  display: flex;
+  height: 100vh;
+}
+
+.main {
+  flex: 1;
+  padding: 60px 80px;
+  overflow-y: auto;
+  perspective: 1000px;
+}
+
+.gridLayout {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 32px;
+}
+
+.chartLine {
+  height: 40px;
+  border-bottom: 2px solid var(--accent-gold);
+  opacity: 0.3;
+}
+
+.barChart {
+  height: 40px;
+  display: flex;
+  gap: 4px;
+  align-items: flex-end;
+}
+
+.operational {
+  font-size: 11px;
+  color: #4ade80;
+}
+
+.pulse {
+  width: 8px;
+  height: 8px;
+  background: #4ade80;
+  border-radius: 50%;
+  display: inline-block;
+  box-shadow: 0 0 10px #4ade80;
+  margin-right: 8px;
+  animation: glow 2s infinite;
+}
+
+.propertyListSlab {
+  grid-column: span 12;
+  margin-top: 16px;
+}
+
+.propertyHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.propertyHeader h2 {
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-secondary);
+}
+
+.viewAll {
+  font-family: var(--mono-font);
+  font-size: 12px;
+  color: var(--accent-gold);
+  cursor: pointer;
+}

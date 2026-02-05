@@ -1,0 +1,52 @@
+.propertyRow {
+  display: grid;
+  grid-template-columns: 80px 1fr 150px 150px 150px;
+  align-items: center;
+  padding: 24px 32px;
+  background: var(--obsidian-surface);
+  border: 1px solid rgba(255, 255, 255, 0.03);
+  border-radius: 20px;
+  margin-bottom: 16px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 4px 4px 10px rgba(0,0,0,0.3);
+}
+
+.propertyRow:hover {
+  background: var(--obsidian-elevated);
+  border-color: rgba(255,255,255,0.1);
+  transform: translateX(10px);
+}
+
+.propImg {
+  width: 48px;
+  height: 48px;
+  background: #1a1a1a;
+  border-radius: 12px;
+  box-shadow: var(--inner-relief);
+}
+
+.propInfo h3 {
+  font-size: 16px;
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+
+.propInfo p {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.propMetric {
+  font-family: var(--mono-font);
+  font-size: 14px;
+  text-align: right;
+}
+
+.propLabel {
+  display: block;
+  font-size: 10px;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+  text-transform: uppercase;
+}

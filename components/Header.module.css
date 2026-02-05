@@ -1,0 +1,57 @@
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 80px;
+  animation: slideUp 1s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.portfolioTotal {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+  display: block;
+}
+
+.portfolioValue {
+  font-size: 4rem;
+  font-weight: 300;
+  letter-spacing: -0.04em;
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.delta {
+  font-family: var(--mono-font);
+  font-size: 14px;
+  color: #4ade80;
+  background: rgba(74, 222, 128, 0.1);
+  padding: 4px 12px;
+  border-radius: 100px;
+  letter-spacing: 0;
+}
+
+.glassButton {
+  background: var(--obsidian-elevated);
+  border: 1px solid rgba(255,255,255,0.1);
+  color: white;
+  padding: 12px 24px;
+  border-radius: 100px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  box-shadow: 4px 4px 10px rgba(0,0,0,0.5);
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.glassButton:hover {
+  background: var(--text-primary);
+  color: var(--obsidian-base);
+  transform: scale(1.05);
+}

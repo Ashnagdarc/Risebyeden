@@ -1,0 +1,363 @@
+.container {
+  display: flex;
+  height: 100vh;
+}
+
+.main {
+  flex: 1;
+  padding: 60px 80px;
+  overflow-y: auto;
+  perspective: 1000px;
+}
+
+.header {
+  margin-bottom: 60px;
+  animation: slideUp 1s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.backLink {
+  font-family: var(--mono-font);
+  font-size: 12px;
+  color: var(--accent-gold);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: inline-block;
+  margin-bottom: 16px;
+}
+
+.backLink:hover {
+  transform: translateX(-4px);
+}
+
+.pageTitle {
+  font-size: 3rem;
+  font-weight: 300;
+  letter-spacing: -0.04em;
+  margin-bottom: 8px;
+}
+
+.subtitle {
+  font-size: 14px;
+  color: var(--text-secondary);
+  letter-spacing: 0.05em;
+}
+
+.grid {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+/* Metrics Row */
+.metricsRow {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+  animation: revealSlab 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.metricCard {
+  background: linear-gradient(135deg, #121212 0%, #080808 100%);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 20px;
+  padding: 24px;
+  box-shadow: var(--relief-shadow);
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.metricCard::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.05) 0%, transparent 50%);
+  pointer-events: none;
+}
+
+.metricCard:hover {
+  transform: translateY(-4px);
+  border-color: rgba(255,255,255,0.1);
+}
+
+.metricLabel {
+  font-family: var(--mono-font);
+  font-size: 10px;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  display: block;
+  margin-bottom: 12px;
+}
+
+.metricValue {
+  font-size: 24px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Chart Section */
+.chartSection {
+  background: linear-gradient(135deg, #121212 0%, #080808 100%);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 24px;
+  padding: 40px;
+  box-shadow: var(--relief-shadow);
+  position: relative;
+  overflow: hidden;
+  animation: revealSlab 0.8s cubic-bezier(0.16, 1, 0.3, 1) both 0.1s;
+}
+
+.chartSection::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.05) 0%, transparent 50%);
+  pointer-events: none;
+}
+
+.sectionTitle {
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-secondary);
+  margin-bottom: 32px;
+  font-family: var(--mono-font);
+}
+
+.chartContainer {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 60px;
+  align-items: center;
+}
+
+.legend {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.legendItem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 12px;
+  transition: all 0.3s ease;
+}
+
+.legendItem:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.legendColor {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+}
+
+.legendLabel {
+  flex: 1;
+  font-size: 14px;
+}
+
+.legendValue {
+  font-family: var(--mono-font);
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+/* Performers Section */
+.performersSection {
+  background: linear-gradient(135deg, #121212 0%, #080808 100%);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 24px;
+  padding: 40px;
+  box-shadow: var(--relief-shadow);
+  position: relative;
+  overflow: hidden;
+  animation: revealSlab 0.8s cubic-bezier(0.16, 1, 0.3, 1) both 0.2s;
+}
+
+.performersSection::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.05) 0%, transparent 50%);
+  pointer-events: none;
+}
+
+.performersList {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.performerCard {
+  display: grid;
+  grid-template-columns: 60px 1fr auto;
+  align-items: center;
+  gap: 24px;
+  padding: 20px;
+  background: var(--obsidian-surface);
+  border: 1px solid rgba(255, 255, 255, 0.03);
+  border-radius: 16px;
+  transition: all 0.3s ease;
+}
+
+.performerCard:hover {
+  background: var(--obsidian-elevated);
+  border-color: rgba(255, 255, 255, 0.1);
+  transform: translateX(8px);
+}
+
+.performerRank {
+  width: 40px;
+  height: 40px;
+  background: var(--accent-gold);
+  color: var(--obsidian-base);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 18px;
+}
+
+.performerInfo h3 {
+  font-size: 16px;
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+
+.performerInfo p {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.performerMetrics {
+  display: flex;
+  gap: 32px;
+}
+
+.performerMetric {
+  text-align: right;
+}
+
+.performerMetricLabel {
+  display: block;
+  font-family: var(--mono-font);
+  font-size: 10px;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.performerMetricValue {
+  font-family: var(--mono-font);
+  font-size: 14px;
+  color: #4ade80;
+}
+
+/* Insights Section */
+.insightsSection {
+  background: linear-gradient(135deg, #121212 0%, #080808 100%);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 24px;
+  padding: 40px;
+  box-shadow: var(--relief-shadow);
+  position: relative;
+  overflow: hidden;
+  animation: revealSlab 0.8s cubic-bezier(0.16, 1, 0.3, 1) both 0.3s;
+}
+
+.insightsSection::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.05) 0%, transparent 50%);
+  pointer-events: none;
+}
+
+.insightsList {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+.insightCard {
+  background: var(--obsidian-surface);
+  border: 1px solid rgba(255, 255, 255, 0.03);
+  border-radius: 16px;
+  padding: 24px;
+  display: flex;
+  gap: 16px;
+  transition: all 0.3s ease;
+}
+
+.insightCard:hover {
+  background: var(--obsidian-elevated);
+  border-color: rgba(255, 255, 255, 0.1);
+  transform: translateY(-4px);
+}
+
+.insightIcon {
+  font-size: 32px;
+  line-height: 1;
+}
+
+.insightContent h3 {
+  font-size: 14px;
+  font-weight: 500;
+  margin-bottom: 8px;
+}
+
+.insightContent p {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+@media (max-width: 1200px) {
+  .metricsRow {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .chartContainer {
+    grid-template-columns: 1fr;
+  }
+
+  .insightsList {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .main {
+    padding: 40px 24px;
+  }
+
+  .metricsRow {
+    grid-template-columns: 1fr;
+  }
+
+  .pageTitle {
+    font-size: 2rem;
+  }
+}

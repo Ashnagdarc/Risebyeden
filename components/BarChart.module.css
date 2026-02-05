@@ -1,0 +1,22 @@
+.chartWrapper {
+  width: 100%;
+  overflow-x: auto;
+  animation: fadeIn 0.8s ease;
+}
+
+.canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
