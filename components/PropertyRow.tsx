@@ -7,7 +7,7 @@ interface PropertyRowProps {
   appreciation: string;
   capRate: string;
   valuation: string;
-  gradient: string;
+  gradientClass: string;
 }
 
 export default function PropertyRow({
@@ -17,11 +17,11 @@ export default function PropertyRow({
   appreciation,
   capRate,
   valuation,
-  gradient
+  gradientClass
 }: PropertyRowProps) {
   return (
     <div className={styles.propertyRow}>
-      <div className={styles.propImg} style={{ background: gradient }}></div>
+      <div className={`${styles.propImg} ${gradientClass}`}></div>
       <div className={styles.propInfo}>
         <h3>{name}</h3>
         <p>{location} • {type}</p>

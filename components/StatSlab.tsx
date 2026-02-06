@@ -13,6 +13,11 @@ interface StatSlabProps {
 export default function StatSlab({ label, value, children, delay = 0 }: StatSlabProps) {
   const slabRef = useRef<HTMLDivElement>(null);
 
+  const delayClass =
+    delay === 0.2 ? styles.delay200 :
+    delay === 0.1 ? styles.delay100 :
+    styles.delay0;
+
   const handleMouseMove = (e: MouseEvent<HTMLDivElement>) => {
     const slab = slabRef.current;
     if (!slab) return;
@@ -38,8 +43,7 @@ export default function StatSlab({ label, value, children, delay = 0 }: StatSlab
   return (
     <div 
       ref={slabRef}
-      className={styles.statSlab}
-      style={{ animationDelay: `${delay}s` }}
+      className={`${styles.statSlab} ${delayClass}`}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
     >

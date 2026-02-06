@@ -29,6 +29,29 @@
   align-items: flex-end;
 }
 
+.barSegment {
+  flex: 1;
+  border-radius: 2px;
+  background: #333;
+}
+
+.barLow {
+  height: 40%;
+}
+
+.barMid {
+  height: 60%;
+}
+
+.barMidHigh {
+  height: 55%;
+}
+
+.barPeak {
+  height: 90%;
+  background: var(--text-primary);
+}
+
 .operational {
   font-size: 11px;
   color: #4ade80;
@@ -62,6 +85,18 @@
   text-transform: uppercase;
   letter-spacing: 0.1em;
   color: var(--text-secondary);
+}
+
+.propGradientObsidian {
+  background: linear-gradient(45deg, #1a1a1a, #333);
+}
+
+.propGradientVeridian {
+  background: linear-gradient(45deg, #0f1412, #1e2a24);
+}
+
+.propGradientGilded {
+  background: linear-gradient(45deg, #1a1610, #3d3528);
 }
 
 .viewAll {

@@ -13,7 +13,7 @@ export default function Home() {
       appreciation: "+22.4%",
       capRate: "5.2%",
       valuation: "$4.2M",
-      gradient: "linear-gradient(45deg, #1a1a1a, #333)"
+      gradientClass: styles.propGradientObsidian
     },
     {
       name: "Veridian Atrium",
@@ -22,7 +22,7 @@ export default function Home() {
       appreciation: "+11.8%",
       capRate: "4.8%",
       valuation: "$5.1M",
-      gradient: "linear-gradient(45deg, #0f1412, #1e2a24)"
+      gradientClass: styles.propGradientVeridian
     },
     {
       name: "The Gilded Loft",
@@ -31,7 +31,7 @@ export default function Home() {
       appreciation: "+9.1%",
       capRate: "6.1%",
       valuation: "$3.5M",
-      gradient: "linear-gradient(45deg, #1a1610, #3d3528)"
+      gradientClass: styles.propGradientGilded
     }
   ];
 
@@ -50,10 +50,10 @@ export default function Home() {
           
           <StatSlab label="Portfolio LTV" value="52.4%" delay={0.1}>
             <div className={styles.barChart}>
-              <div style={{ flex: 1, height: '40%', background: '#333', borderRadius: '2px' }}></div>
-              <div style={{ flex: 1, height: '60%', background: '#333', borderRadius: '2px' }}></div>
-              <div style={{ flex: 1, height: '55%', background: '#333', borderRadius: '2px' }}></div>
-              <div style={{ flex: 1, height: '90%', background: 'var(--text-primary)', borderRadius: '2px' }}></div>
+              <div className={`${styles.barSegment} ${styles.barLow}`}></div>
+              <div className={`${styles.barSegment} ${styles.barMid}`}></div>
+              <div className={`${styles.barSegment} ${styles.barMidHigh}`}></div>
+              <div className={`${styles.barSegment} ${styles.barPeak}`}></div>
             </div>
           </StatSlab>
           
