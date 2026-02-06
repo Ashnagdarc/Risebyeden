@@ -10,12 +10,48 @@ datasource db {
 enum UserRole {
   ADMIN
   CLIENT
+  AGENT
 }
 
 enum UserStatus {
   PENDING
   ACTIVE
   REJECTED
+}
+
+enum PropertyStatus {
+  AVAILABLE
+  RESERVED
+  SOLD
+}
+
+enum TransactionStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+}
+
+enum InviteStatus {
+  SENT
+  ACCEPTED
+  EXPIRED
+  REVOKED
+}
+
+enum DocumentType {
+  AGREEMENT
+  DEED
+  DISCLOSURE
+  INVOICE
+  OTHER
 }
 
 model User {
@@ -31,4 +67,139 @@ model User {
   tokenUsed      Boolean    @default(false)
   createdAt      DateTime   @default(now())
   updatedAt      DateTime   @updatedAt
+  clientProperties ClientProperty[]
+  clientProfile   ClientProfile?
+  payments        Payment[]
+  transactions    Transaction[]
+  documents       Document[]
+  organizationMembers OrganizationMember[]
+}
+
+model Organization {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  members   OrganizationMember[]
+  invites   InviteRequest[]
+  documents Document[]
+}
+
+model OrganizationMember {
+  id             String   @id @default(cuid())
+  organizationId String
+  userId         String
+  role           UserRole @default(CLIENT)
+  createdAt      DateTime @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  user         User         @relation(fields: [userId], references: [id])
+
+  @@unique([organizationId, userId])
+}
+
+model ClientProfile {
+  id           String   @id @default(cuid())
+  userId       String   @unique
+  phone        String?
+  addressLine1 String?
+  addressLine2 String?
+  city         String?
+  region       String?
+  postalCode   String?
+  country      String?
+  riskProfile  String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+model Property {
+  id          String         @id @default(cuid())
+  slug        String         @unique
+  name        String
+  location    String?
+  description String?
+  status      PropertyStatus @default(AVAILABLE)
+  basePrice   Decimal?       @db.Decimal(12, 2)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  purchases   ClientProperty[]
+  documents   Document[]
+  transactions Transaction[]
+}
+
+model ClientProperty {
+  id            String   @id @default(cuid())
+  userId        String
+  propertyId    String
+  quantity      Int      @default(1)
+  purchasePrice Decimal? @db.Decimal(12, 2)
+  notes         String?
+  purchasedAt   DateTime @default(now())
+
+  user     User     @relation(fields: [userId], references: [id])
+  property Property @relation(fields: [propertyId], references: [id])
+}
+
+model Transaction {
+  id          String            @id @default(cuid())
+  userId      String
+  propertyId  String
+  status      TransactionStatus @default(PENDING)
+  amount      Decimal           @db.Decimal(12, 2)
+  currency    String            @default("USD")
+  reference   String?
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  user     User     @relation(fields: [userId], references: [id])
+  property Property @relation(fields: [propertyId], references: [id])
+  payments Payment[]
+}
+
+model Payment {
+  id            String        @id @default(cuid())
+  transactionId String
+  userId        String
+  amount        Decimal       @db.Decimal(12, 2)
+  currency      String        @default("USD")
+  status        PaymentStatus @default(PENDING)
+  paidAt        DateTime?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  transaction Transaction @relation(fields: [transactionId], references: [id])
+  user        User        @relation(fields: [userId], references: [id])
+}
+
+model InviteRequest {
+  id             String       @id @default(cuid())
+  email          String
+  organizationId String?
+  role           UserRole     @default(CLIENT)
+  status         InviteStatus @default(SENT)
+  token          String       @unique
+  expiresAt      DateTime?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  organization Organization? @relation(fields: [organizationId], references: [id])
+}
+
+model Document {
+  id             String       @id @default(cuid())
+  name           String
+  url            String
+  type           DocumentType @default(OTHER)
+  userId         String?
+  propertyId     String?
+  organizationId String?
+  createdAt      DateTime     @default(now())
+
+  user         User?         @relation(fields: [userId], references: [id])
+  property     Property?     @relation(fields: [propertyId], references: [id])
+  organization Organization? @relation(fields: [organizationId], references: [id])
 }
