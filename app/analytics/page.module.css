@@ -335,8 +335,18 @@
 }
 
 .insightIcon {
-  font-size: 32px;
-  line-height: 1;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.insightIcon svg {
+  width: 24px;
+  height: 24px;
+  stroke: var(--accent-gold);
 }
 
 .insightContent h3 {

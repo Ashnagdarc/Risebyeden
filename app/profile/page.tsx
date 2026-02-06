@@ -1,9 +1,12 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
 import styles from './page.module.css';
 
 export default function ProfilePage() {
+  const router = useRouter();
+
   return (
     <div className={styles.container}>
       <Sidebar />
@@ -16,8 +19,12 @@ export default function ProfilePage() {
             <p className={styles.subtitle}>Manage your profile, security, and portfolio visibility.</p>
           </div>
           <div className={styles.headerActions}>
-            <button className={styles.secondaryButton}>Security</button>
-            <button className={styles.primaryButton}>Edit Profile</button>
+            <button className={styles.secondaryButton} onClick={() => router.push('/profile/security')}>
+              Security
+            </button>
+            <button className={styles.primaryButton} onClick={() => router.push('/profile/edit')}>
+              Edit Profile
+            </button>
           </div>
         </header>
 

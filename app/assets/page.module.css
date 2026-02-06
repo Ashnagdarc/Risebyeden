@@ -1,0 +1,538 @@
+.container {
+  display: flex;
+  min-height: 100vh;
+}
+
+.main {
+  flex: 1;
+  padding: 60px 80px;
+  overflow-y: auto;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 32px;
+  margin-bottom: 40px;
+}
+
+.kicker {
+  font-family: var(--mono-font);
+  font-size: 11px;
+  letter-spacing: 0.3em;
+  color: var(--accent-gold);
+  text-transform: uppercase;
+  margin-bottom: 12px;
+}
+
+.pageTitle {
+  font-size: 32px;
+  font-weight: 300;
+  letter-spacing: -0.04em;
+  margin-bottom: 8px;
+}
+
+.subtitle {
+  font-size: 14px;
+  color: var(--text-secondary);
+  max-width: 480px;
+}
+
+.primaryButton {
+  padding: 14px 24px;
+  border-radius: 6px;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  font-family: var(--mono-font);
+  cursor: pointer;
+  background: var(--accent-gold);
+  border: 1px solid var(--accent-gold);
+  color: #0a0a0a;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+}
+
+.primaryButton:hover {
+  transform: translateY(-2px);
+}
+
+/* Summary Stats */
+.summaryGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+  margin-bottom: 32px;
+}
+
+.statCard {
+  padding: 24px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, var(--obsidian-surface) 0%, var(--obsidian-elevated) 100%);
+  border: 1px solid rgba(197, 163, 104, 0.12);
+  box-shadow: var(--relief-shadow);
+  position: relative;
+}
+
+.statLabel {
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  font-family: var(--mono-font);
+  margin-bottom: 12px;
+}
+
+.statValue {
+  font-size: 28px;
+  font-weight: 300;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+}
+
+.statChange {
+  font-size: 12px;
+  color: #81c784;
+  margin-top: 8px;
+  font-family: var(--mono-font);
+}
+
+.statusDot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  background: #81c784;
+  border-radius: 50%;
+  margin-left: 8px;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+/* Distribution Section */
+.distributionSection {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr;
+  gap: 24px;
+  margin-bottom: 32px;
+}
+
+.distributionCard {
+  padding: 28px;
+  border-radius: 10px;
+  background: rgba(10, 10, 10, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: var(--relief-shadow);
+}
+
+.sectionTitle {
+  font-size: 12px;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--accent-gold);
+  font-family: var(--mono-font);
+  margin-bottom: 24px;
+}
+
+.distributionChart {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.distributionItem {
+  display: grid;
+  grid-template-columns: 120px 1fr 80px 60px;
+  gap: 16px;
+  align-items: center;
+}
+
+.distributionInfo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.distributionDot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.distributionType {
+  font-size: 13px;
+  color: var(--text-primary);
+}
+
+.distributionBar {
+  height: 8px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.distributionFill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.5s ease;
+}
+
+.distributionValue {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+  text-align: right;
+}
+
+.distributionPercent {
+  font-size: 12px;
+  color: var(--text-secondary);
+  font-family: var(--mono-font);
+  text-align: right;
+}
+
+/* Type Colors */
+.typeResidential {
+  background: #64b5f6;
+}
+
+.typeCommercial {
+  background: #81c784;
+}
+
+.typeMixedUse {
+  background: var(--accent-gold);
+}
+
+.typeIndustrial {
+  background: #ba68c8;
+}
+
+/* Geo List */
+.geoList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.geoItem {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 16px;
+  align-items: center;
+  padding: 14px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.geoItem:last-child {
+  border-bottom: none;
+}
+
+.geoCity {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.geoCount {
+  font-size: 12px;
+  color: var(--text-secondary);
+  font-family: var(--mono-font);
+}
+
+.geoValue {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--accent-gold);
+}
+
+/* Controls */
+.controlsBar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 24px;
+  margin-bottom: 28px;
+  padding: 16px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.searchWrapper {
+  flex: 1;
+  max-width: 320px;
+}
+
+.searchInput {
+  width: 100%;
+  padding: 12px 16px;
+  border-radius: 6px;
+  font-size: 14px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: var(--text-primary);
+  transition: all 0.3s ease;
+}
+
+.searchInput:focus {
+  outline: none;
+  border-color: rgba(197, 163, 104, 0.5);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.searchInput::placeholder {
+  color: var(--text-secondary);
+}
+
+.filterGroup {
+  display: flex;
+  gap: 12px;
+}
+
+.filterSelect {
+  padding: 12px 16px;
+  border-radius: 6px;
+  font-size: 13px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: var(--text-primary);
+  cursor: pointer;
+  min-width: 160px;
+}
+
+.filterSelect:focus {
+  outline: none;
+  border-color: rgba(197, 163, 104, 0.5);
+}
+
+/* Assets Grid */
+.assetsGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+}
+
+.assetCard {
+  border-radius: 12px;
+  background: rgba(10, 10, 10, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.assetCard:hover {
+  transform: translateY(-4px);
+  border-color: rgba(197, 163, 104, 0.3);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+}
+
+.assetImage {
+  height: 140px;
+  position: relative;
+}
+
+.gradientObsidian {
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+}
+
+.gradientVeridian {
+  background: linear-gradient(135deg, #134e5e 0%, #71b280 100%);
+}
+
+.gradientGilded {
+  background: linear-gradient(135deg, #c5a368 0%, #8b6914 50%, #3d2914 100%);
+}
+
+.gradientAurora {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.gradientMeridian {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+}
+
+.gradientSlate {
+  background: linear-gradient(135deg, #3d3d3d 0%, #1a1a1a 100%);
+}
+
+.typeBadge {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #0a0a0a;
+}
+
+.assetContent {
+  padding: 20px;
+}
+
+.assetHeader {
+  margin-bottom: 20px;
+}
+
+.assetName {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 4px;
+  color: var(--text-primary);
+}
+
+.assetLocation {
+  font-size: 12px;
+  color: var(--text-secondary);
+  font-family: var(--mono-font);
+}
+
+.assetMetrics {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.metric {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.metricLabel {
+  font-size: 9px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  font-family: var(--mono-font);
+}
+
+.metricValue {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.metricValueGreen {
+  font-size: 15px;
+  font-weight: 600;
+  color: #81c784;
+}
+
+.assetFooter {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.occupancyBar {
+  flex: 1;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.occupancyFill {
+  height: 100%;
+  background: #81c784;
+  border-radius: 2px;
+}
+
+/* Occupancy widths */
+.occupancy90 { width: 90%; }
+.occupancy92 { width: 92%; }
+.occupancy95 { width: 95%; }
+.occupancy98 { width: 98%; }
+.occupancy100, .occupancyFull { width: 100%; }
+
+/* Distribution bar widths */
+.width14 { width: 14%; }
+.width16 { width: 16%; }
+.width20 { width: 20%; }
+.width21 { width: 21%; }
+.width25 { width: 25%; }
+.width26 { width: 26%; }
+
+.occupancyLabel {
+  font-size: 11px;
+  color: var(--text-secondary);
+  font-family: var(--mono-font);
+}
+
+.acquiredDate {
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin-left: auto;
+}
+
+/* Responsive */
+@media (max-width: 1400px) {
+  .assetsGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .summaryGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 1200px) {
+  .header {
+    flex-direction: column;
+  }
+
+  .distributionSection {
+    grid-template-columns: 1fr;
+  }
+
+  .distributionItem {
+    grid-template-columns: 100px 1fr 70px 50px;
+  }
+}
+
+@media (max-width: 768px) {
+  .main {
+    padding: 40px 24px;
+  }
+
+  .summaryGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .assetsGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .controlsBar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .searchWrapper {
+    max-width: 100%;
+  }
+
+  .filterGroup {
+    flex-direction: column;
+  }
+
+  .distributionItem {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .distributionValue,
+  .distributionPercent {
+    text-align: left;
+  }
+}

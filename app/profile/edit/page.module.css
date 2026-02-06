@@ -1,0 +1,355 @@
+.container {
+  display: flex;
+  min-height: 100vh;
+}
+
+.main {
+  flex: 1;
+  padding: 60px 80px;
+  overflow-y: auto;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 32px;
+  margin-bottom: 40px;
+}
+
+.kicker {
+  font-family: var(--mono-font);
+  font-size: 11px;
+  letter-spacing: 0.3em;
+  color: var(--accent-gold);
+  text-transform: uppercase;
+  margin-bottom: 12px;
+}
+
+.pageTitle {
+  font-size: 32px;
+  font-weight: 300;
+  letter-spacing: -0.04em;
+  margin-bottom: 8px;
+}
+
+.subtitle {
+  font-size: 14px;
+  color: var(--text-secondary);
+  max-width: 420px;
+}
+
+.headerActions {
+  display: flex;
+  gap: 12px;
+}
+
+.primaryButton,
+.secondaryButton {
+  padding: 12px 20px;
+  border-radius: 6px;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  font-family: var(--mono-font);
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.primaryButton {
+  background: var(--accent-gold);
+  border: 1px solid var(--accent-gold);
+  color: #0a0a0a;
+}
+
+.secondaryButton {
+  background: transparent;
+  border: 1px solid rgba(197, 163, 104, 0.4);
+  color: var(--accent-gold);
+}
+
+.secondaryButton:hover,
+.primaryButton:hover {
+  transform: translateY(-2px);
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+.avatarSection {
+  padding: 28px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, var(--obsidian-surface) 0%, var(--obsidian-elevated) 100%);
+  border: 1px solid rgba(197, 163, 104, 0.12);
+  box-shadow: var(--relief-shadow);
+}
+
+.avatarUpload {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.avatar {
+  width: 88px;
+  height: 88px;
+  border-radius: 50%;
+  background: rgba(197, 163, 104, 0.15);
+  border: 2px solid rgba(197, 163, 104, 0.4);
+  display: grid;
+  place-items: center;
+  font-weight: 600;
+  font-size: 24px;
+  letter-spacing: 0.2em;
+  font-family: var(--mono-font);
+  color: var(--accent-gold);
+}
+
+.avatarActions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.uploadButton {
+  padding: 10px 18px;
+  border-radius: 6px;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-family: var(--mono-font);
+  cursor: pointer;
+  background: transparent;
+  border: 1px solid rgba(197, 163, 104, 0.4);
+  color: var(--accent-gold);
+  transition: all 0.3s ease;
+}
+
+.uploadButton:hover {
+  background: rgba(197, 163, 104, 0.1);
+}
+
+.uploadHint {
+  font-size: 12px;
+  color: var(--text-secondary);
+  font-family: var(--mono-font);
+}
+
+.formGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
+}
+
+.panel {
+  padding: 28px;
+  border-radius: 10px;
+  background: rgba(10, 10, 10, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: var(--relief-shadow);
+}
+
+.panelTitle {
+  font-size: 12px;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--accent-gold);
+  font-family: var(--mono-font);
+  margin-bottom: 24px;
+}
+
+.fieldGroup {
+  margin-bottom: 20px;
+}
+
+.fieldGroup:last-child {
+  margin-bottom: 0;
+}
+
+.label {
+  display: block;
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  font-family: var(--mono-font);
+  margin-bottom: 10px;
+}
+
+.input,
+.textarea {
+  width: 100%;
+  padding: 14px 16px;
+  border-radius: 6px;
+  font-size: 14px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: var(--text-primary);
+  transition: all 0.3s ease;
+}
+
+.input:focus,
+.textarea:focus {
+  outline: none;
+  border-color: rgba(197, 163, 104, 0.5);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.textarea {
+  resize: vertical;
+  min-height: 100px;
+  font-family: inherit;
+  line-height: 1.5;
+}
+
+.fieldHint {
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin-top: 8px;
+}
+
+.tierBadge {
+  display: inline-block;
+  padding: 10px 16px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  background: rgba(197, 163, 104, 0.15);
+  border: 1px solid rgba(197, 163, 104, 0.3);
+  color: var(--accent-gold);
+}
+
+.verificationStatus {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.verifiedBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  background: rgba(76, 175, 80, 0.15);
+  border: 1px solid rgba(76, 175, 80, 0.3);
+  color: #81c784;
+}
+
+.verifiedBadge::before {
+  content: '✓';
+  font-weight: bold;
+}
+
+.linkButton {
+  background: none;
+  border: none;
+  color: var(--accent-gold);
+  font-size: 12px;
+  font-family: var(--mono-font);
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.linkButton:hover {
+  opacity: 0.8;
+}
+
+.visibilityOptions {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.radioOption {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 16px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.radioOption:hover {
+  background: rgba(255, 255, 255, 0.02);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.radioOption input[type="radio"] {
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(197, 163, 104, 0.4);
+  border-radius: 50%;
+  margin-top: 2px;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+.radioOption input[type="radio"]:checked {
+  border-color: var(--accent-gold);
+}
+
+.radioOption input[type="radio"]:checked::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--accent-gold);
+}
+
+.radioTitle {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.radioDesc {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+@media (max-width: 1200px) {
+  .header {
+    flex-direction: column;
+  }
+
+  .formGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .main {
+    padding: 40px 24px;
+  }
+
+  .headerActions {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .avatarUpload {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .visibilityOptions {
+    gap: 12px;
+  }
+}

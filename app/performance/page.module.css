@@ -100,6 +100,10 @@
   margin-bottom: 8px;
 }
 
+.metricValuePositive {
+  color: #4ade80;
+}
+
 .metricChange {
   font-family: var(--mono-font);
   font-size: 11px;
@@ -232,6 +236,26 @@
   transition: width 1s ease;
 }
 
+.occupancyFill[data-occupancy='92'] {
+  width: 92%;
+}
+
+.occupancyFill[data-occupancy='95'] {
+  width: 95%;
+}
+
+.occupancyFill[data-occupancy='97'] {
+  width: 97%;
+}
+
+.occupancyFill[data-occupancy='98'] {
+  width: 98%;
+}
+
+.occupancyFill[data-occupancy='100'] {
+  width: 100%;
+}
+
 .revenue {
   font-family: var(--mono-font);
   font-size: 14px;
@@ -297,6 +321,18 @@
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.statIconGreen {
+  background: rgba(74, 222, 128, 0.1);
+}
+
+.statIconBlue {
+  background: rgba(96, 165, 250, 0.1);
+}
+
+.statIconGold {
+  background: rgba(197, 163, 104, 0.1);
 }
 
 .statContent {

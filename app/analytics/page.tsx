@@ -107,21 +107,44 @@ export default function Analytics() {
             <h2 className={styles.sectionTitle}>Market Insights</h2>
             <div className={styles.insightsList}>
               <div className={styles.insightCard}>
-                <div className={styles.insightIcon}>📈</div>
+                <div className={styles.insightIcon}>
+                  <svg viewBox="0 0 24 24" fill="none" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+                    <polyline points="17 6 23 6 23 12"></polyline>
+                  </svg>
+                </div>
                 <div className={styles.insightContent}>
                   <h3>Strong Performance</h3>
                   <p>Your portfolio outperformed the market average by 6.3% this quarter.</p>
                 </div>
               </div>
               <div className={styles.insightCard}>
-                <div className={styles.insightIcon}>🎯</div>
+                <div className={styles.insightIcon}>
+                  <svg viewBox="0 0 24 24" fill="none" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <circle cx="12" cy="12" r="6"></circle>
+                    <circle cx="12" cy="12" r="2"></circle>
+                  </svg>
+                </div>
                 <div className={styles.insightContent}>
                   <h3>Diversification Score</h3>
                   <p>Portfolio shows excellent diversification across property types and locations.</p>
                 </div>
               </div>
               <div className={styles.insightCard}>
-                <div className={styles.insightIcon}>💡</div>
+                <div className={styles.insightIcon}>
+                  <svg viewBox="0 0 24 24" fill="none" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="12" y1="2" x2="12" y2="6"></line>
+                    <line x1="12" y1="18" x2="12" y2="22"></line>
+                    <circle cx="12" cy="12" r="4"></circle>
+                    <line x1="4.93" y1="4.93" x2="7.76" y2="7.76"></line>
+                    <line x1="16.24" y1="16.24" x2="19.07" y2="19.07"></line>
+                    <line x1="2" y1="12" x2="6" y2="12"></line>
+                    <line x1="18" y1="12" x2="22" y2="12"></line>
+                    <line x1="4.93" y1="19.07" x2="7.76" y2="16.24"></line>
+                    <line x1="16.24" y1="7.76" x2="19.07" y2="4.93"></line>
+                  </svg>
+                </div>
                 <div className={styles.insightContent}>
                   <h3>Opportunity Alert</h3>
                   <p>Consider expanding in emerging markets showing 18% growth potential.</p>

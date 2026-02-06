@@ -104,4 +104,130 @@
   font-size: 12px;
   color: var(--accent-gold);
   cursor: pointer;
+  text-decoration: none;
+}
+
+.viewAll:hover {
+  text-decoration: underline;
+}
+
+/* Quick Actions Panel */
+.quickActionsPanel {
+  grid-column: span 6;
+  padding: 24px;
+  border-radius: 10px;
+  background: rgba(10, 10, 10, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: var(--relief-shadow);
+}
+
+.panelTitle {
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--accent-gold);
+  font-family: var(--mono-font);
+  margin-bottom: 20px;
+}
+
+.actionsList {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.actionItem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  color: var(--text-primary);
+  font-size: 13px;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.actionItem:hover {
+  background: rgba(197, 163, 104, 0.1);
+  border-color: rgba(197, 163, 104, 0.3);
+  transform: translateY(-2px);
+}
+
+.actionIcon {
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.actionIcon svg {
+  width: 16px;
+  height: 16px;
+  stroke: var(--accent-gold);
+}
+
+/* Recent Activity Panel */
+.activityPanel {
+  grid-column: span 6;
+  padding: 24px;
+  border-radius: 10px;
+  background: rgba(10, 10, 10, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: var(--relief-shadow);
+}
+
+.activityList {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.activityItem {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.activityDot {
+  width: 8px;
+  height: 8px;
+  background: var(--accent-gold);
+  border-radius: 50%;
+  margin-top: 6px;
+  flex-shrink: 0;
+}
+
+.activityContent {
+  flex: 1;
+}
+
+.activityText {
+  font-size: 13px;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.activityTime {
+  font-size: 11px;
+  color: var(--text-secondary);
+  font-family: var(--mono-font);
+}
+
+@media (max-width: 1200px) {
+  .quickActionsPanel,
+  .activityPanel {
+    grid-column: span 12;
+  }
+}
+
+@media (max-width: 768px) {
+  .actionsList {
+    grid-template-columns: 1fr;
+  }
 }

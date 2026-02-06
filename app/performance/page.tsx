@@ -70,7 +70,7 @@ export default function Performance() {
 
             <div className={styles.metricCard}>
               <span className={styles.metricLabel}>Net Income (YTD)</span>
-              <div className={styles.metricValue} style={{ color: '#4ade80' }}>
+              <div className={`${styles.metricValue} ${styles.metricValuePositive}`}>
                 ${(netIncome / 1000000).toFixed(2)}M
               </div>
               <div className={styles.metricChange}>+24.7% vs last year</div>
@@ -111,7 +111,7 @@ export default function Performance() {
                     <div className={styles.occupancyBar}>
                       <div 
                         className={styles.occupancyFill}
-                        style={{ width: `${property.occupancy}%` }}
+                        data-occupancy={property.occupancy}
                       ></div>
                     </div>
                     <span>{property.occupancy}%</span>
@@ -132,7 +132,7 @@ export default function Performance() {
           {/* Quick Stats */}
           <div className={styles.quickStats}>
             <div className={styles.statCard}>
-              <div className={styles.statIcon} style={{ background: 'rgba(74, 222, 128, 0.1)' }}>
+              <div className={`${styles.statIcon} ${styles.statIconGreen}`}>
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#4ade80" strokeWidth="2">
                   <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
                 </svg>
@@ -144,7 +144,7 @@ export default function Performance() {
             </div>
 
             <div className={styles.statCard}>
-              <div className={styles.statIcon} style={{ background: 'rgba(96, 165, 250, 0.1)' }}>
+              <div className={`${styles.statIcon} ${styles.statIconBlue}`}>
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" strokeWidth="2">
                   <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                   <polyline points="7 10 12 15 17 10"></polyline>
@@ -158,7 +158,7 @@ export default function Performance() {
             </div>
 
             <div className={styles.statCard}>
-              <div className={styles.statIcon} style={{ background: 'rgba(197, 163, 104, 0.1)' }}>
+              <div className={`${styles.statIcon} ${styles.statIconGold}`}>
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#c5a368" strokeWidth="2">
                   <circle cx="12" cy="12" r="10"></circle>
                   <polyline points="12 6 12 12 16 14"></polyline>

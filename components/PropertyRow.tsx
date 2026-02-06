@@ -1,6 +1,10 @@
+'use client';
+
+import { useRouter } from 'next/navigation';
 import styles from './PropertyRow.module.css';
 
 interface PropertyRowProps {
+  id: number;
   name: string;
   location: string;
   type: string;
@@ -11,6 +15,7 @@ interface PropertyRowProps {
 }
 
 export default function PropertyRow({
+  id,
   name,
   location,
   type,
@@ -19,8 +24,16 @@ export default function PropertyRow({
   valuation,
   gradientClass
 }: PropertyRowProps) {
+  const router = useRouter();
+
   return (
-    <div className={styles.propertyRow}>
+    <div 
+      className={styles.propertyRow}
+      onClick={() => router.push(`/acquire/${id}`)}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => e.key === 'Enter' && router.push(`/acquire/${id}`)}
+    >
       <div className={`${styles.propImg} ${gradientClass}`}></div>
       <div className={styles.propInfo}>
         <h3>{name}</h3>
