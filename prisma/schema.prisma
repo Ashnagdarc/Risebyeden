@@ -12,12 +12,23 @@ enum UserRole {
   CLIENT
 }
 
+enum UserStatus {
+  PENDING
+  ACTIVE
+  REJECTED
+}
+
 model User {
-  id             String   @id @default(cuid())
-  name           String
-  email          String   @unique
-  role           UserRole @default(CLIENT)
-  hashedPassword String
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  id             String     @id @default(cuid())
+  userId         String     @unique            // Short unique ID like RBE-4X9K
+  name           String?
+  organization   String?
+  email          String?    @unique
+  role           UserRole   @default(CLIENT)
+  status         UserStatus @default(PENDING)
+  hashedPassword String                         // Access Key (hashed)
+  accessToken    String?    @unique             // One-time enlist token
+  tokenUsed      Boolean    @default(false)
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
 }

@@ -47,3 +47,23 @@
 .settings {
   margin-top: auto;
 }
+
+.logout {
+  background: none;
+  border: 1px solid transparent;
+  padding: 0;
+  cursor: pointer;
+}
+
+.logout:hover {
+  background: rgba(220, 60, 60, 0.12);
+  border-color: rgba(220, 60, 60, 0.25);
+}
+
+.logout svg {
+  stroke: var(--text-secondary);
+}
+
+.logout:hover svg {
+  stroke: #dc3c3c;
+}

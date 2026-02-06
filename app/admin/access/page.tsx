@@ -1,47 +1,85 @@
-
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Sidebar from '@/components/Sidebar';
 import AdminNav from '@/components/AdminNav';
 import styles from '../admin.module.css';
 
+type UserRecord = {
+  id: string;
+  userId: string;
+  name: string | null;
+  organization: string | null;
+  role: string;
+  status: string;
+  tokenUsed: boolean;
+  createdAt: string;
+};
+
+type Credentials = {
+  userId: string;
+  accessKey: string;
+  accessToken: string;
+};
+
 export default function AdminAccess() {
-  const team = [
-    { name: 'Eden Ops', role: 'Admin', status: 'Enabled', lastActive: 'Today' },
-    { name: 'Portfolio Team', role: 'Admin', status: 'Enabled', lastActive: 'Yesterday' },
-    { name: 'Support Desk', role: 'Viewer', status: 'Limited', lastActive: '3 days ago' },
-  ];
-
-  const [formState, setFormState] = useState({
-    name: '',
-    email: '',
-    password: '',
-    role: 'CLIENT',
-  });
+  const [users, setUsers] = useState<UserRecord[]>([]);
+  const [pendingUsers, setPendingUsers] = useState<UserRecord[]>([]);
+  const [credentials, setCredentials] = useState<Credentials | null>(null);
   const [statusMessage, setStatusMessage] = useState('');
+  const [isProvisioning, setIsProvisioning] = useState(false);
+  const [filter, setFilter] = useState<'all' | 'PENDING' | 'ACTIVE' | 'REJECTED'>('all');
 
-  const handleChange = (field: string, value: string) => {
-    setFormState((prev) => ({ ...prev, [field]: value }));
-  };
+  const fetchUsers = useCallback(async () => {
+    const res = await fetch('/api/admin/users');
+    if (res.ok) {
+      const data = await res.json();
+      setUsers(data.users);
+      setPendingUsers(data.users.filter((u: UserRecord) => u.status === 'PENDING' && u.tokenUsed));
+    }
+  }, []);
 
-  const handleProvision = async (event: React.FormEvent) => {
-    event.preventDefault();
-    setStatusMessage('Provisioning user...');
+  useEffect(() => {
+    fetchUsers();
+  }, [fetchUsers]);
 
-    const response = await fetch('/api/admin/users', {
+  const handleProvision = async () => {
+    setIsProvisioning(true);
+    setStatusMessage('Generating credentials...');
+    setCredentials(null);
+
+    const res = await fetch('/api/admin/users', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(formState),
+      body: JSON.stringify({ role: 'CLIENT' }),
     });
 
-    if (response.ok) {
-      setStatusMessage('User provisioned successfully.');
-      setFormState({ name: '', email: '', password: '', role: 'CLIENT' });
+    if (res.ok) {
+      const data = await res.json();
+      setCredentials(data.credentials);
+      setStatusMessage('Credentials generated. Share securely with the client.');
+      fetchUsers();
     } else {
-      setStatusMessage('Unable to provision user.');
+      setStatusMessage('Failed to provision user.');
+    }
+    setIsProvisioning(false);
+  };
+
+  const handleAction = async (id: string, action: 'approve' | 'reject') => {
+    const res = await fetch('/api/admin/users', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, action }),
+    });
+
+    if (res.ok) {
+      fetchUsers();
     }
   };
+
+  const filteredUsers = filter === 'all' ? users : users.filter(u => u.status === filter);
+  const activeCount = users.filter(u => u.status === 'ACTIVE').length;
+  const pendingCount = users.filter(u => u.status === 'PENDING').length;
 
   return (
     <div className={styles.container}>
@@ -52,114 +90,186 @@ export default function AdminAccess() {
           <div>
             <p className={styles.kicker}>Admin</p>
             <h1 className={styles.pageTitle}>Access Control</h1>
-            <p className={styles.subtitle}>Role-based access is enforced for admin workflows and client data.</p>
+            <p className={styles.subtitle}>Provision client credentials, manage enlistment requests, and control access.</p>
           </div>
-          <button className={styles.primaryButton}>Invite Admin</button>
+          <button
+            className={styles.primaryButton}
+            onClick={handleProvision}
+            disabled={isProvisioning}
+          >
+            {isProvisioning ? 'Generating...' : 'Provision Client'}
+          </button>
         </header>
 
         <AdminNav />
 
+        {/* Stat cards */}
+        <section className={styles.statGrid}>
+          <div className={styles.statCard}>
+            <div className={styles.statLabel}>Total Users</div>
+            <div className={styles.statValue}>{users.length}</div>
+          </div>
+          <div className={styles.statCard}>
+            <div className={styles.statLabel}>Active</div>
+            <div className={styles.statValue}>{activeCount}</div>
+            <div className={styles.statMeta}>{activeCount} authorized</div>
+          </div>
+          <div className={styles.statCard}>
+            <div className={styles.statLabel}>Pending Requests</div>
+            <div className={styles.statValue}>{pendingCount}</div>
+            <div className={styles.statMeta}>{pendingUsers.length} awaiting review</div>
+          </div>
+        </section>
+
+        {/* Generated credentials display */}
+        {credentials && (
+          <section className={styles.section} style={{ marginBottom: 24 }}>
+            <h2 className={styles.sectionTitle}>New Client Credentials</h2>
+            <p style={{ fontSize: 12, color: 'var(--text-secondary)', marginBottom: 16, fontFamily: 'var(--mono-font)', letterSpacing: '0.1em' }}>
+              Share these securely with the client. The access key and token are shown only once.
+            </p>
+            <div className={styles.formGrid}>
+              <div className={styles.field}>
+                <label className={styles.label}>User ID</label>
+                <div className={styles.input} style={{ userSelect: 'all', cursor: 'text' }}>
+                  {credentials.userId}
+                </div>
+              </div>
+              <div className={styles.field}>
+                <label className={styles.label}>Access Key</label>
+                <div className={styles.input} style={{ userSelect: 'all', cursor: 'text' }}>
+                  {credentials.accessKey}
+                </div>
+              </div>
+              <div className={styles.field}>
+                <label className={styles.label}>Access Token (Invite Code)</label>
+                <div className={styles.input} style={{ userSelect: 'all', cursor: 'text' }}>
+                  {credentials.accessToken}
+                </div>
+              </div>
+            </div>
+            <div className={styles.inlineActions} style={{ marginTop: 12 }}>
+              <button
+                className={styles.secondaryButton}
+                onClick={() => {
+                  navigator.clipboard.writeText(
+                    `User ID: ${credentials.userId}\nAccess Key: ${credentials.accessKey}\nAccess Token: ${credentials.accessToken}`
+                  );
+                  setStatusMessage('Credentials copied to clipboard.');
+                }}
+              >
+                Copy All
+              </button>
+              <span className={`${styles.badge} ${styles.badgeMuted}`}>{statusMessage}</span>
+            </div>
+          </section>
+        )}
+
         <section className={styles.grid}>
+          {/* Pending enlistment requests */}
           <div className={styles.section}>
-            <h2 className={styles.sectionTitle}>Admin Roles</h2>
+            <h2 className={styles.sectionTitle}>Enlistment Requests</h2>
+            {pendingUsers.length === 0 ? (
+              <p style={{ fontSize: 13, color: 'var(--text-secondary)' }}>No pending enlistment requests.</p>
+            ) : (
+              <div className={styles.table}>
+                <div className={styles.tableHeader}>
+                  <div>User ID</div>
+                  <div>Organization</div>
+                  <div>Status</div>
+                  <div>Actions</div>
+                </div>
+                {pendingUsers.map((user) => (
+                  <div key={user.id} className={styles.tableRow}>
+                    <div>{user.userId}</div>
+                    <div>{user.organization || '—'}</div>
+                    <div className={`${styles.badge} ${styles.badgePending}`}>Pending</div>
+                    <div className={styles.inlineActions}>
+                      <button
+                        className={styles.secondaryButton}
+                        onClick={() => handleAction(user.id, 'approve')}
+                        style={{ fontSize: 10, padding: '6px 12px' }}
+                      >
+                        Authorize
+                      </button>
+                      <button
+                        className={styles.secondaryButton}
+                        onClick={() => handleAction(user.id, 'reject')}
+                        style={{ fontSize: 10, padding: '6px 12px', color: '#f87171' }}
+                      >
+                        Reject
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* All users list */}
+          <div className={styles.section}>
+            <h2 className={styles.sectionTitle}>All Users</h2>
+            <div className={styles.inlineActions} style={{ marginBottom: 16 }}>
+              {(['all', 'ACTIVE', 'PENDING', 'REJECTED'] as const).map((f) => (
+                <button
+                  key={f}
+                  className={styles.secondaryButton}
+                  style={{
+                    fontSize: 10,
+                    padding: '6px 12px',
+                    borderColor: filter === f ? 'var(--accent-gold)' : undefined,
+                    color: filter === f ? 'var(--accent-gold)' : undefined,
+                  }}
+                  onClick={() => setFilter(f)}
+                >
+                  {f === 'all' ? 'All' : f}
+                </button>
+              ))}
+            </div>
             <div className={styles.table}>
               <div className={styles.tableHeader}>
-                <div>Team</div>
+                <div>User ID</div>
+                <div>Organization</div>
                 <div>Role</div>
                 <div>Status</div>
-                <div>Last Active</div>
               </div>
-              {team.map((member) => (
-                <div key={member.name} className={styles.tableRow}>
-                  <div>{member.name}</div>
-                  <div>{member.role}</div>
-                  <div className={member.status === 'Enabled' ? `${styles.badge} ${styles.badgeSuccess}` : `${styles.badge} ${styles.badgeMuted}`}>
-                    {member.status}
+              {filteredUsers.map((user) => (
+                <div key={user.id} className={styles.tableRow}>
+                  <div>{user.userId}</div>
+                  <div>{user.organization || '—'}</div>
+                  <div>{user.role}</div>
+                  <div className={`${styles.badge} ${
+                    user.status === 'ACTIVE' ? styles.badgeSuccess :
+                    user.status === 'PENDING' ? styles.badgePending :
+                    styles.badgeMuted
+                  }`}>
+                    {user.status}
                   </div>
-                  <div>{member.lastActive}</div>
                 </div>
               ))}
             </div>
           </div>
+        </section>
 
-          <div className={styles.section}>
-            <h2 className={styles.sectionTitle}>Provision User</h2>
-            <form onSubmit={handleProvision}>
-              <div className={styles.formGrid}>
-                <div className={styles.field}>
-                  <label className={styles.label} htmlFor="userName">Full Name</label>
-                  <input
-                    className={styles.input}
-                    id="userName"
-                    value={formState.name}
-                    onChange={(event) => handleChange('name', event.target.value)}
-                    placeholder="Client or admin name"
-                    required
-                  />
-                </div>
-                <div className={styles.field}>
-                  <label className={styles.label} htmlFor="userEmail">Email</label>
-                  <input
-                    className={styles.input}
-                    id="userEmail"
-                    type="email"
-                    value={formState.email}
-                    onChange={(event) => handleChange('email', event.target.value)}
-                    placeholder="name@risebyeden.com"
-                    required
-                  />
-                </div>
-              </div>
-              <div className={styles.formGrid}>
-                <div className={styles.field}>
-                  <label className={styles.label} htmlFor="userRole">Role</label>
-                  <select
-                    className={styles.select}
-                    id="userRole"
-                    value={formState.role}
-                    onChange={(event) => handleChange('role', event.target.value)}
-                  >
-                    <option value="CLIENT">Client</option>
-                    <option value="ADMIN">Admin</option>
-                  </select>
-                </div>
-                <div className={styles.field}>
-                  <label className={styles.label} htmlFor="userPassword">Temporary Password</label>
-                  <input
-                    className={styles.input}
-                    id="userPassword"
-                    type="password"
-                    value={formState.password}
-                    onChange={(event) => handleChange('password', event.target.value)}
-                    placeholder="Set a temporary password"
-                    required
-                  />
-                </div>
-              </div>
-              <div className={styles.inlineActions}>
-                <button className={styles.primaryButton} type="submit">Create User</button>
-                <span className={`${styles.badge} ${styles.badgeMuted}`}>{statusMessage || 'No pending actions'}</span>
-              </div>
-            </form>
-          </div>
-
-          <div className={styles.section}>
-            <h2 className={styles.sectionTitle}>Policy Overview</h2>
+        {/* Policy overview */}
+        <section className={styles.section} style={{ marginTop: 24 }}>
+          <h2 className={styles.sectionTitle}>Access Flow</h2>
+          <div className={styles.formGrid}>
             <div className={styles.field}>
-              <label className={styles.label}>Access Rules</label>
-              <div className={`${styles.badge} ${styles.badgeMuted}`}>Admin only: Presets, Pricing, Assignments</div>
+              <label className={styles.label}>Step 1</label>
+              <div className={`${styles.badge} ${styles.badgeMuted}`}>Admin provisions User ID + Access Key + Access Token</div>
             </div>
             <div className={styles.field}>
-              <label className={styles.label}>Client Data</label>
-              <div className={`${styles.badge} ${styles.badgeMuted}`}>Restricted: Portfolio values and personal details</div>
+              <label className={styles.label}>Step 2</label>
+              <div className={`${styles.badge} ${styles.badgeMuted}`}>Admin sends credentials securely to client</div>
             </div>
             <div className={styles.field}>
-              <label className={styles.label}>Audit Trail</label>
-              <div className={`${styles.badge} ${styles.badgeMuted}`}>Append-only price history and assignment logs</div>
+              <label className={styles.label}>Step 3</label>
+              <div className={`${styles.badge} ${styles.badgeMuted}`}>Client uses Enlist form with all 3 credentials + org name</div>
             </div>
-            <div className={styles.inlineActions}>
-              <button className={styles.secondaryButton}>Review Logs</button>
-              <button className={styles.secondaryButton}>Export Access List</button>
+            <div className={styles.field}>
+              <label className={styles.label}>Step 4</label>
+              <div className={`${styles.badge} ${styles.badgeMuted}`}>Admin reviews and authorizes the request</div>
             </div>
           </div>
         </section>

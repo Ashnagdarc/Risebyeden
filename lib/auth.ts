@@ -12,12 +12,12 @@ export const authOptions: NextAuthOptions = {
     Credentials({
       name: 'Credentials',
       credentials: {
-        identifier: { label: 'Identifier', type: 'text' },
+        identifier: { label: 'User ID', type: 'text' },
         accessKey: { label: 'Access Key', type: 'password' },
         adminOnly: { label: 'Admin Only', type: 'text' },
       },
       async authorize(credentials) {
-        const identifier = String(credentials?.identifier || '').trim();
+        const identifier = String(credentials?.identifier || '').trim().toUpperCase();
         const accessKey = String(credentials?.accessKey || '').trim();
         const adminOnly = String(credentials?.adminOnly || '').trim() === 'true';
 
@@ -25,21 +25,20 @@ export const authOptions: NextAuthOptions = {
           return null;
         }
 
-        const user = await prisma.user.findFirst({
-          where: {
-            OR: [
-              { email: identifier.toLowerCase() },
-              { name: identifier },
-            ],
-          },
+        const user = await prisma.user.findUnique({
+          where: { userId: identifier },
         });
 
         if (!user) {
           return null;
         }
 
-        const isValid = await bcrypt.compare(accessKey, user.hashedPassword);
+        // Must be ACTIVE to log in
+        if (user.status !== 'ACTIVE') {
+          return null;
+        }
 
+        const isValid = await bcrypt.compare(accessKey, user.hashedPassword);
         if (!isValid) {
           return null;
         }
@@ -50,8 +49,8 @@ export const authOptions: NextAuthOptions = {
 
         return {
           id: user.id,
-          name: user.name,
-          email: user.email,
+          name: user.name || user.userId,
+          email: user.email || user.userId,
           role: user.role === 'ADMIN' ? 'admin' : 'client',
         };
       },
