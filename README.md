@@ -6,14 +6,14 @@ A minimal dark-themed property investment portfolio dashboard built with Next.js
 
 ## Features
 
-- ✨ Sleek obsidian-inspired dark UI with vitreous glass effects
-- 📊 Real-time portfolio metrics and analytics
-- 🏢 Property asset distribution with detailed metrics
-- 📈 Performance tracking with interactive charts
-- 🎨 Smooth animations and 3D hover effects
-- 📱 Fully responsive design
-- 🧭 Multi-page navigation (Dashboard, Analytics, Performance, Acquire Property)
-- ⚡ Built with Next.js App Router and TypeScript
+- Sleek obsidian-inspired dark UI with vitreous glass effects
+- Real-time portfolio metrics and analytics
+- Property asset distribution with detailed metrics
+- Performance tracking with interactive charts
+- Smooth animations and 3D hover effects
+- Fully responsive design
+- Multi-page navigation (Dashboard, Analytics, Performance, Acquire Property)
+- Built with Next.js App Router and TypeScript
 
 ## Tech Stack
 
