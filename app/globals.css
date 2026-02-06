@@ -23,7 +23,7 @@ body {
   background-color: var(--obsidian-base);
   color: var(--text-primary);
   font-family: var(--sans-font);
-  overflow: hidden;
+  overflow-y: auto;
   height: 100vh;
 }
 

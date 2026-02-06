@@ -44,6 +44,7 @@ export default function Performance() {
             <Link href="/" className={styles.backLink}>
               ← Back to Dashboard
             </Link>
+            <p className={styles.kicker}>Performance</p>
             <h1 className={styles.pageTitle}>Performance Overview</h1>
             <p className={styles.subtitle}>Track revenue, expenses, and property performance metrics</p>
           </div>
