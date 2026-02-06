@@ -27,14 +27,6 @@ export default function Sidebar() {
         </svg>
       </Link>
       
-      <Link href="/performance" className={`${styles.navItem} ${pathname === '/performance' ? styles.active : ''}`}>
-        <svg viewBox="0 0 24 24" fill="none" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M12 20V10"></path>
-          <path d="M18 20V4"></path>
-          <path d="M6 20v-4"></path>
-        </svg>
-      </Link>
-
       <Link href="/assets" className={`${styles.navItem} ${pathname === '/assets' ? styles.active : ''}`}>
         <svg viewBox="0 0 24 24" fill="none" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
           <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
