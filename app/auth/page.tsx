@@ -91,12 +91,13 @@ export default function AuthPage() {
                 Your secure session is established. You now have full access to Rise by Eden.
               </p>
               <div className={styles.welcomeActions}>
-                <Link href="/" className={styles.welcomeAction}>
-                  Enter Dashboard
-                </Link>
-                {(session?.user as { role?: string } | undefined)?.role === 'admin' && (
+                {(session?.user as { role?: string } | undefined)?.role === 'admin' ? (
                   <Link href="/admin" className={styles.welcomeAction}>
                     Enter Admin
+                  </Link>
+                ) : (
+                  <Link href="/" className={styles.welcomeAction}>
+                    Enter Dashboard
                   </Link>
                 )}
                 <button

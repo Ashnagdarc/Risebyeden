@@ -3,11 +3,15 @@ import { withAuth } from 'next-auth/middleware';
 export default withAuth({
   callbacks: {
     authorized({ token, req }) {
-      if (!req.nextUrl.pathname.startsWith('/admin')) {
-        return true;
+      const path = req.nextUrl.pathname;
+
+      // Admin routes require admin role
+      if (path.startsWith('/admin')) {
+        return token?.role === 'admin';
       }
 
-      return token?.role === 'admin';
+      // All other matched routes require any valid session
+      return !!token;
     },
   },
   pages: {
@@ -16,5 +20,16 @@ export default withAuth({
 });
 
 export const config = {
-  matcher: ['/admin/:path*'],
+  matcher: [
+    '/',
+    '/analytics/:path*',
+    '/assets/:path*',
+    '/profile/:path*',
+    '/settings/:path*',
+    '/consultation/:path*',
+    '/acquire/:path*',
+    '/updates/:path*',
+    '/performance/:path*',
+    '/admin/:path*',
+  ],
 };
