@@ -14,7 +14,6 @@ interface Asset {
   appreciation: number;
   capRate: number;
   valuation: number;
-  monthlyIncome: number;
   occupancy: number;
   acquired: string;
   gradient: string;
@@ -36,7 +35,6 @@ export default function AssetsPage() {
       appreciation: 22.4,
       capRate: 5.2,
       valuation: 4200000,
-      monthlyIncome: 28500,
       occupancy: 100,
       acquired: 'Mar 2023',
       gradient: 'obsidian'
@@ -50,7 +48,6 @@ export default function AssetsPage() {
       appreciation: 11.8,
       capRate: 4.8,
       valuation: 5100000,
-      monthlyIncome: 32000,
       occupancy: 100,
       acquired: 'Jun 2022',
       gradient: 'veridian'
@@ -64,7 +61,6 @@ export default function AssetsPage() {
       appreciation: 9.1,
       capRate: 6.1,
       valuation: 3500000,
-      monthlyIncome: 21800,
       occupancy: 95,
       acquired: 'Sep 2023',
       gradient: 'gilded'
@@ -78,7 +74,6 @@ export default function AssetsPage() {
       appreciation: 8.4,
       capRate: 5.8,
       valuation: 6800000,
-      monthlyIncome: 45000,
       occupancy: 92,
       acquired: 'Jan 2022',
       gradient: 'aurora'
@@ -92,7 +87,6 @@ export default function AssetsPage() {
       appreciation: 15.2,
       capRate: 5.5,
       valuation: 8200000,
-      monthlyIncome: 52000,
       occupancy: 98,
       acquired: 'Nov 2021',
       gradient: 'meridian'
@@ -106,7 +100,6 @@ export default function AssetsPage() {
       appreciation: 6.8,
       capRate: 7.2,
       valuation: 4500000,
-      monthlyIncome: 35000,
       occupancy: 100,
       acquired: 'Aug 2023',
       gradient: 'slate'
@@ -121,9 +114,9 @@ export default function AssetsPage() {
   };
 
   const totalValue = assets.reduce((sum, asset) => sum + asset.valuation, 0);
-  const totalMonthlyIncome = assets.reduce((sum, asset) => sum + asset.monthlyIncome, 0);
   const avgOccupancy = assets.reduce((sum, asset) => sum + asset.occupancy, 0) / assets.length;
   const avgCapRate = assets.reduce((sum, asset) => sum + asset.capRate, 0) / assets.length;
+  const avgAppreciation = assets.reduce((sum, asset) => sum + asset.appreciation, 0) / assets.length;
 
   const typeDistribution = assets.reduce((acc, asset) => {
     acc[asset.type] = (acc[asset.type] || 0) + asset.valuation;
@@ -141,7 +134,6 @@ export default function AssetsPage() {
       switch (sortBy) {
         case 'valuation': return b.valuation - a.valuation;
         case 'appreciation': return b.appreciation - a.appreciation;
-        case 'income': return b.monthlyIncome - a.monthlyIncome;
         case 'capRate': return b.capRate - a.capRate;
         default: return 0;
       }
@@ -211,9 +203,9 @@ export default function AssetsPage() {
             <p className={styles.statChange}>+14.2% YTD</p>
           </div>
           <div className={styles.statCard}>
-            <p className={styles.statLabel}>Monthly Income</p>
-            <p className={styles.statValue}>{formatCurrency(totalMonthlyIncome)}</p>
-            <p className={styles.statChange}>+8.6% vs last month</p>
+            <p className={styles.statLabel}>Avg. Appreciation</p>
+            <p className={styles.statValue}>+{avgAppreciation.toFixed(1)}%</p>
+            <p className={styles.statChange}>Portfolio trend</p>
           </div>
           <div className={styles.statCard}>
             <p className={styles.statLabel}>Avg. Occupancy</p>
@@ -302,7 +294,6 @@ export default function AssetsPage() {
             >
               <option value="valuation">Sort by Value</option>
               <option value="appreciation">Sort by Appreciation</option>
-              <option value="income">Sort by Income</option>
               <option value="capRate">Sort by Cap Rate</option>
             </select>
           </div>
@@ -336,10 +327,6 @@ export default function AssetsPage() {
                   <div className={styles.metric}>
                     <span className={styles.metricLabel}>Cap Rate</span>
                     <span className={styles.metricValue}>{asset.capRate}%</span>
-                  </div>
-                  <div className={styles.metric}>
-                    <span className={styles.metricLabel}>Monthly</span>
-                    <span className={styles.metricValue}>{formatCurrency(asset.monthlyIncome)}</span>
                   </div>
                 </div>
                 <div className={styles.assetFooter}>

@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { signIn, useSession } from 'next-auth/react';
 import styles from './page.module.css';
 
 type AuthMode = 'login' | 'signup';
@@ -9,7 +10,10 @@ type AuthMode = 'login' | 'signup';
 export default function AuthPage() {
   const [mode, setMode] = useState<AuthMode>('login');
   const [identifier, setIdentifier] = useState('');
+  const [accessKey, setAccessKey] = useState('');
   const [showWelcome, setShowWelcome] = useState(false);
+  const [authError, setAuthError] = useState('');
+  const { data: session } = useSession();
 
   const getDisplayName = (value: string) => {
     const trimmed = value.trim();
@@ -26,9 +30,22 @@ export default function AuthPage() {
 
   const displayName = getDisplayName(identifier);
 
-  const handleSubmit = (event: React.FormEvent) => {
+  const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-    setShowWelcome(true);
+    setAuthError('');
+
+    const result = await signIn('credentials', {
+      identifier,
+      accessKey,
+      adminOnly: 'false',
+      redirect: false,
+    });
+
+    if (result?.ok) {
+      setShowWelcome(true);
+    } else {
+      setAuthError('Invalid access details. Please try again.');
+    }
   };
 
   return (
@@ -51,6 +68,11 @@ export default function AuthPage() {
                 <Link href="/" className={styles.welcomeAction}>
                   Enter Dashboard
                 </Link>
+                {(session?.user as { role?: string } | undefined)?.role === 'admin' && (
+                  <Link href="/admin" className={styles.welcomeAction}>
+                    Enter Admin
+                  </Link>
+                )}
                 <button
                   type="button"
                   className={styles.welcomeDismiss}
@@ -143,10 +165,16 @@ export default function AuthPage() {
                     placeholder="••••••••••••"
                     spellCheck={false}
                     required
+                    value={accessKey}
+                    onChange={(event) => setAccessKey(event.target.value)}
                   />
                   <span className={styles.dataStatus}>SEC</span>
                 </div>
               </div>
+
+              {authError && (
+                <p className={styles.formError}>{authError}</p>
+              )}
 
               {mode === 'signup' && (
                 <div className={styles.inputGroup}>

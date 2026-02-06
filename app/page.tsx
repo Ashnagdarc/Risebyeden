@@ -128,7 +128,7 @@ export default function Home() {
               <div className={styles.activityItem}>
                 <span className={styles.activityDot}></span>
                 <div className={styles.activityContent}>
-                  <p className={styles.activityText}>Rent payment received - Obsidian Heights</p>
+                  <p className={styles.activityText}>Valuation update posted - Obsidian Heights</p>
                   <p className={styles.activityTime}>Yesterday</p>
                 </div>
               </div>

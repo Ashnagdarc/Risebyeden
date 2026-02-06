@@ -26,8 +26,6 @@ export default function PropertyDetails() {
       type: 'Luxury Residential',
       yearBuilt: 2020,
       capRate: 4.8,
-      monthlyRent: 12500,
-      annualExpenses: 45000,
       description: 'Stunning luxury residence in the heart of Tribeca. Features premium finishes, floor-to-ceiling windows, and breathtaking city views. Prime location with easy access to downtown Manhattan.'
     },
     {
@@ -44,8 +42,6 @@ export default function PropertyDetails() {
       type: 'Commercial',
       yearBuilt: 2018,
       capRate: 6.2,
-      monthlyRent: 28000,
-      annualExpenses: 95000,
       description: 'Premium commercial space in San Francisco\'s Marina district. Recently renovated with modern amenities. High foot traffic area, perfect for retail or office use.'
     },
     {
@@ -62,8 +58,6 @@ export default function PropertyDetails() {
       type: 'Residential',
       yearBuilt: 2019,
       capRate: 5.1,
-      monthlyRent: 15000,
-      annualExpenses: 52000,
       description: 'Spacious estate in prestigious Los Angeles neighborhood. Features modern architecture, gourmet kitchen, and expansive outdoor living spaces. Perfect for families seeking luxury and comfort.'
     },
     {
@@ -80,8 +74,6 @@ export default function PropertyDetails() {
       type: 'Urban Residential',
       yearBuilt: 2021,
       capRate: 5.5,
-      monthlyRent: 9500,
-      annualExpenses: 32000,
       description: 'Contemporary urban loft in the heart of Austin. High ceilings, exposed brick, and modern fixtures. Walking distance to restaurants, entertainment, and tech hubs.'
     },
     {
@@ -98,8 +90,6 @@ export default function PropertyDetails() {
       type: 'Commercial',
       yearBuilt: 2017,
       capRate: 6.8,
-      monthlyRent: 42000,
-      annualExpenses: 125000,
       description: 'State-of-the-art office complex in Seattle\'s tech corridor. Modern infrastructure, high-speed connectivity, and ample parking. Ideal for growing tech companies.'
     },
     {
@@ -116,8 +106,6 @@ export default function PropertyDetails() {
       type: 'Luxury Residential',
       yearBuilt: 2022,
       capRate: 4.9,
-      monthlyRent: 18000,
-      annualExpenses: 58000,
       description: 'Oceanfront luxury property with stunning views. Private beach access, infinity pool, and premium amenities. The ultimate coastal living experience.'
     },
   ];
@@ -199,16 +187,8 @@ export default function PropertyDetails() {
                   <div className={styles.statValue}>{formatPrice(property.price)}</div>
                 </div>
                 <div className={styles.stat}>
-                  <div className={styles.statLabel}>Monthly Rent</div>
-                  <div className={styles.statValue}>${formatNumber(property.monthlyRent)}</div>
-                </div>
-                <div className={styles.stat}>
                   <div className={styles.statLabel}>Cap Rate</div>
                   <div className={styles.statValue}>{property.capRate}%</div>
-                </div>
-                <div className={styles.stat}>
-                  <div className={styles.statLabel}>Annual Expenses</div>
-                  <div className={styles.statValue}>${formatNumber(property.annualExpenses)}</div>
                 </div>
               </div>
             </div>

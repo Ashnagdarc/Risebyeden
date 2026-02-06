@@ -338,6 +338,16 @@
   transform: translateY(0);
 }
 
+.formError {
+  margin-top: 16px;
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  font-family: var(--mono-font);
+  color: #fbbf24;
+  text-align: center;
+}
+
 .formFooter {
   display: flex;
   align-items: center;
