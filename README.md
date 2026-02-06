@@ -1,4 +1,4 @@
-# Obsidian Portfolio Dashboard
+# Risebyeden Portfolio Dashboard
 
 A minimal dark-themed property investment portfolio dashboard built with Next.js 15, React 19, and TypeScript.
 
