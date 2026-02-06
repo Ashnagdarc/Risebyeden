@@ -7,10 +7,10 @@ import styles from './page.module.css';
 
 export default function Analytics() {
   const portfolioData = [
-    { label: 'Residential', value: 45, color: '#4ade80' },
-    { label: 'Commercial', value: 30, color: '#60a5fa' },
-    { label: 'Mixed Use', value: 20, color: '#c5a368' },
-    { label: 'Industrial', value: 5, color: '#f87171' },
+    { label: 'Residential', value: 45, color: '#4ade80', className: styles.legendResidential },
+    { label: 'Commercial', value: 30, color: '#60a5fa', className: styles.legendCommercial },
+    { label: 'Mixed Use', value: 20, color: '#c5a368', className: styles.legendMixedUse },
+    { label: 'Industrial', value: 5, color: '#f87171', className: styles.legendIndustrial },
   ];
 
   const performanceMetrics = [
@@ -67,7 +67,7 @@ export default function Analytics() {
               <div className={styles.legend}>
                 {portfolioData.map((item, index) => (
                   <div key={index} className={styles.legendItem}>
-                    <div className={styles.legendColor} style={{ background: item.color }}></div>
+                    <div className={`${styles.legendColor} ${item.className}`}></div>
                     <span className={styles.legendLabel}>{item.label}</span>
                     <span className={styles.legendValue}>{item.value}%</span>
                   </div>
