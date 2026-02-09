@@ -33,7 +33,7 @@ export async function POST(request: Request) {
   const session = await getServerSession(authOptions);
   const role = (session?.user as { role?: string } | undefined)?.role;
 
-  if (!session || role !== 'admin') {
+  if (!session || (role || '').toLowerCase() !== 'admin') {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
@@ -87,7 +87,7 @@ export async function GET(request: Request) {
   const session = await getServerSession(authOptions);
   const role = (session?.user as { role?: string } | undefined)?.role;
 
-  if (!session || role !== 'admin') {
+  if (!session || (role || '').toLowerCase() !== 'admin') {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
@@ -117,7 +117,7 @@ export async function PATCH(request: Request) {
   const session = await getServerSession(authOptions);
   const role = (session?.user as { role?: string } | undefined)?.role;
 
-  if (!session || role !== 'admin') {
+  if (!session || (role || '').toLowerCase() !== 'admin') {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 

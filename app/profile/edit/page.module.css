@@ -258,6 +258,15 @@
   text-underline-offset: 3px;
 }
 
+.statusMessage {
+  margin-top: 20px;
+  font-family: var(--mono-font);
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--accent-gold);
+}
+
 .linkButton:hover {
   opacity: 0.8;
 }

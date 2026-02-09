@@ -7,10 +7,20 @@ import { authOptions } from '@/lib/auth';
 async function requireAdmin() {
   const session = await getServerSession(authOptions);
   const role = (session?.user as { role?: string } | undefined)?.role;
-  if (!session || role !== 'admin') {
+  if (!session || (role || '').toLowerCase() !== 'admin') {
     return null;
   }
   return session;
+}
+
+function resolveTierLabel(propertyCount: number) {
+  if (propertyCount >= 15) {
+    return 'Oga Boss';
+  }
+  if (propertyCount >= 10) {
+    return 'Prime';
+  }
+  return 'Core';
 }
 
 export async function GET() {
@@ -27,6 +37,12 @@ export async function GET() {
       name: true,
       organization: true,
       status: true,
+      clientProfile: {
+        select: {
+          tierOverride: true,
+          tierOverrideEnabled: true,
+        },
+      },
       clientProperties: {
         select: {
           quantity: true,
@@ -51,6 +67,11 @@ export async function GET() {
       return acc;
     }, { propertyCount: 0, portfolioValue: 0 });
 
+    const overrideEnabled = Boolean(user.clientProfile?.tierOverrideEnabled);
+    const overrideLabel = user.clientProfile?.tierOverride || null;
+    const computedTier = resolveTierLabel(totals.propertyCount);
+    const tier = overrideEnabled && overrideLabel ? overrideLabel : computedTier;
+
     return {
       id: user.id,
       userId: user.userId,
@@ -59,6 +80,10 @@ export async function GET() {
       status: user.status,
       propertyCount: totals.propertyCount,
       portfolioValue: totals.portfolioValue,
+      tier,
+      tierOverride: overrideLabel,
+      tierOverrideEnabled: overrideEnabled,
+      tierSource: overrideEnabled && overrideLabel ? 'override' : 'auto',
     };
   });
 
@@ -76,6 +101,8 @@ export async function PATCH(request: Request) {
     name?: string | null;
     organization?: string | null;
     status?: 'PENDING' | 'ACTIVE' | 'REJECTED';
+    tierOverride?: string | null;
+    tierOverrideEnabled?: boolean;
   };
 
   if (!body.id) {
@@ -96,6 +123,21 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: 'Client not found' }, { status: 404 });
     }
 
+    if (body.tierOverride !== undefined || body.tierOverrideEnabled !== undefined) {
+      await prisma.clientProfile.upsert({
+        where: { userId: body.id },
+        create: {
+          userId: body.id,
+          tierOverride: body.tierOverride ?? null,
+          tierOverrideEnabled: body.tierOverrideEnabled ?? false,
+        },
+        update: {
+          tierOverride: body.tierOverride ?? undefined,
+          tierOverrideEnabled: body.tierOverrideEnabled ?? undefined,
+        },
+      });
+    }
+
     const client = await prisma.user.findUnique({
       where: { id: body.id },
       select: {
@@ -104,6 +146,12 @@ export async function PATCH(request: Request) {
         name: true,
         organization: true,
         status: true,
+        clientProfile: {
+          select: {
+            tierOverride: true,
+            tierOverrideEnabled: true,
+          },
+        },
       },
     });
 

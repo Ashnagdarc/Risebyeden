@@ -7,7 +7,7 @@ import { authOptions } from '@/lib/auth';
 async function requireAdmin() {
   const session = await getServerSession(authOptions);
   const role = (session?.user as { role?: string } | undefined)?.role;
-  if (!session || role !== 'admin') {
+  if (!session || (role || '').toLowerCase() !== 'admin') {
     return null;
   }
   return session;

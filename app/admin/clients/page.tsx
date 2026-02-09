@@ -13,6 +13,10 @@ type ClientSummary = {
   status: string;
   propertyCount: number;
   portfolioValue: number;
+  tier: string;
+  tierOverride: string | null;
+  tierOverrideEnabled: boolean;
+  tierSource: 'auto' | 'override';
 };
 
 type PropertyRecord = {
@@ -44,6 +48,8 @@ export default function ClientPortfolios() {
   const [editName, setEditName] = useState('');
   const [editOrganization, setEditOrganization] = useState('');
   const [editStatus, setEditStatus] = useState<'ACTIVE' | 'PENDING' | 'REJECTED'>('ACTIVE');
+  const [editTierOverrideEnabled, setEditTierOverrideEnabled] = useState(false);
+  const [editTierOverride, setEditTierOverride] = useState('Core');
   const [editMessage, setEditMessage] = useState('');
   const [deleteMessage, setDeleteMessage] = useState('');
 
@@ -124,6 +130,8 @@ export default function ClientPortfolios() {
     setEditName(client.name || '');
     setEditOrganization(client.organization || '');
     setEditStatus(client.status as 'ACTIVE' | 'PENDING' | 'REJECTED');
+    setEditTierOverrideEnabled(Boolean(client.tierOverrideEnabled));
+    setEditTierOverride(client.tierOverride || client.tier || 'Core');
     setEditMessage('');
     setIsEditOpen(true);
   };
@@ -140,7 +148,14 @@ export default function ClientPortfolios() {
     setIsDeleteOpen(true);
   };
 
-  const updateClient = async (payload: { id: string; status?: 'ACTIVE' | 'PENDING' | 'REJECTED'; name?: string; organization?: string; }) => {
+  const updateClient = async (payload: {
+    id: string;
+    status?: 'ACTIVE' | 'PENDING' | 'REJECTED';
+    name?: string;
+    organization?: string;
+    tierOverrideEnabled?: boolean;
+    tierOverride?: string | null;
+  }) => {
     setEditMessage('');
     setIsSubmitting(true);
 
@@ -172,6 +187,8 @@ export default function ClientPortfolios() {
       name: editName,
       organization: editOrganization,
       status: editStatus,
+      tierOverrideEnabled: editTierOverrideEnabled,
+      tierOverride: editTierOverrideEnabled ? editTierOverride : null,
     });
   };
 
@@ -226,10 +243,11 @@ export default function ClientPortfolios() {
           <div className={styles.section}>
             <h2 className={styles.sectionTitle}>Client List</h2>
             <div className={styles.table}>
-              <div className={`${styles.tableHeader} ${styles.tableHeaderActions}`}>
+              <div className={`${styles.tableHeader} ${styles.tableHeaderActionsWide}`}>
                 <div>Client</div>
                 <div>Portfolio</div>
                 <div>Properties</div>
+                <div>Tier</div>
                 <div>Status</div>
                 <div>Actions</div>
               </div>
@@ -241,7 +259,7 @@ export default function ClientPortfolios() {
                 </div>
               ) : (
                 clients.map((client) => (
-                  <div key={client.id} className={`${styles.tableRow} ${styles.tableRowActions}`}>
+                  <div key={client.id} className={`${styles.tableRow} ${styles.tableRowActionsWide}`}>
                     <div>
                       {client.name || client.organization || client.userId}
                       <div className={styles.statMeta}>{client.userId}</div>
@@ -252,6 +270,12 @@ export default function ClientPortfolios() {
                         : '—'}
                     </div>
                     <div>{client.propertyCount}</div>
+                    <div>
+                      <div>{client.tier}</div>
+                      {client.tierSource === 'override' && (
+                        <div className={styles.statMeta}>Override</div>
+                      )}
+                    </div>
                     <div className={client.status === 'ACTIVE' ? `${styles.badge} ${styles.badgeSuccess}` : `${styles.badge} ${styles.badgePending}`}>
                       {client.status}
                     </div>
@@ -451,6 +475,32 @@ export default function ClientPortfolios() {
                     <option value="ACTIVE">ACTIVE</option>
                     <option value="PENDING">PENDING</option>
                     <option value="REJECTED">REJECTED</option>
+                  </select>
+                </div>
+                <div className={styles.field}>
+                  <label className={styles.label} htmlFor="tierOverrideEnabled">Tier Override</label>
+                  <select
+                    className={styles.select}
+                    id="tierOverrideEnabled"
+                    value={editTierOverrideEnabled ? 'on' : 'off'}
+                    onChange={(event) => setEditTierOverrideEnabled(event.target.value === 'on')}
+                  >
+                    <option value="off">Auto (based on properties)</option>
+                    <option value="on">Manual override</option>
+                  </select>
+                </div>
+                <div className={styles.field}>
+                  <label className={styles.label} htmlFor="tierOverride">Tier Level</label>
+                  <select
+                    className={styles.select}
+                    id="tierOverride"
+                    value={editTierOverride}
+                    onChange={(event) => setEditTierOverride(event.target.value)}
+                    disabled={!editTierOverrideEnabled}
+                  >
+                    <option value="Core">Core</option>
+                    <option value="Prime">Prime</option>
+                    <option value="Oga Boss">Oga Boss</option>
                   </select>
                 </div>
                 <div className={styles.inlineActions}>

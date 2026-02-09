@@ -1,14 +1,28 @@
 import Link from 'next/link';
 import styles from './Header.module.css';
 
-export default function Header() {
+type HeaderProps = {
+  totalValue: number;
+  deltaPercent: number;
+};
+
+const formatCurrency = (value: number) => {
+  if (value >= 1000000) {
+    return `$${(value / 1000000).toFixed(1)}M`;
+  }
+  return `$${value.toLocaleString()}`;
+};
+
+export default function Header({ totalValue, deltaPercent }: HeaderProps) {
+  const deltaLabel = `${deltaPercent >= 0 ? '+' : ''}${deltaPercent.toFixed(1)}%`;
+
   return (
     <header className={styles.header}>
       <div>
         <span className={styles.portfolioTotal}>Total Managed Assets</span>
         <h1 className={styles.portfolioValue}>
-          $12,842,000
-          <span className={styles.delta}>+14.2%</span>
+          {formatCurrency(totalValue)}
+          <span className={styles.delta}>{deltaLabel}</span>
         </h1>
       </div>
       <Link href="/acquire" className={styles.glassButton}>

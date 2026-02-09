@@ -1,28 +1,127 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
 import styles from './page.module.css';
 
+type ProfilePayload = {
+  user: {
+    name: string | null;
+    email: string | null;
+    status: string;
+  };
+  profile: {
+    phone: string | null;
+    city: string | null;
+    region: string | null;
+    country: string | null;
+    bio: string | null;
+  } | null;
+  settings: {
+    dataSharing: string | null;
+  } | null;
+  stats: {
+    tier: string;
+  };
+};
+
+type VisibilityOption = 'private' | 'partners' | 'public';
+
+const defaultForm = {
+  displayName: '',
+  email: '',
+  phone: '',
+  location: '',
+  bio: '',
+};
+
 export default function EditProfilePage() {
   const router = useRouter();
-  const [formData, setFormData] = useState({
-    displayName: 'Daniel Nonso',
-    email: 'daniel.nonso48@gmail.com',
-    phone: '+234 803 221 9812',
-    location: 'Lagos, Nigeria',
-    bio: 'Principal investor focused on premium real estate acquisitions across emerging markets.',
-  });
+  const [formData, setFormData] = useState(defaultForm);
+  const [visibility, setVisibility] = useState<VisibilityOption>('private');
+  const [tierLabel, setTierLabel] = useState('Institutional Prime');
+  const [verificationLabel, setVerificationLabel] = useState('Pending Review');
+  const [isSaving, setIsSaving] = useState(false);
+  const [statusMessage, setStatusMessage] = useState('');
+
+  useEffect(() => {
+    let isMounted = true;
+
+    fetch('/api/client/profile')
+      .then(async (res) => {
+        if (!res.ok) {
+          throw new Error('Failed to load profile');
+        }
+        return res.json();
+      })
+      .then((payload: ProfilePayload) => {
+        if (!isMounted) {
+          return;
+        }
+
+        const locationParts = [payload.profile?.city, payload.profile?.region, payload.profile?.country]
+          .filter(Boolean)
+          .join(', ');
+
+        setFormData({
+          displayName: payload.user.name || '',
+          email: payload.user.email || '',
+          phone: payload.profile?.phone || '',
+          location: locationParts,
+          bio: payload.profile?.bio || '',
+        });
+
+        if (payload.settings?.dataSharing === 'Full') {
+          setVisibility('public');
+        } else if (payload.settings?.dataSharing === 'Standard') {
+          setVisibility('partners');
+        } else {
+          setVisibility('private');
+        }
+
+        setTierLabel(payload.stats.tier || 'Institutional Prime');
+        setVerificationLabel(payload.user.status === 'ACTIVE' ? 'KYC Approved' : 'Pending Review');
+      })
+      .catch(() => {
+        if (isMounted) {
+          setStatusMessage('Unable to load profile data.');
+        }
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Save logic would go here
-    router.push('/profile');
+    setIsSaving(true);
+    setStatusMessage('');
+
+    const response = await fetch('/api/client/profile', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: formData.displayName,
+        email: formData.email,
+        phone: formData.phone,
+        location: formData.location,
+        bio: formData.bio,
+        visibility,
+      }),
+    });
+
+    if (response.ok) {
+      router.push('/profile');
+    } else {
+      setStatusMessage('Unable to save profile changes.');
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -40,8 +139,8 @@ export default function EditProfilePage() {
             <button className={styles.secondaryButton} onClick={() => router.push('/profile')}>
               Cancel
             </button>
-            <button className={styles.primaryButton} onClick={handleSubmit}>
-              Save Changes
+            <button className={styles.primaryButton} onClick={handleSubmit} disabled={isSaving}>
+              {isSaving ? 'Saving...' : 'Save Changes'}
             </button>
           </div>
         </header>
@@ -49,7 +148,14 @@ export default function EditProfilePage() {
         <form className={styles.form} onSubmit={handleSubmit}>
           <section className={styles.avatarSection}>
             <div className={styles.avatarUpload}>
-              <div className={styles.avatar}>RB</div>
+              <div className={styles.avatar}>
+                {(formData.displayName || 'RB')
+                  .split(' ')
+                  .map((part) => part[0])
+                  .slice(0, 2)
+                  .join('')
+                  .toUpperCase()}
+              </div>
               <div className={styles.avatarActions}>
                 <button type="button" className={styles.uploadButton}>Upload Photo</button>
                 <p className={styles.uploadHint}>JPG, PNG or GIF. Max 2MB.</p>
@@ -129,14 +235,14 @@ export default function EditProfilePage() {
 
               <div className={styles.fieldGroup}>
                 <label className={styles.label}>Portfolio Tier</label>
-                <div className={styles.tierBadge}>Institutional Prime</div>
+                <div className={styles.tierBadge}>{tierLabel}</div>
                 <p className={styles.fieldHint}>Tier is determined by total assets under management.</p>
               </div>
 
               <div className={styles.fieldGroup}>
                 <label className={styles.label}>Verification Status</label>
                 <div className={styles.verificationStatus}>
-                  <span className={styles.verifiedBadge}>KYC Approved</span>
+                  <span className={styles.verifiedBadge}>{verificationLabel}</span>
                   <button type="button" className={styles.linkButton}>Re-verify</button>
                 </div>
               </div>
@@ -147,21 +253,39 @@ export default function EditProfilePage() {
             <h3 className={styles.panelTitle}>Portfolio Visibility</h3>
             <div className={styles.visibilityOptions}>
               <label className={styles.radioOption}>
-                <input type="radio" name="visibility" value="private" defaultChecked />
+                <input
+                  type="radio"
+                  name="visibility"
+                  value="private"
+                  checked={visibility === 'private'}
+                  onChange={() => setVisibility('private')}
+                />
                 <div>
                   <p className={styles.radioTitle}>Private</p>
                   <p className={styles.radioDesc}>Only you can view your portfolio holdings.</p>
                 </div>
               </label>
               <label className={styles.radioOption}>
-                <input type="radio" name="visibility" value="partners" />
+                <input
+                  type="radio"
+                  name="visibility"
+                  value="partners"
+                  checked={visibility === 'partners'}
+                  onChange={() => setVisibility('partners')}
+                />
                 <div>
                   <p className={styles.radioTitle}>Partners Only</p>
                   <p className={styles.radioDesc}>Visible to verified Rise by eden partners.</p>
                 </div>
               </label>
               <label className={styles.radioOption}>
-                <input type="radio" name="visibility" value="public" />
+                <input
+                  type="radio"
+                  name="visibility"
+                  value="public"
+                  checked={visibility === 'public'}
+                  onChange={() => setVisibility('public')}
+                />
                 <div>
                   <p className={styles.radioTitle}>Public</p>
                   <p className={styles.radioDesc}>Portfolio visible on your investor profile.</p>
@@ -170,6 +294,7 @@ export default function EditProfilePage() {
             </div>
           </section>
         </form>
+        {statusMessage && <p className={styles.statusMessage}>{statusMessage}</p>}
       </main>
     </div>
   );

@@ -28,9 +28,11 @@ export default function AuthPage() {
       accessKey,
       adminOnly: 'false',
       redirect: false,
+      callbackUrl: '/',
     });
 
     if (result?.ok) {
+      await new Promise((resolve) => setTimeout(resolve, 150));
       const sessionRes = await fetch('/api/auth/session');
       const session = await sessionRes.json();
 

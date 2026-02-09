@@ -83,6 +83,7 @@ model User {
   updatedAt      DateTime   @updatedAt
   clientProperties ClientProperty[]
   clientProfile   ClientProfile?
+  settings        UserSettings?
   payments        Payment[]
   transactions    Transaction[]
   documents       Document[]
@@ -125,8 +126,29 @@ model ClientProfile {
   postalCode   String?
   country      String?
   riskProfile  String?
+  bio          String?
+  tierOverride String?
+  tierOverrideEnabled Boolean @default(false)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+model UserSettings {
+  id                     String   @id @default(cuid())
+  userId                 String   @unique
+  twoFactorEnabled       Boolean  @default(true)
+  deviceApproval         Boolean  @default(true)
+  weeklySecurityReports  Boolean  @default(false)
+  portfolioAlerts        Boolean  @default(true)
+  acquisitionOpportunities Boolean @default(true)
+  marketReports          Boolean  @default(false)
+  portfolioStrategy      String?
+  defaultRegion          String?
+  dataSharing            String?
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
 
   user User @relation(fields: [userId], references: [id])
 }

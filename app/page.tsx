@@ -28,6 +28,8 @@ export default async function Home() {
   const clientProperties = await prisma.clientProperty.findMany({
     where: { userId },
     select: {
+      quantity: true,
+      purchasePrice: true,
       property: {
         select: {
           id: true,
@@ -54,7 +56,8 @@ export default async function Home() {
   const properties = clientProperties.map((entry, index) => {
     const property = entry.property;
     const locationParts = [property.location, property.city, property.state].filter(Boolean);
-    const valuation = property.basePrice ? Number(property.basePrice) : 0;
+    const basePrice = property.basePrice ? Number(property.basePrice) : 0;
+    const valuation = basePrice;
     return {
       id: property.id,
       name: property.name,
@@ -69,6 +72,13 @@ export default async function Home() {
       appreciationValue: property.appreciation || 0,
     };
   });
+
+  const totalValue = clientProperties.reduce((sum, entry) => {
+    const quantity = entry.quantity || 1;
+    const purchasePrice = entry.purchasePrice ? Number(entry.purchasePrice) : null;
+    const basePrice = entry.property.basePrice ? Number(entry.property.basePrice) : 0;
+    return sum + quantity * (purchasePrice ?? basePrice);
+  }, 0);
 
   const avgOccupancy = properties.length
     ? properties.reduce((sum, property) => sum + property.occupancy, 0) / properties.length
@@ -106,7 +116,7 @@ export default async function Home() {
       <Sidebar />
       
       <main className={styles.main}>
-        <Header />
+        <Header totalValue={totalValue} deltaPercent={avgAppreciation} />
         
         <section className={styles.gridLayout}>
           {/* Stat Slabs */}
