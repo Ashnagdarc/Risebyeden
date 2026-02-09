@@ -10,6 +10,8 @@ const navItems = [
   { href: '/admin/pricing', label: 'Price History' },
   { href: '/admin/clients', label: 'Client Portfolios' },
   { href: '/admin/access', label: 'Access' },
+  { href: '/admin/invites', label: 'Invites' },
+  { href: '/admin/interest-requests', label: 'Interest Requests' },
 ];
 
 export default function AdminNav() {

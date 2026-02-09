@@ -24,8 +24,8 @@ export default function Sidebar() {
           </svg>
         </Link>
 
-        {/* Presets */}
-        <Link href="/admin/presets" className={`${styles.navItem} ${pathname === '/admin/presets' ? styles.active : ''}`}>
+        {/* Properties */}
+        <Link href="/admin/properties" className={`${styles.navItem} ${pathname === '/admin/properties' ? styles.active : ''}`}>
           <svg viewBox="0 0 24 24" fill="none" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
             <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
             <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
@@ -56,6 +56,25 @@ export default function Sidebar() {
           <svg viewBox="0 0 24 24" fill="none" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
             <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
             <path d="M9 12l2 2 4-4"></path>
+          </svg>
+        </Link>
+
+        {/* Invites */}
+        <Link href="/admin/invites" className={`${styles.navItem} ${pathname === '/admin/invites' ? styles.active : ''}`}>
+          <svg viewBox="0 0 24 24" fill="none" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M21 5H3a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h18a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2z"></path>
+            <polyline points="22,7 12,13 2,7"></polyline>
+          </svg>
+        </Link>
+
+        {/* Interest Requests */}
+        <Link
+          href="/admin/interest-requests"
+          className={`${styles.navItem} ${pathname === '/admin/interest-requests' ? styles.active : ''}`}
+        >
+          <svg viewBox="0 0 24 24" fill="none" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M3 3v18h18"></path>
+            <path d="M7 16l4-4 4 3 5-6"></path>
           </svg>
         </Link>
 

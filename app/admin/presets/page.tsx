@@ -1,3 +1,5 @@
-import PropertyPresets from '@/components/admin/PropertyPresets';
+import { redirect } from 'next/navigation';
 
-export default PropertyPresets;
+export default function PresetsRedirect() {
+	redirect('/admin/properties');
+}
