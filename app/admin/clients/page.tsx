@@ -38,11 +38,14 @@ export default function ClientPortfolios() {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeactivateOpen, setIsDeactivateOpen] = useState(false);
   const [deactivateClient, setDeactivateClient] = useState<ClientSummary | null>(null);
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [deleteClient, setDeleteClient] = useState<ClientSummary | null>(null);
   const [editingClientId, setEditingClientId] = useState('');
   const [editName, setEditName] = useState('');
   const [editOrganization, setEditOrganization] = useState('');
   const [editStatus, setEditStatus] = useState<'ACTIVE' | 'PENDING' | 'REJECTED'>('ACTIVE');
   const [editMessage, setEditMessage] = useState('');
+  const [deleteMessage, setDeleteMessage] = useState('');
 
   const currencyFormatter = useMemo(
     () => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }),
@@ -131,6 +134,12 @@ export default function ClientPortfolios() {
     setEditMessage('');
   };
 
+  const openDeleteModal = (client: ClientSummary) => {
+    setDeleteClient(client);
+    setDeleteMessage('');
+    setIsDeleteOpen(true);
+  };
+
   const updateClient = async (payload: { id: string; status?: 'ACTIVE' | 'PENDING' | 'REJECTED'; name?: string; organization?: string; }) => {
     setEditMessage('');
     setIsSubmitting(true);
@@ -164,6 +173,35 @@ export default function ClientPortfolios() {
       organization: editOrganization,
       status: editStatus,
     });
+  };
+
+  const handleDeleteClient = async () => {
+    if (!deleteClient) {
+      setDeleteMessage('Select a client first.');
+      return;
+    }
+
+    setIsSubmitting(true);
+    setDeleteMessage('');
+
+    const res = await fetch('/api/admin/clients', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: deleteClient.id }),
+    });
+
+    if (res.ok) {
+      setDeleteMessage('Client deleted.');
+      if (selectedClientId === deleteClient.id) {
+        setSelectedClientId('');
+      }
+      fetchClients();
+      setIsDeleteOpen(false);
+    } else {
+      setDeleteMessage('Failed to delete client.');
+    }
+
+    setIsSubmitting(false);
   };
 
   return (
@@ -236,6 +274,13 @@ export default function ClientPortfolios() {
                         disabled={isSubmitting}
                       >
                         {client.status === 'ACTIVE' ? 'Deactivate' : 'Activate'}
+                      </button>
+                      <button
+                        className={`${styles.secondaryButton} ${styles.actionButtonSmall} ${styles.actionButtonDanger}`}
+                        onClick={() => openDeleteModal(client)}
+                        disabled={isSubmitting}
+                      >
+                        Delete
                       </button>
                     </div>
                   </div>
@@ -451,6 +496,37 @@ export default function ClientPortfolios() {
                   {isSubmitting ? 'Deactivating...' : 'Deactivate'}
                 </button>
               </div>
+            </div>
+          </div>
+        )}
+
+        {isDeleteOpen && deleteClient && (
+          <div
+            className={styles.modalOverlay}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Delete client"
+            onClick={() => setIsDeleteOpen(false)}
+          >
+            <div className={styles.modalCard} onClick={(event) => event.stopPropagation()}>
+              <h2 className={styles.modalTitle}>Delete Client</h2>
+              <p className={styles.modalBody}>
+                This will permanently remove {deleteClient.name || deleteClient.organization || deleteClient.userId} and all
+                related records. This action cannot be undone.
+              </p>
+              <div className={styles.modalActions}>
+                <button className={styles.secondaryButton} onClick={() => setIsDeleteOpen(false)}>
+                  Cancel
+                </button>
+                <button
+                  className={styles.primaryButton}
+                  onClick={handleDeleteClient}
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? 'Deleting...' : 'Delete Client'}
+                </button>
+              </div>
+              {deleteMessage && <p className={styles.emptyText}>{deleteMessage}</p>}
             </div>
           </div>
         )}

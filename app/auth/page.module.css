@@ -97,6 +97,11 @@
   margin-bottom: 18px;
 }
 
+.welcomeStatusActive {
+  border-color: rgba(74, 222, 128, 0.5);
+  color: #b7f7c9;
+}
+
 .welcomePulse {
   width: 8px;
   height: 8px;
@@ -104,6 +109,11 @@
   background: var(--accent-gold);
   box-shadow: 0 0 12px rgba(197, 163, 104, 0.6);
   animation: pulseGlow 1.6s ease-in-out infinite;
+}
+
+.welcomeStatusActive .welcomePulse {
+  background: #4ade80;
+  box-shadow: 0 0 12px rgba(74, 222, 128, 0.6);
 }
 
 .welcomeDots span {

@@ -22,6 +22,7 @@ export const authOptions: NextAuthOptions = {
         const adminOnly = String(credentials?.adminOnly || '').trim() === 'true';
 
         if (!identifier || !accessKey) {
+          console.warn('auth:missing-credentials', { identifierPresent: !!identifier, accessKeyPresent: !!accessKey });
           return null;
         }
 
@@ -30,20 +31,24 @@ export const authOptions: NextAuthOptions = {
         });
 
         if (!user) {
+          console.warn('auth:user-not-found', { identifier });
           return null;
         }
 
         // Must be ACTIVE to log in
         if (user.status !== 'ACTIVE') {
+          console.warn('auth:user-not-active', { identifier, status: user.status });
           return null;
         }
 
         const isValid = await bcrypt.compare(accessKey, user.hashedPassword);
         if (!isValid) {
+          console.warn('auth:invalid-access-key', { identifier });
           return null;
         }
 
         if (adminOnly && user.role !== 'ADMIN') {
+          console.warn('auth:admin-required', { identifier, role: user.role });
           return null;
         }
 

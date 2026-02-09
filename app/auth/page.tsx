@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { signIn } from 'next-auth/react';
@@ -15,6 +15,7 @@ export default function AuthPage() {
   const [organization, setOrganization] = useState('');
   const [accessToken, setAccessToken] = useState('');
   const [enlistSuccess, setEnlistSuccess] = useState(false);
+  const [enlistStatus, setEnlistStatus] = useState<'PENDING' | 'ACTIVE' | 'REJECTED' | 'UNKNOWN'>('PENDING');
   const [authError, setAuthError] = useState('');
   const router = useRouter();
 
@@ -30,7 +31,14 @@ export default function AuthPage() {
     });
 
     if (result?.ok) {
-      router.replace('/');
+      const sessionRes = await fetch('/api/auth/session');
+      const session = await sessionRes.json();
+
+      if (session?.user) {
+        router.replace('/');
+      } else {
+        setAuthError('Login succeeded, but session was not established. Check NEXTAUTH_URL and cookies.');
+      }
     } else {
       setAuthError('Invalid User ID or Access Key. Verify your credentials.');
     }
@@ -56,6 +64,7 @@ export default function AuthPage() {
 
       if (res.ok) {
         setEnlistSuccess(true);
+        setEnlistStatus('PENDING');
       } else {
         setAuthError(data.error || 'Unable to process request.');
       }
@@ -63,6 +72,50 @@ export default function AuthPage() {
       setAuthError('Connection failed. Try again.');
     }
   };
+
+  useEffect(() => {
+    if (!enlistSuccess) {
+      return;
+    }
+
+    let cancelled = false;
+
+    const checkStatus = async () => {
+      if (!identifier || !accessKey) {
+        return;
+      }
+
+      const res = await fetch('/api/auth/enlist/status', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: identifier, accessKey }),
+      });
+
+      if (!res.ok) {
+        if (!cancelled) {
+          setEnlistStatus('UNKNOWN');
+        }
+        return;
+      }
+
+      const data = await res.json();
+      if (!cancelled) {
+        const nextStatus = data.status || 'UNKNOWN';
+        setEnlistStatus(nextStatus);
+        if (nextStatus === 'ACTIVE') {
+          router.replace('/');
+        }
+      }
+    };
+
+    checkStatus();
+    const interval = setInterval(checkStatus, 15000);
+
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
+  }, [accessKey, enlistSuccess, identifier]);
 
   const handleSubmit = mode === 'login' ? handleLogin : handleEnlist;
 
@@ -76,20 +129,34 @@ export default function AuthPage() {
             <div className={styles.welcomeContent}>
               <p className={styles.welcomeKicker}>REQUEST SUBMITTED</p>
               <h2 className={styles.welcomeTitle}>
-                <span className={styles.welcomeLabel}>Pending Authorization</span>
+                <span className={styles.welcomeLabel}>
+                  {enlistStatus === 'ACTIVE' ? 'Neural Handshake Established' : 'Pending Authorization'}
+                </span>
                 <span className={styles.welcomeName}>{organization || 'Your Organization'}</span>
               </h2>
               <p className={styles.welcomeSubtitle}>
-                Your access request is queued. We are waiting for neural handshake confirmation from an admin.
+                {enlistStatus === 'ACTIVE'
+                  ? 'Authorization confirmed. You can return to login and establish your secure session.'
+                  : enlistStatus === 'REJECTED'
+                    ? 'Your access request was not approved. Contact an administrator for assistance.'
+                    : 'Your access request is queued. We are waiting for neural handshake confirmation from an admin.'}
               </p>
-              <div className={styles.welcomeStatus}>
+              <div className={`${styles.welcomeStatus} ${enlistStatus === 'ACTIVE' ? styles.welcomeStatusActive : ''}`}>
                 <span className={styles.welcomePulse} />
-                <span>Awaiting admin confirmation</span>
-                <span className={styles.welcomeDots} aria-hidden="true">
-                  <span>.</span>
-                  <span>.</span>
-                  <span>.</span>
+                <span>
+                  {enlistStatus === 'ACTIVE'
+                    ? 'Handshake secured'
+                    : enlistStatus === 'REJECTED'
+                      ? 'Request declined'
+                      : 'Awaiting admin confirmation'}
                 </span>
+                {enlistStatus !== 'ACTIVE' && enlistStatus !== 'REJECTED' && (
+                  <span className={styles.welcomeDots} aria-hidden="true">
+                    <span>.</span>
+                    <span>.</span>
+                    <span>.</span>
+                  </span>
+                )}
               </div>
               <div className={styles.welcomeActions}>
                 <button
@@ -102,9 +169,10 @@ export default function AuthPage() {
                     setAccessKey('');
                     setOrganization('');
                     setAccessToken('');
+                    setEnlistStatus('PENDING');
                   }}
                 >
-                  Back to Login
+                  {enlistStatus === 'ACTIVE' ? 'Return to Login' : 'Back to Login'}
                 </button>
               </div>
             </div>
@@ -133,7 +201,11 @@ export default function AuthPage() {
               <button
                 type="button"
                 className={`${styles.tabTrigger} ${mode === 'login' ? styles.active : ''}`}
-                onClick={() => { setMode('login'); setAuthError(''); }}
+                onClick={() => {
+                  setMode('login');
+                  setAuthError('');
+                  setEnlistSuccess(false);
+                }}
               >
                 Login
               </button>

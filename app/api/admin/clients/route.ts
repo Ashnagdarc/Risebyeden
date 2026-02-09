@@ -112,3 +112,42 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ error: 'Unable to update client' }, { status: 500 });
   }
 }
+
+export async function DELETE(request: Request) {
+  const session = await requireAdmin();
+  if (!session) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  const body = (await request.json()) as { id?: string };
+
+  if (!body.id) {
+    return NextResponse.json({ error: 'Client id is required' }, { status: 400 });
+  }
+
+  const client = await prisma.user.findUnique({
+    where: { id: body.id },
+    select: { id: true, role: true },
+  });
+
+  if (!client || client.role !== 'CLIENT') {
+    return NextResponse.json({ error: 'Client not found' }, { status: 404 });
+  }
+
+  try {
+    await prisma.$transaction([
+      prisma.clientProperty.deleteMany({ where: { userId: client.id } }),
+      prisma.payment.deleteMany({ where: { userId: client.id } }),
+      prisma.transaction.deleteMany({ where: { userId: client.id } }),
+      prisma.document.deleteMany({ where: { userId: client.id } }),
+      prisma.organizationMember.deleteMany({ where: { userId: client.id } }),
+      prisma.interestRequest.deleteMany({ where: { userId: client.id } }),
+      prisma.clientProfile.deleteMany({ where: { userId: client.id } }),
+      prisma.user.delete({ where: { id: client.id } }),
+    ]);
+
+    return NextResponse.json({ ok: true });
+  } catch {
+    return NextResponse.json({ error: 'Unable to delete client' }, { status: 500 });
+  }
+}
