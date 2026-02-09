@@ -1,45 +1,96 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Sidebar from '@/components/Sidebar';
 import styles from './page.module.css';
+
+type Advisor = {
+  id: string;
+  name: string;
+  title: string;
+  specialty: string | null;
+  status: 'AVAILABLE' | 'BUSY' | 'INACTIVE';
+};
 
 export default function ConsultationPage() {
   const [selectedDate, setSelectedDate] = useState('');
   const [selectedTime, setSelectedTime] = useState('');
   const [consultationType, setConsultationType] = useState('portfolio');
   const [message, setMessage] = useState('');
+  const [advisors, setAdvisors] = useState<Advisor[]>([]);
+  const [selectedAdvisorId, setSelectedAdvisorId] = useState<string | null>(null);
+  const [statusMessage, setStatusMessage] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const availableTimes = [
-    '09:00 AM', '10:00 AM', '11:00 AM', 
-    '02:00 PM', '03:00 PM', '04:00 PM'
-  ];
+  useEffect(() => {
+    let isMounted = true;
 
-  const consultants = [
-    {
-      name: 'Sarah Chen',
-      role: 'Senior Portfolio Advisor',
-      specialty: 'High-value acquisitions',
-      available: true
-    },
-    {
-      name: 'Michael Torres',
-      role: 'Investment Strategist',
-      specialty: 'Market analysis & timing',
-      available: true
-    },
-    {
-      name: 'Elena Kozlov',
-      role: 'Real Estate Analyst',
-      specialty: 'Commercial properties',
-      available: false
-    }
-  ];
+    fetch('/api/client/advisors')
+      .then(async (res) => {
+        if (!res.ok) {
+          throw new Error('Failed to load advisors');
+        }
+        return res.json();
+      })
+      .then((data) => {
+        if (!isMounted) {
+          return;
+        }
+        setAdvisors(data.advisors || []);
+      })
+      .catch(() => {
+        if (isMounted) {
+          setStatusMessage('Unable to load advisors.');
+        }
+      });
 
-  const handleSubmit = (e: React.FormEvent) => {
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const availableTimes = useMemo(
+    () => [
+      '09:00 AM', '10:00 AM', '11:00 AM',
+      '02:00 PM', '03:00 PM', '04:00 PM',
+    ],
+    []
+  );
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle booking logic
-    alert('Consultation request submitted successfully!');
+    setStatusMessage('');
+
+    if (!selectedDate || !consultationType) {
+      setStatusMessage('Select a consultation type and date.');
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    const response = await fetch('/api/client/consultations', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        type: consultationType,
+        preferredDate: selectedDate,
+        preferredTime: selectedTime,
+        notes: message,
+        advisorId: selectedAdvisorId,
+      }),
+    });
+
+    if (response.ok) {
+      setStatusMessage('Consultation request submitted. We will reach out shortly.');
+      setSelectedDate('');
+      setSelectedTime('');
+      setMessage('');
+      setSelectedAdvisorId(null);
+    } else {
+      setStatusMessage('Unable to submit request. Please try again.');
+    }
+
+    setIsSubmitting(false);
   };
 
   return (
@@ -146,30 +197,49 @@ export default function ConsultationPage() {
                 />
               </div>
 
-              <button type="submit" className={styles.primaryButton}>
-                Request Consultation
+              <button type="submit" className={styles.primaryButton} disabled={isSubmitting}>
+                {isSubmitting ? 'Submitting...' : 'Request Consultation'}
               </button>
+              {statusMessage && <p className={styles.statusMessage}>{statusMessage}</p>}
             </form>
           </section>
 
           <section className={styles.consultantsPanel}>
             <h3 className={styles.panelTitle}>Our Advisors</h3>
             <div className={styles.consultantsList}>
-              {consultants.map((consultant, index) => (
-                <div key={index} className={styles.consultantCard}>
+              {advisors.length === 0 && (
+                <div className={styles.consultantEmpty}>No advisors available yet.</div>
+              )}
+              {advisors.map((consultant) => {
+                const isAvailable = consultant.status === 'AVAILABLE';
+                const isSelected = selectedAdvisorId === consultant.id;
+                return (
+                  <button
+                    key={consultant.id}
+                    type="button"
+                    className={`${styles.consultantCard} ${isSelected ? styles.consultantSelected : ''}`}
+                    onClick={() => {
+                      if (!isAvailable) {
+                        return;
+                      }
+                      setSelectedAdvisorId(consultant.id);
+                    }}
+                    disabled={!isAvailable}
+                  >
                   <div className={styles.consultantAvatar}>
                     {consultant.name.split(' ').map(n => n[0]).join('')}
                   </div>
                   <div className={styles.consultantInfo}>
                     <h4 className={styles.consultantName}>{consultant.name}</h4>
-                    <p className={styles.consultantRole}>{consultant.role}</p>
-                    <p className={styles.consultantSpecialty}>{consultant.specialty}</p>
+                    <p className={styles.consultantRole}>{consultant.title}</p>
+                    <p className={styles.consultantSpecialty}>{consultant.specialty || 'Advisory support'}</p>
                   </div>
-                  <span className={`${styles.availabilityBadge} ${consultant.available ? styles.available : styles.unavailable}`}>
-                    {consultant.available ? 'Available' : 'Busy'}
+                  <span className={`${styles.availabilityBadge} ${isAvailable ? styles.available : styles.unavailable}`}>
+                    {isAvailable ? 'Available' : 'Busy'}
                   </span>
-                </div>
-              ))}
+                </button>
+              );
+              })}
             </div>
 
             <div className={styles.infoCard}>

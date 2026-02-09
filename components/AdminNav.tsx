@@ -9,6 +9,7 @@ const navItems = [
   { href: '/admin/properties', label: 'Properties' },
   { href: '/admin/pricing', label: 'Price History' },
   { href: '/admin/clients', label: 'Client Portfolios' },
+  { href: '/admin/consultations', label: 'Consultations' },
   { href: '/admin/access', label: 'Access' },
   { href: '/admin/invites', label: 'Invites' },
   { href: '/admin/interest-requests', label: 'Interest Requests' },

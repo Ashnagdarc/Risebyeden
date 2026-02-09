@@ -168,6 +168,15 @@
   box-shadow: 0 8px 24px rgba(197, 163, 104, 0.3);
 }
 
+.statusMessage {
+  margin-top: 1rem;
+  font-family: var(--mono-font);
+  font-size: 0.75rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--accent-gold);
+}
+
 /* Consultants Panel */
 .consultantsList {
   display: flex;
@@ -177,12 +186,35 @@
 }
 
 .consultantCard {
+  width: 100%;
+  text-align: left;
+  border: 1px solid transparent;
+  cursor: pointer;
   display: flex;
   align-items: center;
   gap: 1rem;
   padding: 1rem;
   background: var(--obsidian-base);
   border-radius: 10px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.consultantCard:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.consultantSelected {
+  border-color: rgba(197, 163, 104, 0.5);
+  box-shadow: 0 0 0 1px rgba(197, 163, 104, 0.2);
+}
+
+.consultantEmpty {
+  padding: 1rem;
+  background: var(--obsidian-base);
+  border-radius: 10px;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
 }
 
 .consultantAvatar {
