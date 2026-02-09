@@ -1,13 +1,13 @@
+/* eslint-disable @next/next/no-img-element */
 'use client';
 
-import { useParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import Sidebar from '@/components/Sidebar';
 import styles from './page.module.css';
 
 export default function PropertyDetails() {
   const params = useParams();
-  const router = useRouter();
   const propertyId = parseInt(params.id as string);
 
   // Mock properties data (same as in acquire page)

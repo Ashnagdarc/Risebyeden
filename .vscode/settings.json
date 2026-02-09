@@ -1,0 +1,6 @@
+{
+  "files.associations": {
+    "prisma/migrations/**/*.sql": "postgresql"
+  },
+  "sql.validate.enable": false
+}

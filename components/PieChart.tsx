@@ -36,7 +36,7 @@ export default function PieChart({ data }: PieChartProps) {
     let currentAngle = -Math.PI / 2; // Start at top
 
     // Draw slices
-    data.forEach((item, index) => {
+    data.forEach((item) => {
       const sliceAngle = (item.value / total) * 2 * Math.PI;
       
       // Draw slice

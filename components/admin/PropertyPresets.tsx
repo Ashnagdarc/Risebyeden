@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -239,7 +240,7 @@ export default function PropertyPresets() {
               </div>
               {filteredProperties.length === 0 ? (
                 <div className={`${styles.tableRow} ${styles.tableRowActions}`}>
-                  <div style={{ gridColumn: '1 / -1', color: 'var(--text-secondary)' }}>
+                  <div className={styles.tableEmpty}>
                     No presets match these filters.
                   </div>
                 </div>

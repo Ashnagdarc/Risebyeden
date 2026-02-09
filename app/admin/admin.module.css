@@ -325,6 +325,7 @@
 }
 
 .copyInput {
+  -webkit-user-select: all;
   user-select: all;
   cursor: text;
 }
