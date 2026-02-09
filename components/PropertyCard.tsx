@@ -4,12 +4,11 @@ import { useRouter } from 'next/navigation';
 import styles from './PropertyCard.module.css';
 
 interface Property {
-  id: number;
+  id: string;
   name: string;
   price: number;
   location: string;
-  state: string;
-  image: string;
+  state?: string;
   appreciation: number;
   bedrooms: number;
   bathrooms: number;

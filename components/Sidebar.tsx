@@ -59,14 +59,6 @@ export default function Sidebar() {
           </svg>
         </Link>
 
-        {/* Back to Client Dashboard */}
-        <Link href="/" className={`${styles.navItem} ${styles.settings}`}>
-          <svg viewBox="0 0 24 24" fill="none" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-            <line x1="19" y1="12" x2="5" y2="12"></line>
-            <polyline points="12 19 5 12 12 5"></polyline>
-          </svg>
-        </Link>
-
         {/* Logout */}
         <button onClick={() => signOut({ callbackUrl: '/auth' })} className={`${styles.navItem} ${styles.logout}`}>
           <svg viewBox="0 0 24 24" fill="none" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">

@@ -33,47 +33,180 @@ async function main() {
     {
       name: 'Obsidian Heights',
       slug: 'obsidian-heights',
-      location: 'Victoria Island, Lagos',
+      location: 'Victoria Island',
+      city: 'Lagos',
+      state: 'Lagos',
+      propertyType: 'Mixed Use',
+      bedrooms: 4,
+      bathrooms: 3,
+      squareFeet: 3500,
+      yearBuilt: 2020,
+      appreciation: 7.2,
+      capRate: 4.8,
+      occupancy: 98,
+      acquiredAt: new Date('2023-03-15'),
       status: 'AVAILABLE' as const,
       basePrice: 4200000,
+      description: 'A flagship mixed-use residence with premium finishes and skyline views.',
     },
     {
       name: 'Veridian Atrium',
       slug: 'veridian-atrium',
-      location: 'Ikoyi, Lagos',
+      location: 'Ikoyi',
+      city: 'Lagos',
+      state: 'Lagos',
+      propertyType: 'Residential',
+      bedrooms: 3,
+      bathrooms: 2,
+      squareFeet: 2800,
+      yearBuilt: 2019,
+      appreciation: 5.8,
+      capRate: 4.4,
+      occupancy: 100,
+      acquiredAt: new Date('2022-06-10'),
       status: 'AVAILABLE' as const,
       basePrice: 6100000,
+      description: 'Refined residential tower with curated amenities and private concierge.',
     },
     {
       name: 'Gilded Loft',
       slug: 'gilded-loft',
-      location: 'Banana Island, Lagos',
+      location: 'Banana Island',
+      city: 'Lagos',
+      state: 'Lagos',
+      propertyType: 'Commercial',
+      bedrooms: 0,
+      bathrooms: 0,
+      squareFeet: 4200,
+      yearBuilt: 2018,
+      appreciation: 6.1,
+      capRate: 6.0,
+      occupancy: 94,
+      acquiredAt: new Date('2023-09-01'),
       status: 'RESERVED' as const,
       basePrice: 7800000,
+      description: 'Boutique commercial lofts designed for premium tenants and flexible layouts.',
     },
     {
       name: 'Beachfront Paradise',
       slug: 'beachfront-paradise',
-      location: 'Lekki Phase 1, Lagos',
+      location: 'Lekki Phase 1',
+      city: 'Lagos',
+      state: 'Lagos',
+      propertyType: 'Luxury Residential',
+      bedrooms: 4,
+      bathrooms: 3,
+      squareFeet: 3800,
+      yearBuilt: 2022,
+      appreciation: 7.5,
+      capRate: 4.9,
+      occupancy: 100,
+      acquiredAt: new Date('2023-11-20'),
       status: 'AVAILABLE' as const,
       basePrice: 5200000,
+      description: 'Oceanfront estate with private terraces, curated interiors, and concierge services.',
     },
   ];
 
   for (const property of properties) {
-    await prisma.property.upsert({
+    const record = await prisma.property.upsert({
       where: { slug: property.slug },
       update: {
         name: property.name,
         location: property.location,
+        city: property.city,
+        state: property.state,
+        propertyType: property.propertyType,
+        bedrooms: property.bedrooms,
+        bathrooms: property.bathrooms,
+        squareFeet: property.squareFeet,
+        yearBuilt: property.yearBuilt,
+        appreciation: property.appreciation,
+        capRate: property.capRate,
+        occupancy: property.occupancy,
+        acquiredAt: property.acquiredAt,
         status: property.status,
         basePrice: property.basePrice,
+        description: property.description,
       },
       create: property,
     });
+
+    const priceUpdates = [
+      {
+        price: Number(property.basePrice) * 0.98,
+        effectiveDate: new Date('2026-01-30'),
+        source: 'Market Index',
+      },
+      {
+        price: Number(property.basePrice),
+        effectiveDate: new Date('2026-02-05'),
+        source: 'Internal Review',
+      },
+    ];
+
+    for (const update of priceUpdates) {
+      await prisma.priceUpdate.upsert({
+        where: {
+          propertyId_effectiveDate: {
+            propertyId: record.id,
+            effectiveDate: update.effectiveDate,
+          },
+        },
+        update: {
+          price: update.price,
+          source: update.source,
+        },
+        create: {
+          propertyId: record.id,
+          price: update.price,
+          effectiveDate: update.effectiveDate,
+          source: update.source,
+        },
+      });
+    }
   }
 
-  console.log(`Seeded ${properties.length} properties.`);
+  const announcements = [
+    {
+      type: 'FEATURE' as const,
+      title: 'New Portfolio Analytics Dashboard',
+      description: 'Advanced analytics with AI-driven insights, trend forecasts, and tailored reports.',
+      isNew: true,
+    },
+    {
+      type: 'MARKET' as const,
+      title: 'Q4 2024 Market Report Available',
+      description: 'Quarterly report on emerging markets, property valuations, and new opportunities.',
+      isNew: true,
+    },
+    {
+      type: 'POLICY' as const,
+      title: 'Updated Investment Terms',
+      description: 'Updated terms to improve transparency and investor protections across portfolios.',
+      isNew: false,
+    },
+    {
+      type: 'MAINTENANCE' as const,
+      title: 'Scheduled Maintenance Complete',
+      description: 'Platform maintenance completed successfully with security and performance upgrades.',
+      isNew: false,
+    },
+  ];
+
+  for (const announcement of announcements) {
+    await prisma.announcement.upsert({
+      where: { title: announcement.title },
+      update: {
+        description: announcement.description,
+        type: announcement.type,
+        isNew: announcement.isNew,
+      },
+      create: announcement,
+    });
+  }
+
+  console.log(`Seeded ${properties.length} properties and ${announcements.length} announcements.`);
 }
 
 main()

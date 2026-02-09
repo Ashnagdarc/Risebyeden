@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
+import type { Prisma } from '@prisma/client';
 import prisma from '@/lib/prisma';
 import { authOptions } from '@/lib/auth';
 
@@ -18,7 +19,7 @@ export async function GET() {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const users = await prisma.user.findMany({
+  const clientQuery = {
     where: { role: 'CLIENT' },
     select: {
       id: true,
@@ -34,9 +35,11 @@ export async function GET() {
       },
     },
     orderBy: { createdAt: 'desc' },
-  });
+  } satisfies Prisma.UserFindManyArgs;
 
-  const clients = users.map((user) => {
+  const users = await prisma.user.findMany(clientQuery);
+
+  const clients = (users as Prisma.UserGetPayload<typeof clientQuery>[]).map((user) => {
     const totals = user.clientProperties.reduce<{
       propertyCount: number;
       portfolioValue: number;

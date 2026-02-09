@@ -1,118 +1,79 @@
 /* eslint-disable @next/next/no-img-element */
 'use client';
 
+import { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import Sidebar from '@/components/Sidebar';
 import styles from './page.module.css';
 
+type PropertyDetail = {
+  id: string;
+  name: string;
+  basePrice: number | null;
+  location: string | null;
+  city: string | null;
+  state: string | null;
+  propertyType: string | null;
+  appreciation: number | null;
+  bedrooms: number | null;
+  bathrooms: number | null;
+  squareFeet: number | null;
+  yearBuilt: number | null;
+  capRate: number | null;
+  description: string | null;
+  documents: { url: string }[];
+};
+
 export default function PropertyDetails() {
   const params = useParams();
-  const propertyId = parseInt(params.id as string);
+  const propertyId = params.id as string | undefined;
+  const [property, setProperty] = useState<PropertyDetail | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSubmitted, setIsSubmitted] = useState(false);
 
-  // Mock properties data (same as in acquire page)
-  const properties = [
-    {
-      id: 1,
-      name: 'The Obsidian Heights',
-      price: 2500000,
-      location: 'Tribeca',
-      state: 'New York',
-      image: 'https://images.unsplash.com/photo-1545324418-cc1a9a6fded0?w=600&h=400&fit=crop',
-      appreciation: 7.2,
-      bedrooms: 4,
-      bathrooms: 3,
-      squareFeet: 3500,
-      type: 'Luxury Residential',
-      yearBuilt: 2020,
-      capRate: 4.8,
-      description: 'Stunning luxury residence in the heart of Tribeca. Features premium finishes, floor-to-ceiling windows, and breathtaking city views. Prime location with easy access to downtown Manhattan.'
-    },
-    {
-      id: 2,
-      name: 'Marina Bay Commercial',
-      price: 4200000,
-      location: 'San Francisco',
-      state: 'California',
-      image: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=600&h=400&fit=crop',
-      appreciation: 5.8,
-      bedrooms: 0,
-      bathrooms: 0,
-      squareFeet: 8500,
-      type: 'Commercial',
-      yearBuilt: 2018,
-      capRate: 6.2,
-      description: 'Premium commercial space in San Francisco\'s Marina district. Recently renovated with modern amenities. High foot traffic area, perfect for retail or office use.'
-    },
-    {
-      id: 3,
-      name: 'Sunset Valley Estate',
-      price: 3100000,
-      location: 'Los Angeles',
-      state: 'California',
-      image: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=600&h=400&fit=crop',
-      appreciation: 6.4,
-      bedrooms: 5,
-      bathrooms: 4,
-      squareFeet: 4200,
-      type: 'Residential',
-      yearBuilt: 2019,
-      capRate: 5.1,
-      description: 'Spacious estate in prestigious Los Angeles neighborhood. Features modern architecture, gourmet kitchen, and expansive outdoor living spaces. Perfect for families seeking luxury and comfort.'
-    },
-    {
-      id: 4,
-      name: 'Downtown Austin Loft',
-      price: 1800000,
-      location: 'Downtown',
-      state: 'Texas',
-      image: 'https://images.unsplash.com/photo-1512497935541-1a4d49d6b8bd?w=600&h=400&fit=crop',
-      appreciation: 8.1,
-      bedrooms: 3,
-      bathrooms: 2,
-      squareFeet: 2800,
-      type: 'Urban Residential',
-      yearBuilt: 2021,
-      capRate: 5.5,
-      description: 'Contemporary urban loft in the heart of Austin. High ceilings, exposed brick, and modern fixtures. Walking distance to restaurants, entertainment, and tech hubs.'
-    },
-    {
-      id: 5,
-      name: 'Tech Hub Office Complex',
-      price: 5500000,
-      location: 'Seattle',
-      state: 'Washington',
-      image: 'https://images.unsplash.com/photo-1486325212027-8081e485255e?w=600&h=400&fit=crop',
-      appreciation: 6.9,
-      bedrooms: 0,
-      bathrooms: 0,
-      squareFeet: 12000,
-      type: 'Commercial',
-      yearBuilt: 2017,
-      capRate: 6.8,
-      description: 'State-of-the-art office complex in Seattle\'s tech corridor. Modern infrastructure, high-speed connectivity, and ample parking. Ideal for growing tech companies.'
-    },
-    {
-      id: 6,
-      name: 'Beachfront Paradise',
-      price: 3800000,
-      location: 'Miami Beach',
-      state: 'Florida',
-      image: 'https://images.unsplash.com/photo-1600881558541-dc73d4c9c67b?w=600&h=400&fit=crop',
-      appreciation: 7.5,
-      bedrooms: 4,
-      bathrooms: 3,
-      squareFeet: 3800,
-      type: 'Luxury Residential',
-      yearBuilt: 2022,
-      capRate: 4.9,
-      description: 'Oceanfront luxury property with stunning views. Private beach access, infinity pool, and premium amenities. The ultimate coastal living experience.'
-    },
-  ];
+  useEffect(() => {
+    if (!propertyId) {
+      return;
+    }
 
-  const property = properties.find(p => p.id === propertyId);
+    let isMounted = true;
+    setIsLoading(true);
 
-  if (!property) {
+    fetch(`/api/client/properties/${propertyId}`)
+      .then(async (res) => {
+        if (!res.ok) {
+          throw new Error('Failed to fetch property');
+        }
+        return res.json();
+      })
+      .then((data) => {
+        if (isMounted) {
+          setProperty(data.property || null);
+        }
+      })
+      .catch(() => {
+        if (isMounted) {
+          setProperty(null);
+        }
+      })
+      .finally(() => {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [propertyId]);
+
+  const imageUrl = useMemo(() => {
+    return property?.documents?.[0]?.url || '';
+  }, [property]);
+
+  if (!property && !isLoading) {
     return (
       <div className={styles.container}>
         <Sidebar />
@@ -136,8 +97,29 @@ export default function PropertyDetails() {
     return num.toLocaleString();
   };
 
-  const handleInvest = () => {
-    alert(`Investment interest registered for ${property.name}. Our team will contact you shortly.`);
+  const handleInvest = async () => {
+    if (!property || isSubmitting || isSubmitted) {
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const res = await fetch('/api/client/interest-requests', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ propertyId: property.id }),
+      });
+
+      if (!res.ok) {
+        throw new Error('Failed to submit interest');
+      }
+
+      setIsSubmitted(true);
+    } catch (error) {
+      alert('Unable to submit interest at the moment. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -151,21 +133,25 @@ export default function PropertyDetails() {
               ← Back to Properties
             </Link>
             <div className={styles.titleRow}>
-              <h1 className={styles.pageTitle}>{property.name}</h1>
+              <h1 className={styles.pageTitle}>{property?.name || 'Loading...'}</h1>
               <div className={styles.appreciationBadge}>
-                +{property.appreciation}% Appreciation
+                +{property?.appreciation ?? 0}% Appreciation
               </div>
             </div>
             <div className={styles.metaRow}>
-              <span className={styles.type}>{property.type}</span>
-              <span className={styles.location}>{property.location}, {property.state}</span>
+              <span className={styles.type}>{property?.propertyType || 'Residential'}</span>
+              <span className={styles.location}>
+                {property?.location || property?.city || 'Location'}{property?.state ? `, ${property.state}` : ''}
+              </span>
             </div>
           </div>
         </header>
 
         <div className={styles.imageSection}>
           <div className={styles.imageContainer}>
-            <img src={property.image} alt={property.name} className={styles.propertyImage} />
+            {imageUrl ? (
+              <img src={imageUrl} alt={property?.name || 'Property'} className={styles.propertyImage} />
+            ) : null}
             <div className={styles.imageOverlay}>
               <div className={styles.imageBadge}>Premium Listing</div>
             </div>
@@ -176,7 +162,7 @@ export default function PropertyDetails() {
           <div className={styles.mainSection}>
             <div className={styles.section}>
               <h2 className={styles.sectionTitle}>Property Overview</h2>
-              <p className={styles.description}>{property.description}</p>
+              <p className={styles.description}>{property?.description || 'No description available yet.'}</p>
             </div>
 
             <div className={styles.section}>
@@ -184,11 +170,11 @@ export default function PropertyDetails() {
               <div className={styles.statsGrid}>
                 <div className={styles.stat}>
                   <div className={styles.statLabel}>Purchase Price</div>
-                  <div className={styles.statValue}>{formatPrice(property.price)}</div>
+                  <div className={styles.statValue}>{formatPrice(property?.basePrice || 0)}</div>
                 </div>
                 <div className={styles.stat}>
                   <div className={styles.statLabel}>Cap Rate</div>
-                  <div className={styles.statValue}>{property.capRate}%</div>
+                  <div className={styles.statValue}>{property?.capRate ?? 0}%</div>
                 </div>
               </div>
             </div>
@@ -198,19 +184,19 @@ export default function PropertyDetails() {
               <div className={styles.statsGrid}>
                 <div className={styles.stat}>
                   <div className={styles.statLabel}>Square Feet</div>
-                  <div className={styles.statValue}>{formatNumber(property.squareFeet)}</div>
+                  <div className={styles.statValue}>{formatNumber(property?.squareFeet || 0)}</div>
                 </div>
                 <div className={styles.stat}>
                   <div className={styles.statLabel}>Year Built</div>
-                  <div className={styles.statValue}>{property.yearBuilt}</div>
+                  <div className={styles.statValue}>{property?.yearBuilt ?? 'N/A'}</div>
                 </div>
-                {property.bedrooms > 0 && (
+                {property?.bedrooms && property.bedrooms > 0 && (
                   <div className={styles.stat}>
                     <div className={styles.statLabel}>Bedrooms</div>
                     <div className={styles.statValue}>{property.bedrooms}</div>
                   </div>
                 )}
-                {property.bathrooms > 0 && (
+                {property?.bathrooms && property.bathrooms > 0 && (
                   <div className={styles.stat}>
                     <div className={styles.statLabel}>Bathrooms</div>
                     <div className={styles.statValue}>{property.bathrooms}</div>
@@ -224,22 +210,26 @@ export default function PropertyDetails() {
             <div className={styles.investmentCard}>
               <div className={styles.priceDisplay}>
                 <div className={styles.priceLabel}>Investment Amount</div>
-                <div className={styles.priceAmount}>{formatPrice(property.price)}</div>
+                <div className={styles.priceAmount}>{formatPrice(property?.basePrice || 0)}</div>
               </div>
 
               <div className={styles.keyMetrics}>
                 <div className={styles.metric}>
                   <span className={styles.metricLabel}>Projected Return</span>
-                  <span className={styles.metricValue}>+{property.appreciation}%</span>
+                  <span className={styles.metricValue}>+{property?.appreciation ?? 0}%</span>
                 </div>
                 <div className={styles.metric}>
                   <span className={styles.metricLabel}>Cap Rate</span>
-                  <span className={styles.metricValue}>{property.capRate}%</span>
+                  <span className={styles.metricValue}>{property?.capRate ?? 0}%</span>
                 </div>
               </div>
 
-              <button className={styles.investButton} onClick={handleInvest}>
-                Express Interest
+              <button
+                className={styles.investButton}
+                onClick={handleInvest}
+                disabled={isSubmitting || isSubmitted}
+              >
+                {isSubmitted ? 'Interest Sent' : isSubmitting ? 'Sending...' : 'Express Interest'}
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M5 12h14M12 5l7 7-7 7"/>
                 </svg>

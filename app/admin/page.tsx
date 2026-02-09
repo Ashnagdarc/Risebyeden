@@ -1,22 +1,62 @@
 'use client';
 
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import Sidebar from '@/components/Sidebar';
 import AdminNav from '@/components/AdminNav';
 import styles from './admin.module.css';
 
-export default function AdminOverview() {
-  const interestRequests = [
-    { id: 'IR-1042', client: 'Aisha Cole', property: 'The Obsidian Heights', status: 'Pending', date: 'Today' },
-    { id: 'IR-1038', client: 'David Lin', property: 'Marina Bay Commercial', status: 'Scheduled', date: 'Yesterday' },
-    { id: 'IR-1034', client: 'Nora Patel', property: 'Beachfront Paradise', status: 'Pending', date: '2 days ago' },
-  ];
+type OverviewStats = {
+  pendingInterests: number;
+  activePresets: number;
+  priceUpdates: number;
+  clientPortfolios: number;
+};
 
-  const priceUpdates = [
-    { id: 'PU-220', preset: 'Veridian Atrium', change: '+2.1%', date: 'Today' },
-    { id: 'PU-219', preset: 'The Gilded Loft', change: '+1.4%', date: 'Yesterday' },
-    { id: 'PU-218', preset: 'Meridian Towers', change: '+0.9%', date: '2 days ago' },
-  ];
+type InterestItem = {
+  id: string;
+  status: string;
+  createdAt: string;
+  user: { userId: string; name: string | null } | null;
+  property: { name: string } | null;
+};
+
+type PriceUpdateItem = {
+  id: string;
+  price: number;
+  effectiveDate: string;
+  source: string | null;
+  property: { name: string } | null;
+};
+
+export default function AdminOverview() {
+  const [stats, setStats] = useState<OverviewStats>({
+    pendingInterests: 0,
+    activePresets: 0,
+    priceUpdates: 0,
+    clientPortfolios: 0,
+  });
+  const [interestRequests, setInterestRequests] = useState<InterestItem[]>([]);
+  const [priceUpdates, setPriceUpdates] = useState<PriceUpdateItem[]>([]);
+
+  const currencyFormatter = useMemo(
+    () => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }),
+    []
+  );
+
+  const fetchOverview = useCallback(async () => {
+    const res = await fetch('/api/admin/overview');
+    if (res.ok) {
+      const data = await res.json();
+      setStats(data.stats);
+      setInterestRequests(data.recentInterests || []);
+      setPriceUpdates(data.recentPriceUpdates || []);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchOverview();
+  }, [fetchOverview]);
 
   return (
     <div className={styles.container}>
@@ -39,23 +79,23 @@ export default function AdminOverview() {
         <section className={styles.statGrid}>
           <div className={styles.statCard}>
             <div className={styles.statLabel}>Pending Interests</div>
-            <div className={styles.statValue}>12</div>
-            <div className={styles.statMeta}>4 scheduled today</div>
+            <div className={styles.statValue}>{stats.pendingInterests}</div>
+            <div className={styles.statMeta}>Requests awaiting review</div>
           </div>
           <div className={styles.statCard}>
             <div className={styles.statLabel}>Active Presets</div>
-            <div className={styles.statValue}>38</div>
-            <div className={styles.statMeta}>3 inactive</div>
+            <div className={styles.statValue}>{stats.activePresets}</div>
+            <div className={styles.statMeta}>Available or reserved</div>
           </div>
           <div className={styles.statCard}>
             <div className={styles.statLabel}>Price Updates</div>
-            <div className={styles.statValue}>6</div>
+            <div className={styles.statValue}>{stats.priceUpdates}</div>
             <div className={styles.statMeta}>Last 7 days</div>
           </div>
           <div className={styles.statCard}>
             <div className={styles.statLabel}>Client Portfolios</div>
-            <div className={styles.statValue}>84</div>
-            <div className={styles.statMeta}>2 new this week</div>
+            <div className={styles.statValue}>{stats.clientPortfolios}</div>
+            <div className={styles.statMeta}>Active client accounts</div>
           </div>
         </section>
 
@@ -69,16 +109,22 @@ export default function AdminOverview() {
                 <div>Property</div>
                 <div>Status</div>
               </div>
-              {interestRequests.map((request) => (
-                <div key={request.id} className={styles.tableRow}>
-                  <div>{request.id}</div>
-                  <div>{request.client}</div>
-                  <div>{request.property}</div>
-                  <div className={request.status === 'Scheduled' ? `${styles.badge} ${styles.badgeSuccess}` : `${styles.badge} ${styles.badgePending}`}>
-                    {request.status}
-                  </div>
+              {interestRequests.length === 0 ? (
+                <div className={styles.tableRow}>
+                  <div className={styles.tableEmpty}>No interest requests yet.</div>
                 </div>
-              ))}
+              ) : (
+                interestRequests.map((request) => (
+                  <div key={request.id} className={styles.tableRow}>
+                    <div>{request.id.slice(0, 6).toUpperCase()}</div>
+                    <div>{request.user?.name || request.user?.userId || '—'}</div>
+                    <div>{request.property?.name || '—'}</div>
+                    <div className={request.status === 'SCHEDULED' || request.status === 'APPROVED' ? `${styles.badge} ${styles.badgeSuccess}` : `${styles.badge} ${styles.badgePending}`}>
+                      {request.status}
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </div>
 
@@ -88,17 +134,23 @@ export default function AdminOverview() {
               <div className={styles.tableHeader}>
                 <div>Update</div>
                 <div>Preset</div>
-                <div>Change</div>
+                <div>Price</div>
                 <div>Date</div>
               </div>
-              {priceUpdates.map((update) => (
-                <div key={update.id} className={styles.tableRow}>
-                  <div>{update.id}</div>
-                  <div>{update.preset}</div>
-                  <div>{update.change}</div>
-                  <div>{update.date}</div>
+              {priceUpdates.length === 0 ? (
+                <div className={styles.tableRow}>
+                  <div className={styles.tableEmpty}>No price updates logged yet.</div>
                 </div>
-              ))}
+              ) : (
+                priceUpdates.map((update) => (
+                  <div key={update.id} className={styles.tableRow}>
+                    <div>{update.id.slice(0, 6).toUpperCase()}</div>
+                    <div>{update.property?.name || '—'}</div>
+                    <div>{currencyFormatter.format(Number(update.price))}</div>
+                    <div>{new Date(update.effectiveDate).toLocaleDateString()}</div>
+                  </div>
+                ))
+              )}
             </div>
           </div>
         </section>

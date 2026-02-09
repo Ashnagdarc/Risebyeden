@@ -1,15 +1,98 @@
 'use client';
 
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import Sidebar from '@/components/Sidebar';
 import AdminNav from '@/components/AdminNav';
 import styles from '../admin.module.css';
 
+type PriceUpdateItem = {
+  id: string;
+  price: number;
+  effectiveDate: string;
+  source: string | null;
+  property: { id: string; name: string } | null;
+};
+
+type PropertyOption = {
+  id: string;
+  name: string;
+};
+
 export default function PricingAdmin() {
-  const updates = [
-    { id: 'PU-220', preset: 'Veridian Atrium', price: '$5.1M', date: '2026-02-05', source: 'Internal Review' },
-    { id: 'PU-219', preset: 'The Gilded Loft', price: '$3.6M', date: '2026-02-02', source: 'Market Index' },
-    { id: 'PU-218', preset: 'Meridian Towers', price: '$8.4M', date: '2026-01-30', source: 'Internal Review' },
-  ];
+  const [updates, setUpdates] = useState<PriceUpdateItem[]>([]);
+  const [properties, setProperties] = useState<PropertyOption[]>([]);
+  const [propertyId, setPropertyId] = useState('');
+  const [price, setPrice] = useState('');
+  const [effectiveDate, setEffectiveDate] = useState('');
+  const [source, setSource] = useState('Internal Review');
+  const [statusMessage, setStatusMessage] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const currencyFormatter = useMemo(
+    () => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }),
+    []
+  );
+
+  const fetchUpdates = useCallback(async () => {
+    const res = await fetch('/api/admin/price-updates');
+    if (res.ok) {
+      const data = await res.json();
+      setUpdates(data.updates || []);
+    }
+  }, []);
+
+  const fetchProperties = useCallback(async () => {
+    const res = await fetch('/api/admin/properties');
+    if (res.ok) {
+      const data = await res.json();
+      setProperties(data.properties || []);
+      if (!propertyId && data.properties?.length) {
+        setPropertyId(data.properties[0].id);
+      }
+    }
+  }, [propertyId]);
+
+  useEffect(() => {
+    fetchUpdates();
+    fetchProperties();
+  }, [fetchUpdates, fetchProperties]);
+
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setStatusMessage('');
+
+    if (!propertyId || !price || !effectiveDate) {
+      setStatusMessage('Property, price, and date are required.');
+      return;
+    }
+
+    setIsSubmitting(true);
+    const normalizedPrice = price.replace(/[^0-9.]/g, '');
+    const parsedPrice = normalizedPrice ? Number.parseFloat(normalizedPrice) : null;
+
+    const res = await fetch('/api/admin/price-updates', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        propertyId,
+        price: parsedPrice,
+        effectiveDate,
+        source,
+      }),
+    });
+
+    if (res.ok) {
+      setStatusMessage('Price update appended.');
+      setPrice('');
+      setEffectiveDate('');
+      setSource('Internal Review');
+      fetchUpdates();
+    } else {
+      setStatusMessage('Failed to append price update.');
+    }
+
+    setIsSubmitting(false);
+  };
 
   return (
     <div className={styles.container}>
@@ -37,46 +120,85 @@ export default function PricingAdmin() {
                 <div>Price</div>
                 <div>Date</div>
               </div>
-              {updates.map((update) => (
-                <div key={update.id} className={styles.tableRow}>
-                  <div>{update.id}</div>
-                  <div>{update.preset}</div>
-                  <div>{update.price}</div>
-                  <div>{update.date}</div>
+              {updates.length === 0 ? (
+                <div className={styles.tableRow}>
+                  <div className={styles.tableEmpty}>No price updates yet.</div>
                 </div>
-              ))}
+              ) : (
+                updates.map((update) => (
+                  <div key={update.id} className={styles.tableRow}>
+                    <div>{update.id.slice(0, 6).toUpperCase()}</div>
+                    <div>{update.property?.name || '—'}</div>
+                    <div>{currencyFormatter.format(Number(update.price))}</div>
+                    <div>{new Date(update.effectiveDate).toLocaleDateString()}</div>
+                  </div>
+                ))
+              )}
             </div>
           </div>
 
           <div className={styles.section}>
             <h2 className={styles.sectionTitle}>Append New Price</h2>
-            <div className={styles.field}>
-              <label className={styles.label} htmlFor="preset">Preset</label>
-              <select className={styles.select} id="preset">
-                <option>The Obsidian Heights</option>
-                <option>Veridian Atrium</option>
-                <option>The Gilded Loft</option>
-                <option>Aurora Commercial Plaza</option>
-              </select>
-            </div>
-            <div className={styles.formGrid}>
+            <form onSubmit={handleSubmit}>
               <div className={styles.field}>
-                <label className={styles.label} htmlFor="price">Price</label>
-                <input className={styles.input} id="price" placeholder="$0.00" />
+                <label className={styles.label} htmlFor="preset">Preset</label>
+                <select
+                  className={styles.select}
+                  id="preset"
+                  value={propertyId}
+                  onChange={(event) => setPropertyId(event.target.value)}
+                >
+                  {properties.length === 0 ? (
+                    <option value="">No presets available</option>
+                  ) : (
+                    properties.map((property) => (
+                      <option key={property.id} value={property.id}>
+                        {property.name}
+                      </option>
+                    ))
+                  )}
+                </select>
+              </div>
+              <div className={styles.formGrid}>
+                <div className={styles.field}>
+                  <label className={styles.label} htmlFor="price">Price</label>
+                  <input
+                    className={styles.input}
+                    id="price"
+                    placeholder="$0.00"
+                    value={price}
+                    onChange={(event) => setPrice(event.target.value)}
+                  />
+                </div>
+                <div className={styles.field}>
+                  <label className={styles.label} htmlFor="date">Effective Date</label>
+                  <input
+                    className={styles.input}
+                    id="date"
+                    placeholder="YYYY-MM-DD"
+                    value={effectiveDate}
+                    onChange={(event) => setEffectiveDate(event.target.value)}
+                  />
+                </div>
               </div>
               <div className={styles.field}>
-                <label className={styles.label} htmlFor="date">Effective Date</label>
-                <input className={styles.input} id="date" placeholder="YYYY-MM-DD" />
+                <label className={styles.label} htmlFor="source">Data Source</label>
+                <input
+                  className={styles.input}
+                  id="source"
+                  placeholder="Internal Review"
+                  value={source}
+                  onChange={(event) => setSource(event.target.value)}
+                />
               </div>
-            </div>
-            <div className={styles.field}>
-              <label className={styles.label} htmlFor="source">Data Source</label>
-              <input className={styles.input} id="source" placeholder="Internal Review" />
-            </div>
-            <div className={styles.inlineActions}>
-              <button className={styles.primaryButton}>Append Entry</button>
-              <span className={`${styles.badge} ${styles.badgeMuted}`}>Immutable Log</span>
-            </div>
+              <div className={styles.inlineActions}>
+                <button className={styles.primaryButton} type="submit" disabled={isSubmitting}>
+                  {isSubmitting ? 'Appending...' : 'Append Entry'}
+                </button>
+                <span className={`${styles.badge} ${styles.badgeMuted}`}>Immutable Log</span>
+                {statusMessage && <span className={`${styles.badge} ${styles.badgeMuted}`}>{statusMessage}</span>}
+              </div>
+            </form>
           </div>
         </section>
       </main>

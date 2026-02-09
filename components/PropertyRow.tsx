@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import styles from './PropertyRow.module.css';
 
 interface PropertyRowProps {
-  id: number;
+  id: string;
   name: string;
   location: string;
   type: string;

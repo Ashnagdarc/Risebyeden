@@ -1,11 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Sidebar from '@/components/Sidebar';
 import styles from './page.module.css';
 
 interface Update {
-  id: number;
+  id: string;
   type: 'feature' | 'market' | 'policy' | 'maintenance';
   title: string;
   description: string;
@@ -13,63 +13,79 @@ interface Update {
   isNew: boolean;
 }
 
+const normalizeType = (value: string) => {
+  switch (value.toLowerCase()) {
+    case 'market':
+      return 'market';
+    case 'policy':
+      return 'policy';
+    case 'maintenance':
+      return 'maintenance';
+    default:
+      return 'feature';
+  }
+};
+
+const formatRelativeTime = (value: string) => {
+  const date = new Date(value);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffMinutes = Math.floor(diffMs / 60000);
+  if (diffMinutes < 60) {
+    return `${diffMinutes} minutes ago`;
+  }
+  const diffHours = Math.floor(diffMinutes / 60);
+  if (diffHours < 24) {
+    return `${diffHours} hours ago`;
+  }
+  const diffDays = Math.floor(diffHours / 24);
+  return `${diffDays} days ago`;
+};
+
 export default function UpdatesPage() {
   const [filter, setFilter] = useState<'all' | Update['type']>('all');
+  const [updates, setUpdates] = useState<Update[]>([]);
 
-  const updates: Update[] = [
-    {
-      id: 1,
-      type: 'feature',
-      title: 'New Portfolio Analytics Dashboard',
-      description: 'Introducing advanced analytics with AI-powered insights, trend predictions, and customizable reports for your investment portfolio.',
-      date: '2 hours ago',
-      isNew: true
-    },
-    {
-      id: 2,
-      type: 'market',
-      title: 'Q4 2024 Market Report Available',
-      description: 'Our comprehensive quarterly report is now available, featuring analysis of emerging markets, property valuations, and investment opportunities.',
-      date: '1 day ago',
-      isNew: true
-    },
-    {
-      id: 3,
-      type: 'policy',
-      title: 'Updated Investment Terms',
-      description: 'We\'ve updated our investment terms to provide better transparency and improved investor protections. Review the changes in your account settings.',
-      date: '3 days ago',
-      isNew: false
-    },
-    {
-      id: 4,
-      type: 'feature',
-      title: 'Enhanced Property Search Filters',
-      description: 'Find properties faster with new advanced filters including ROI projections, neighborhood scores, and sustainability ratings.',
-      date: '1 week ago',
-      isNew: false
-    },
-    {
-      id: 5,
-      type: 'maintenance',
-      title: 'Scheduled Maintenance Complete',
-      description: 'Platform maintenance has been completed successfully. All systems are now running with improved performance and security updates.',
-      date: '2 weeks ago',
-      isNew: false
-    },
-    {
-      id: 6,
-      type: 'market',
-      title: 'New Premium Properties Listed',
-      description: '15 new exclusive properties have been added to our listings, including luxury condos in Manhattan and beachfront villas in Miami.',
-      date: '2 weeks ago',
-      isNew: false
-    }
-  ];
+  useEffect(() => {
+    let isMounted = true;
 
-  const filteredUpdates = filter === 'all' 
-    ? updates 
-    : updates.filter(update => update.type === filter);
+    fetch('/api/updates')
+      .then(async (res) => {
+        if (!res.ok) {
+          throw new Error('Failed to fetch updates');
+        }
+        return res.json();
+      })
+      .then((data) => {
+        if (!isMounted) {
+          return;
+        }
+        const nextUpdates = (data.updates || []).map((update: { id: string; type: string; title: string; description: string; isNew: boolean; createdAt: string }) => ({
+          id: update.id,
+          type: normalizeType(update.type),
+          title: update.title,
+          description: update.description,
+          date: formatRelativeTime(update.createdAt),
+          isNew: update.isNew,
+        }));
+        setUpdates(nextUpdates);
+      })
+      .catch(() => {
+        if (isMounted) {
+          setUpdates([]);
+        }
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const filteredUpdates = useMemo(() => {
+    return filter === 'all'
+      ? updates
+      : updates.filter(update => update.type === filter);
+  }, [filter, updates]);
 
   const getTypeIcon = (type: Update['type']) => {
     switch (type) {

@@ -6,6 +6,7 @@ import Header from '@/components/Header';
 import StatSlab from '@/components/StatSlab';
 import PropertyRow from '@/components/PropertyRow';
 import { authOptions } from '@/lib/auth';
+import prisma from '@/lib/prisma';
 import styles from './page.module.css';
 
 export default async function Home() {
@@ -19,39 +20,86 @@ export default async function Home() {
   if (role === 'admin') {
     redirect('/admin');
   }
+  const userId = (session?.user as { id?: string } | undefined)?.id;
+  if (!userId) {
+    redirect('/auth');
+  }
 
-  const properties = [
-    {
-      id: 1,
-      name: "The Obsidian Heights",
-      location: "Tribeca, New York",
-      type: "Mixed Use",
-      appreciation: "+22.4%",
-      capRate: "5.2%",
-      valuation: "$4.2M",
-      gradientClass: styles.propGradientObsidian
+  const clientProperties = await prisma.clientProperty.findMany({
+    where: { userId },
+    select: {
+      property: {
+        select: {
+          id: true,
+          name: true,
+          location: true,
+          city: true,
+          state: true,
+          propertyType: true,
+          appreciation: true,
+          capRate: true,
+          basePrice: true,
+          occupancy: true,
+        },
+      },
     },
-    {
-      id: 2,
-      name: "Veridian Atrium",
-      location: "Mayfair, London",
-      type: "Residential",
-      appreciation: "+11.8%",
-      capRate: "4.8%",
-      valuation: "$5.1M",
-      gradientClass: styles.propGradientVeridian
-    },
-    {
-      id: 3,
-      name: "The Gilded Loft",
-      location: "Shinjuku, Tokyo",
-      type: "Commercial",
-      appreciation: "+9.1%",
-      capRate: "6.1%",
-      valuation: "$3.5M",
-      gradientClass: styles.propGradientGilded
-    }
+  });
+
+  const gradientClasses = [
+    styles.propGradientObsidian,
+    styles.propGradientVeridian,
+    styles.propGradientGilded,
   ];
+
+  const properties = clientProperties.map((entry, index) => {
+    const property = entry.property;
+    const locationParts = [property.location, property.city, property.state].filter(Boolean);
+    const valuation = property.basePrice ? Number(property.basePrice) : 0;
+    return {
+      id: property.id,
+      name: property.name,
+      location: locationParts.join(', ') || 'Location pending',
+      type: property.propertyType || 'Residential',
+      appreciation: `+${(property.appreciation || 0).toFixed(1)}%`,
+      capRate: `${(property.capRate || 0).toFixed(1)}%`,
+      valuation: valuation >= 1000000 ? `$${(valuation / 1000000).toFixed(1)}M` : `$${valuation.toLocaleString()}`,
+      gradientClass: gradientClasses[index % gradientClasses.length],
+      occupancy: property.occupancy || 0,
+      capRateValue: property.capRate || 0,
+      appreciationValue: property.appreciation || 0,
+    };
+  });
+
+  const avgOccupancy = properties.length
+    ? properties.reduce((sum, property) => sum + property.occupancy, 0) / properties.length
+    : 0;
+  const avgCapRate = properties.length
+    ? properties.reduce((sum, property) => sum + property.capRateValue, 0) / properties.length
+    : 0;
+  const avgAppreciation = properties.length
+    ? properties.reduce((sum, property) => sum + property.appreciationValue, 0) / properties.length
+    : 0;
+
+  const updates = await prisma.announcement.findMany({
+    orderBy: { createdAt: 'desc' },
+    take: 3,
+    select: { id: true, title: true, createdAt: true },
+  });
+
+  const formatRelativeTime = (value: Date) => {
+    const now = new Date();
+    const diffMs = now.getTime() - value.getTime();
+    const diffMinutes = Math.floor(diffMs / 60000);
+    if (diffMinutes < 60) {
+      return `${diffMinutes} minutes ago`;
+    }
+    const diffHours = Math.floor(diffMinutes / 60);
+    if (diffHours < 24) {
+      return `${diffHours} hours ago`;
+    }
+    const diffDays = Math.floor(diffHours / 24);
+    return `${diffDays} days ago`;
+  };
 
   return (
     <div className={styles.container}>
@@ -62,11 +110,11 @@ export default async function Home() {
         
         <section className={styles.gridLayout}>
           {/* Stat Slabs */}
-          <StatSlab label="Net Annual Yield" value="6.82%" delay={0}>
+          <StatSlab label="Avg Cap Rate" value={`${avgCapRate.toFixed(2)}%`} delay={0}>
             <div className={styles.chartLine}></div>
           </StatSlab>
           
-          <StatSlab label="Portfolio LTV" value="52.4%" delay={0.1}>
+          <StatSlab label="Avg Appreciation" value={`+${avgAppreciation.toFixed(2)}%`} delay={0.1}>
             <div className={styles.barChart}>
               <div className={`${styles.barSegment} ${styles.barLow}`}></div>
               <div className={`${styles.barSegment} ${styles.barMid}`}></div>
@@ -75,7 +123,7 @@ export default async function Home() {
             </div>
           </StatSlab>
           
-          <StatSlab label="Occupancy Rate" value="98.1%" delay={0.2}>
+          <StatSlab label="Avg Occupancy" value={`${avgOccupancy.toFixed(1)}%`} delay={0.2}>
             <div className={styles.operational}>
               <span className={styles.pulse}></span>
               All systems operational
@@ -132,27 +180,24 @@ export default async function Home() {
           <div className={styles.activityPanel}>
             <h3 className={styles.panelTitle}>Recent Activity</h3>
             <div className={styles.activityList}>
-              <div className={styles.activityItem}>
-                <span className={styles.activityDot}></span>
-                <div className={styles.activityContent}>
-                  <p className={styles.activityText}>Portfolio valuation increased by $142K</p>
-                  <p className={styles.activityTime}>2 hours ago</p>
+              {updates.length === 0 && (
+                <div className={styles.activityItem}>
+                  <span className={styles.activityDot}></span>
+                  <div className={styles.activityContent}>
+                    <p className={styles.activityText}>No updates yet.</p>
+                    <p className={styles.activityTime}>Check back soon</p>
+                  </div>
                 </div>
-              </div>
-              <div className={styles.activityItem}>
-                <span className={styles.activityDot}></span>
-                <div className={styles.activityContent}>
-                  <p className={styles.activityText}>Valuation update posted - Obsidian Heights</p>
-                  <p className={styles.activityTime}>Yesterday</p>
+              )}
+              {updates.map((update) => (
+                <div key={update.id} className={styles.activityItem}>
+                  <span className={styles.activityDot}></span>
+                  <div className={styles.activityContent}>
+                    <p className={styles.activityText}>{update.title}</p>
+                    <p className={styles.activityTime}>{formatRelativeTime(update.createdAt)}</p>
+                  </div>
                 </div>
-              </div>
-              <div className={styles.activityItem}>
-                <span className={styles.activityDot}></span>
-                <div className={styles.activityContent}>
-                  <p className={styles.activityText}>New acquisition approved - Meridian Towers</p>
-                  <p className={styles.activityTime}>3 days ago</p>
-                </div>
-              </div>
+              ))}
             </div>
           </div>
 
@@ -164,7 +209,17 @@ export default async function Home() {
             </div>
 
             {properties.map((property) => (
-              <PropertyRow key={property.id} {...property} />
+              <PropertyRow
+                key={property.id}
+                id={property.id}
+                name={property.name}
+                location={property.location}
+                type={property.type}
+                appreciation={property.appreciation}
+                capRate={property.capRate}
+                valuation={property.valuation}
+                gradientClass={property.gradientClass}
+              />
             ))}
           </div>
         </section>

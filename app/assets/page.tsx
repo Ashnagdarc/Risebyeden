@@ -1,22 +1,30 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
 import styles from './page.module.css';
 
 interface Asset {
-  id: number;
+  id: string;
   name: string;
   location: string;
   city: string;
-  type: 'Residential' | 'Commercial' | 'Mixed Use' | 'Industrial';
+  type: string;
   appreciation: number;
   capRate: number;
   valuation: number;
   occupancy: number;
   acquired: string;
   gradient: string;
+  imageUrl?: string | null;
+}
+
+interface PortfolioStats {
+  totalValue: number;
+  avgOccupancy: number;
+  avgCapRate: number;
+  avgAppreciation: number;
 }
 
 export default function AssetsPage() {
@@ -24,87 +32,53 @@ export default function AssetsPage() {
   const [filter, setFilter] = useState<string>('all');
   const [sortBy, setSortBy] = useState<string>('valuation');
   const [searchQuery, setSearchQuery] = useState('');
+  const [assets, setAssets] = useState<Asset[]>([]);
+  const [stats, setStats] = useState<PortfolioStats>({
+    totalValue: 0,
+    avgOccupancy: 0,
+    avgCapRate: 0,
+    avgAppreciation: 0,
+  });
 
-  const assets: Asset[] = [
-    {
-      id: 1,
-      name: 'The Obsidian Heights',
-      location: 'Tribeca',
-      city: 'New York',
-      type: 'Mixed Use',
-      appreciation: 22.4,
-      capRate: 5.2,
-      valuation: 4200000,
-      occupancy: 100,
-      acquired: 'Mar 2023',
-      gradient: 'obsidian'
-    },
-    {
-      id: 2,
-      name: 'Veridian Atrium',
-      location: 'Mayfair',
-      city: 'London',
-      type: 'Residential',
-      appreciation: 11.8,
-      capRate: 4.8,
-      valuation: 5100000,
-      occupancy: 100,
-      acquired: 'Jun 2022',
-      gradient: 'veridian'
-    },
-    {
-      id: 3,
-      name: 'The Gilded Loft',
-      location: 'Shinjuku',
-      city: 'Tokyo',
-      type: 'Commercial',
-      appreciation: 9.1,
-      capRate: 6.1,
-      valuation: 3500000,
-      occupancy: 95,
-      acquired: 'Sep 2023',
-      gradient: 'gilded'
-    },
-    {
-      id: 4,
-      name: 'Aurora Commercial Plaza',
-      location: 'Marina District',
-      city: 'San Francisco',
-      type: 'Commercial',
-      appreciation: 8.4,
-      capRate: 5.8,
-      valuation: 6800000,
-      occupancy: 92,
-      acquired: 'Jan 2022',
-      gradient: 'aurora'
-    },
-    {
-      id: 5,
-      name: 'Meridian Towers',
-      location: 'Downtown',
-      city: 'Dubai',
-      type: 'Residential',
-      appreciation: 15.2,
-      capRate: 5.5,
-      valuation: 8200000,
-      occupancy: 98,
-      acquired: 'Nov 2021',
-      gradient: 'meridian'
-    },
-    {
-      id: 6,
-      name: 'The Slate Complex',
-      location: 'Canary Wharf',
-      city: 'London',
-      type: 'Industrial',
-      appreciation: 6.8,
-      capRate: 7.2,
-      valuation: 4500000,
-      occupancy: 100,
-      acquired: 'Aug 2023',
-      gradient: 'slate'
-    }
-  ];
+  useEffect(() => {
+    let isMounted = true;
+
+    fetch('/api/client/portfolio')
+      .then(async (res) => {
+        if (!res.ok) {
+          throw new Error('Failed to fetch portfolio');
+        }
+        return res.json();
+      })
+      .then((data) => {
+        if (!isMounted) {
+          return;
+        }
+
+        const gradients = ['obsidian', 'veridian', 'gilded', 'aurora', 'meridian', 'slate'];
+        const nextAssets = (data.assets || []).map((asset: Asset, index: number) => ({
+          ...asset,
+          gradient: gradients[index % gradients.length],
+        }));
+
+        setAssets(nextAssets);
+        setStats({
+          totalValue: data.stats?.totalValue || 0,
+          avgOccupancy: data.stats?.avgOccupancy || 0,
+          avgCapRate: data.stats?.avgCapRate || 0,
+          avgAppreciation: data.stats?.avgAppreciation || 0,
+        });
+      })
+      .catch(() => {
+        if (isMounted) {
+          setAssets([]);
+        }
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const formatCurrency = (value: number) => {
     if (value >= 1000000) {
@@ -113,15 +87,27 @@ export default function AssetsPage() {
     return `$${value.toLocaleString()}`;
   };
 
-  const totalValue = assets.reduce((sum, asset) => sum + asset.valuation, 0);
-  const avgOccupancy = assets.reduce((sum, asset) => sum + asset.occupancy, 0) / assets.length;
-  const avgCapRate = assets.reduce((sum, asset) => sum + asset.capRate, 0) / assets.length;
-  const avgAppreciation = assets.reduce((sum, asset) => sum + asset.appreciation, 0) / assets.length;
+  const totalValue = stats.totalValue;
+  const avgOccupancy = stats.avgOccupancy;
+  const avgCapRate = stats.avgCapRate;
+  const avgAppreciation = stats.avgAppreciation;
 
-  const typeDistribution = assets.reduce((acc, asset) => {
-    acc[asset.type] = (acc[asset.type] || 0) + asset.valuation;
-    return acc;
-  }, {} as Record<string, number>);
+  const typeDistribution = useMemo(() => {
+    return assets.reduce((acc, asset) => {
+      acc[asset.type] = (acc[asset.type] || 0) + asset.valuation;
+      return acc;
+    }, {} as Record<string, number>);
+  }, [assets]);
+
+  const typeOptions = useMemo(() => {
+    const options = new Set(assets.map((asset) => asset.type).filter(Boolean));
+    return Array.from(options);
+  }, [assets]);
+
+  const cityOptions = useMemo(() => {
+    const options = new Set(assets.map((asset) => asset.city).filter(Boolean));
+    return Array.from(options);
+  }, [assets]);
 
   const filteredAssets = assets
     .filter(asset => filter === 'all' || asset.type === filter)
@@ -224,7 +210,7 @@ export default function AssetsPage() {
             <h3 className={styles.sectionTitle}>Asset Type Distribution</h3>
             <div className={styles.distributionChart}>
               {Object.entries(typeDistribution).map(([type, value]) => {
-                const percentage = (value / totalValue) * 100;
+                const percentage = totalValue ? (value / totalValue) * 100 : 0;
                 return (
                   <div key={type} className={styles.distributionItem}>
                     <div className={styles.distributionInfo}>
@@ -247,7 +233,7 @@ export default function AssetsPage() {
           <div className={styles.distributionCard}>
             <h3 className={styles.sectionTitle}>Geographic Spread</h3>
             <div className={styles.geoList}>
-              {['New York', 'London', 'Tokyo', 'San Francisco', 'Dubai'].map(city => {
+              {cityOptions.map(city => {
                 const cityAssets = assets.filter(a => a.city === city);
                 const cityValue = cityAssets.reduce((sum, a) => sum + a.valuation, 0);
                 return (
@@ -281,10 +267,9 @@ export default function AssetsPage() {
               aria-label="Filter by asset type"
             >
               <option value="all">All Types</option>
-              <option value="Residential">Residential</option>
-              <option value="Commercial">Commercial</option>
-              <option value="Mixed Use">Mixed Use</option>
-              <option value="Industrial">Industrial</option>
+              {typeOptions.map((type) => (
+                <option key={type} value={type}>{type}</option>
+              ))}
             </select>
             <select 
               value={sortBy} 
@@ -308,6 +293,13 @@ export default function AssetsPage() {
               onClick={() => router.push(`/acquire/${asset.id}`)}
             >
               <div className={`${styles.assetImage} ${getGradientClass(asset.gradient)}`}>
+                {asset.imageUrl ? (
+                  <img
+                    className={styles.assetImagePhoto}
+                    src={asset.imageUrl}
+                    alt={asset.name}
+                  />
+                ) : null}
                 <span className={`${styles.typeBadge} ${getTypeColor(asset.type)}`}>{asset.type}</span>
               </div>
               <div className={styles.assetContent}>
