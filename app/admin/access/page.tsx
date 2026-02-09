@@ -41,6 +41,8 @@ export default function AdminAccess() {
 
   useEffect(() => {
     fetchUsers();
+    const interval = setInterval(fetchUsers, 15000);
+    return () => clearInterval(interval);
   }, [fetchUsers]);
 
   const handleProvision = async () => {

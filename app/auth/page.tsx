@@ -80,8 +80,17 @@ export default function AuthPage() {
                 <span className={styles.welcomeName}>{organization || 'Your Organization'}</span>
               </h2>
               <p className={styles.welcomeSubtitle}>
-                Your access request has been submitted. An admin will review and authorize your account. You will be able to log in once approved.
+                Your access request is queued. We are waiting for neural handshake confirmation from an admin.
               </p>
+              <div className={styles.welcomeStatus}>
+                <span className={styles.welcomePulse} />
+                <span>Awaiting admin confirmation</span>
+                <span className={styles.welcomeDots} aria-hidden="true">
+                  <span>.</span>
+                  <span>.</span>
+                  <span>.</span>
+                </span>
+              </div>
               <div className={styles.welcomeActions}>
                 <button
                   type="button"

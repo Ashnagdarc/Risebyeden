@@ -23,6 +23,149 @@
   mix-blend-mode: soft-light;
 }
 
+.welcomeScreen {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px;
+  background: radial-gradient(circle at 15% 20%, rgba(197, 163, 104, 0.08), transparent 55%);
+  pointer-events: none;
+}
+
+.welcomeContent {
+  max-width: 520px;
+  padding: 28px 32px;
+  background: rgba(10, 10, 10, 0.9);
+  border: 1px solid rgba(197, 163, 104, 0.18);
+  border-radius: 10px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55);
+  pointer-events: auto;
+}
+
+.welcomeKicker {
+  font-family: var(--mono-font);
+  font-size: var(--type-kicker-size);
+  letter-spacing: var(--type-kicker-track);
+  text-transform: uppercase;
+  color: var(--accent-gold);
+  margin-bottom: 12px;
+}
+
+.welcomeTitle {
+  margin: 0 0 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.welcomeLabel {
+  font-size: 18px;
+  letter-spacing: -0.02em;
+  color: var(--text-secondary);
+}
+
+.welcomeName {
+  font-size: 32px;
+  letter-spacing: -0.03em;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.welcomeSubtitle {
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--text-secondary);
+  margin-bottom: 18px;
+}
+
+.welcomeStatus {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  font-family: var(--mono-font);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.65);
+  margin-bottom: 18px;
+}
+
+.welcomePulse {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent-gold);
+  box-shadow: 0 0 12px rgba(197, 163, 104, 0.6);
+  animation: pulseGlow 1.6s ease-in-out infinite;
+}
+
+.welcomeDots span {
+  display: inline-block;
+  animation: dotPulse 1.4s infinite;
+}
+
+.welcomeDots span:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.welcomeDots span:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+.welcomeActions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.welcomeAction {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: var(--text-primary);
+  padding: 10px 16px;
+  border-radius: 999px;
+  font-family: var(--mono-font);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.welcomeAction:hover {
+  border-color: rgba(197, 163, 104, 0.6);
+  color: var(--accent-gold);
+}
+
+@keyframes pulseGlow {
+  0%,
+  100% {
+    opacity: 0.6;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.2);
+  }
+}
+
+@keyframes dotPulse {
+  0%,
+  100% {
+    opacity: 0.2;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
 
 .heroSection {
   position: relative;
