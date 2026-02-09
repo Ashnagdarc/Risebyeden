@@ -46,6 +46,16 @@ pnpm install
 
 ```bash
 npm run dev
+
+## MCP Server (Sentry)
+
+An MCP server is available under [mcp-server](mcp-server).
+
+```
+cd mcp-server
+npm install
+SENTRY_DSN=your_dsn_here npm run start
+```
 # or
 yarn dev
 # or
