@@ -2,7 +2,8 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { signIn, useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
+import { signIn } from 'next-auth/react';
 import styles from './page.module.css';
 
 type AuthMode = 'login' | 'enlist';
@@ -13,18 +14,9 @@ export default function AuthPage() {
   const [accessKey, setAccessKey] = useState('');
   const [organization, setOrganization] = useState('');
   const [accessToken, setAccessToken] = useState('');
-  const [showWelcome, setShowWelcome] = useState(false);
   const [enlistSuccess, setEnlistSuccess] = useState(false);
   const [authError, setAuthError] = useState('');
-  const { data: session } = useSession();
-
-  const getDisplayName = (value: string) => {
-    const trimmed = value.trim();
-    if (!trimmed) return 'Investor';
-    return trimmed.replace(/[^a-zA-Z0-9._\- ]/g, '') || 'Investor';
-  };
-
-  const displayName = getDisplayName(identifier);
+  const router = useRouter();
 
   const handleLogin = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -38,7 +30,7 @@ export default function AuthPage() {
     });
 
     if (result?.ok) {
-      setShowWelcome(true);
+      router.replace('/');
     } else {
       setAuthError('Invalid User ID or Access Key. Verify your credentials.');
     }
@@ -78,39 +70,6 @@ export default function AuthPage() {
     <div className={styles.container}>
       <main className={styles.main}>
         <div className={styles.grain} aria-hidden="true" />
-
-        {showWelcome && (
-          <div className={styles.welcomeScreen}>
-            <div className={styles.welcomeContent}>
-              <p className={styles.welcomeKicker}>ACCESS GRANTED</p>
-              <h2 className={styles.welcomeTitle}>
-                <span className={styles.welcomeLabel}>Welcome</span>
-                <span className={styles.welcomeName}>{displayName}</span>
-              </h2>
-              <p className={styles.welcomeSubtitle}>
-                Your secure session is established. You now have full access to Rise by Eden.
-              </p>
-              <div className={styles.welcomeActions}>
-                {(session?.user as { role?: string } | undefined)?.role === 'admin' ? (
-                  <Link href="/admin" className={styles.welcomeAction}>
-                    Enter Admin
-                  </Link>
-                ) : (
-                  <Link href="/" className={styles.welcomeAction}>
-                    Enter Dashboard
-                  </Link>
-                )}
-                <button
-                  type="button"
-                  className={styles.welcomeDismiss}
-                  onClick={() => setShowWelcome(false)}
-                >
-                  Dismiss
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
 
         {enlistSuccess && (
           <div className={styles.welcomeScreen}>

@@ -1,11 +1,25 @@
 import Link from 'next/link';
+import { getServerSession } from 'next-auth/next';
+import { redirect } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
 import Header from '@/components/Header';
 import StatSlab from '@/components/StatSlab';
 import PropertyRow from '@/components/PropertyRow';
+import { authOptions } from '@/lib/auth';
 import styles from './page.module.css';
 
-export default function Home() {
+export default async function Home() {
+  const session = await getServerSession(authOptions);
+  const role = (session?.user as { role?: string } | undefined)?.role;
+
+  if (!session) {
+    redirect('/auth');
+  }
+
+  if (role === 'admin') {
+    redirect('/admin');
+  }
+
   const properties = [
     {
       id: 1,
