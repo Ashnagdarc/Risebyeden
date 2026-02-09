@@ -53,7 +53,7 @@
 }
 
 .operational {
-  font-size: 11px;
+  font-size: var(--type-section-size);
   color: #4ade80;
 }
 
@@ -81,9 +81,9 @@
 }
 
 .propertyHeader h2 {
-  font-size: 14px;
+  font-size: var(--type-section-size);
   text-transform: uppercase;
-  letter-spacing: 0.1em;
+  letter-spacing: var(--type-section-track);
   color: var(--text-secondary);
 }
 
@@ -101,10 +101,11 @@
 
 .viewAll {
   font-family: var(--mono-font);
-  font-size: 12px;
+  font-size: var(--type-button-size);
   color: var(--accent-gold);
   cursor: pointer;
   text-decoration: none;
+  letter-spacing: var(--type-button-track);
 }
 
 .viewAll:hover {
@@ -122,8 +123,8 @@
 }
 
 .panelTitle {
-  font-size: 11px;
-  letter-spacing: 0.2em;
+  font-size: var(--type-section-size);
+  letter-spacing: var(--type-section-track);
   text-transform: uppercase;
   color: var(--accent-gold);
   font-family: var(--mono-font);

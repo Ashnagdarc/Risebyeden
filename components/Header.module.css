@@ -7,18 +7,18 @@
 }
 
 .portfolioTotal {
-  font-size: 12px;
+  font-size: var(--type-kicker-size);
   text-transform: uppercase;
-  letter-spacing: 0.2em;
+  letter-spacing: var(--type-kicker-track);
   color: var(--text-secondary);
   margin-bottom: 8px;
   display: block;
 }
 
 .portfolioValue {
-  font-size: 4rem;
+  font-size: var(--type-display-size);
   font-weight: 300;
-  letter-spacing: -0.04em;
+  letter-spacing: var(--type-display-track);
   display: flex;
   align-items: baseline;
   gap: 12px;
@@ -26,12 +26,12 @@
 
 .delta {
   font-family: var(--mono-font);
-  font-size: 14px;
+  font-size: var(--type-subtitle-size);
   color: #4ade80;
   background: rgba(74, 222, 128, 0.1);
   padding: 4px 12px;
   border-radius: 100px;
-  letter-spacing: 0;
+  letter-spacing: var(--type-section-track);
 }
 
 .glassButton {
@@ -40,7 +40,7 @@
   color: white;
   padding: 12px 24px;
   border-radius: 100px;
-  font-size: 13px;
+  font-size: var(--type-button-size);
   font-weight: 500;
   cursor: pointer;
   box-shadow: 4px 4px 10px rgba(0,0,0,0.5);
@@ -49,6 +49,7 @@
   align-items: center;
   gap: 8px;
   text-decoration: none;
+  letter-spacing: var(--type-button-track);
 }
 
 .glassButton:hover {

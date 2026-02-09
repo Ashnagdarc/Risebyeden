@@ -19,22 +19,22 @@
 
 .kicker {
   font-family: var(--mono-font);
-  font-size: 11px;
-  letter-spacing: 0.3em;
+  font-size: var(--type-kicker-size);
+  letter-spacing: var(--type-kicker-track);
   color: var(--accent-gold);
   text-transform: uppercase;
   margin-bottom: 12px;
 }
 
 .pageTitle {
-  font-size: 32px;
+  font-size: var(--type-display-size);
   font-weight: 300;
-  letter-spacing: -0.04em;
+  letter-spacing: var(--type-display-track);
   margin-bottom: 8px;
 }
 
 .subtitle {
-  font-size: 14px;
+  font-size: var(--type-subtitle-size);
   color: var(--text-secondary);
   max-width: 520px;
 }
@@ -42,9 +42,9 @@
 .primaryButton {
   padding: 14px 24px;
   border-radius: 6px;
-  font-size: 12px;
+  font-size: var(--type-button-size);
   text-transform: uppercase;
-  letter-spacing: 0.18em;
+  letter-spacing: var(--type-button-track);
   font-family: var(--mono-font);
   cursor: pointer;
   background: var(--accent-gold);
@@ -74,8 +74,8 @@
 }
 
 .statLabel {
-  font-size: 10px;
-  letter-spacing: 0.2em;
+  font-size: var(--type-section-size);
+  letter-spacing: var(--type-section-track);
   text-transform: uppercase;
   color: var(--text-secondary);
   font-family: var(--mono-font);
@@ -111,8 +111,8 @@
 }
 
 .sectionTitle {
-  font-size: 12px;
-  letter-spacing: 0.24em;
+  font-size: var(--type-section-size);
+  letter-spacing: var(--type-section-track);
   text-transform: uppercase;
   color: var(--accent-gold);
   font-family: var(--mono-font);
@@ -145,10 +145,10 @@
 
 .tableHeader {
   font-family: var(--mono-font);
-  font-size: 10px;
+  font-size: var(--type-section-size);
   color: var(--text-secondary);
   text-transform: uppercase;
-  letter-spacing: 0.2em;
+  letter-spacing: var(--type-section-track);
   padding: 8px 6px;
 }
 
@@ -170,9 +170,9 @@
   gap: 6px;
   padding: 4px 10px;
   border-radius: 999px;
-  font-size: 10px;
+  font-size: var(--type-section-size);
   text-transform: uppercase;
-  letter-spacing: 0.1em;
+  letter-spacing: var(--type-section-track);
   font-family: var(--mono-font);
 }
 
@@ -204,10 +204,10 @@
 }
 
 .label {
-  font-size: 12px;
+  font-size: var(--type-section-size);
   font-family: var(--mono-font);
   text-transform: uppercase;
-  letter-spacing: 0.2em;
+  letter-spacing: var(--type-section-track);
   color: var(--text-secondary);
 }
 
