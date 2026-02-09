@@ -87,6 +87,7 @@ model User {
   transactions    Transaction[]
   documents       Document[]
   organizationMembers OrganizationMember[]
+  interestRequests InterestRequest[]
 }
 
 model Organization {

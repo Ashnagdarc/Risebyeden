@@ -16,7 +16,7 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Obsidian Portfolio",
+  title: "Risebyeden",
   description: "Minimal dark theme property investment portfolio dashboard",
 };
 

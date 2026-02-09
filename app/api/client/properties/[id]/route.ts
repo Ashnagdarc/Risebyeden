@@ -11,14 +11,22 @@ async function requireUser() {
   return session;
 }
 
-export async function GET(_request: Request, { params }: { params: { id: string } }) {
+export async function GET(
+  _request: Request,
+  { params }: { params: Promise<{ id?: string }> }
+) {
+  const { id } = (await params) ?? {};
+  if (!id) {
+    return NextResponse.json({ error: 'Missing property id' }, { status: 400 });
+  }
+
   const session = await requireUser();
   if (!session) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   const property = await prisma.property.findUnique({
-    where: { id: params.id },
+    where: { id },
     select: {
       id: true,
       name: true,

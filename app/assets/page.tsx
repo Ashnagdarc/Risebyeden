@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import Sidebar from '@/components/Sidebar';
 import styles from './page.module.css';
 
@@ -294,10 +295,12 @@ export default function AssetsPage() {
             >
               <div className={`${styles.assetImage} ${getGradientClass(asset.gradient)}`}>
                 {asset.imageUrl ? (
-                  <img
+                  <Image
                     className={styles.assetImagePhoto}
                     src={asset.imageUrl}
                     alt={asset.name}
+                    fill
+                    sizes="(max-width: 1024px) 100vw, 33vw"
                   />
                 ) : null}
                 <span className={`${styles.typeBadge} ${getTypeColor(asset.type)}`}>{asset.type}</span>

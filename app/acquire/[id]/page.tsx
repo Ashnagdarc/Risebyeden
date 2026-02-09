@@ -115,7 +115,7 @@ export default function PropertyDetails() {
       }
 
       setIsSubmitted(true);
-    } catch (error) {
+    } catch {
       alert('Unable to submit interest at the moment. Please try again.');
     } finally {
       setIsSubmitting(false);
