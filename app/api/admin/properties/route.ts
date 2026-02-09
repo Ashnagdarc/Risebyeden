@@ -34,6 +34,12 @@ export async function GET() {
       location: true,
       status: true,
       basePrice: true,
+      description: true,
+      documents: {
+        where: { type: 'OTHER' },
+        select: { id: true, url: true },
+        orderBy: { createdAt: 'asc' },
+      },
       createdAt: true,
     },
     orderBy: { createdAt: 'desc' },
@@ -55,6 +61,7 @@ export async function POST(request: Request) {
     description?: string;
     status?: 'AVAILABLE' | 'RESERVED' | 'SOLD';
     basePrice?: string | number | null;
+    imageUrls?: string[];
   };
 
   if (!body.name) {
@@ -68,6 +75,10 @@ export async function POST(request: Request) {
       ? Number(basePriceRaw)
       : null;
 
+  const imageUrls = Array.isArray(body.imageUrls)
+    ? body.imageUrls.map((url) => url.trim()).filter(Boolean)
+    : [];
+
   const property = await prisma.property.create({
     data: {
       name: body.name.trim(),
@@ -76,6 +87,15 @@ export async function POST(request: Request) {
       description: body.description?.trim() || null,
       status: body.status || 'AVAILABLE',
       basePrice,
+      documents: imageUrls.length
+        ? {
+            create: imageUrls.map((url, index) => ({
+              name: `${body.name?.trim() || 'Property'} Image ${index + 1}`,
+              url,
+              type: 'OTHER',
+            })),
+          }
+        : undefined,
     },
     select: {
       id: true,
@@ -87,4 +107,94 @@ export async function POST(request: Request) {
   });
 
   return NextResponse.json({ property });
+}
+
+export async function PATCH(request: Request) {
+  const session = await requireAdmin();
+  if (!session) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  const body = (await request.json()) as {
+    id?: string;
+    name?: string;
+    slug?: string;
+    location?: string;
+    description?: string;
+    status?: 'AVAILABLE' | 'RESERVED' | 'SOLD';
+    basePrice?: string | number | null;
+    imageUrls?: string[];
+  };
+
+  if (!body.id) {
+    return NextResponse.json({ error: 'Property id is required' }, { status: 400 });
+  }
+
+  const basePriceRaw = body.basePrice ?? null;
+  const basePrice = basePriceRaw === null
+    ? null
+    : Number.isFinite(Number(basePriceRaw))
+      ? Number(basePriceRaw)
+      : null;
+
+  const imageUrls = Array.isArray(body.imageUrls)
+    ? body.imageUrls.map((url) => url.trim()).filter(Boolean)
+    : null;
+
+  if (imageUrls) {
+    await prisma.document.deleteMany({
+      where: { propertyId: body.id, type: 'OTHER' },
+    });
+  }
+
+  const property = await prisma.property.update({
+    where: { id: body.id },
+    data: {
+      name: body.name?.trim() || undefined,
+      slug: body.slug ? slugify(body.slug) : undefined,
+      location: body.location?.trim() || null,
+      description: body.description?.trim() || null,
+      status: body.status || undefined,
+      basePrice,
+      documents: imageUrls && imageUrls.length
+        ? {
+            create: imageUrls.map((url, index) => ({
+              name: `${body.name?.trim() || 'Property'} Image ${index + 1}`,
+              url,
+              type: 'OTHER',
+            })),
+          }
+        : undefined,
+    },
+    select: {
+      id: true,
+      name: true,
+      slug: true,
+      status: true,
+      basePrice: true,
+    },
+  });
+
+  return NextResponse.json({ property });
+}
+
+export async function DELETE(request: Request) {
+  const session = await requireAdmin();
+  if (!session) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  const body = (await request.json()) as { id?: string };
+
+  if (!body.id) {
+    return NextResponse.json({ error: 'Property id is required' }, { status: 400 });
+  }
+
+  await prisma.document.deleteMany({ where: { propertyId: body.id } });
+  await prisma.clientProperty.deleteMany({ where: { propertyId: body.id } });
+  await prisma.transaction.deleteMany({ where: { propertyId: body.id } });
+
+  await prisma.property.delete({ where: { id: body.id } });
+
+  return NextResponse.json({ ok: true });
 }

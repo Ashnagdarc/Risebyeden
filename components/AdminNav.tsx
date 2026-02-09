@@ -6,7 +6,7 @@ import styles from './AdminNav.module.css';
 
 const navItems = [
   { href: '/admin', label: 'Overview' },
-  { href: '/admin/presets', label: 'Presets' },
+  { href: '/admin/properties', label: 'Properties' },
   { href: '/admin/pricing', label: 'Price History' },
   { href: '/admin/clients', label: 'Client Portfolios' },
   { href: '/admin/access', label: 'Access' },

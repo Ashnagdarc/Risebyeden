@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import Sidebar from '@/components/Sidebar';
 import AdminNav from '@/components/AdminNav';
 import styles from './admin.module.css';
@@ -28,7 +29,9 @@ export default function AdminOverview() {
             <h1 className={styles.pageTitle}>Control Center</h1>
             <p className={styles.subtitle}>Manage presets, price history, and client portfolios from a single workspace.</p>
           </div>
-          <button className={styles.primaryButton}>Create Preset</button>
+          <Link className={styles.primaryButton} href="/admin/properties">
+            Create Preset
+          </Link>
         </header>
 
         <AdminNav />

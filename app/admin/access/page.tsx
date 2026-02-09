@@ -123,32 +123,32 @@ export default function AdminAccess() {
 
         {/* Generated credentials display */}
         {credentials && (
-          <section className={styles.section} style={{ marginBottom: 24 }}>
+          <section className={`${styles.section} ${styles.credentialSection}`}>
             <h2 className={styles.sectionTitle}>New Client Credentials</h2>
-            <p style={{ fontSize: 12, color: 'var(--text-secondary)', marginBottom: 16, fontFamily: 'var(--mono-font)', letterSpacing: '0.1em' }}>
+            <p className={styles.credentialNote}>
               Share these securely with the client. The access key and token are shown only once.
             </p>
             <div className={styles.formGrid}>
               <div className={styles.field}>
                 <label className={styles.label}>User ID</label>
-                <div className={styles.input} style={{ userSelect: 'all', cursor: 'text' }}>
+                <div className={`${styles.input} ${styles.copyInput}`}>
                   {credentials.userId}
                 </div>
               </div>
               <div className={styles.field}>
                 <label className={styles.label}>Access Key</label>
-                <div className={styles.input} style={{ userSelect: 'all', cursor: 'text' }}>
+                <div className={`${styles.input} ${styles.copyInput}`}>
                   {credentials.accessKey}
                 </div>
               </div>
               <div className={styles.field}>
                 <label className={styles.label}>Access Token (Invite Code)</label>
-                <div className={styles.input} style={{ userSelect: 'all', cursor: 'text' }}>
+                <div className={`${styles.input} ${styles.copyInput}`}>
                   {credentials.accessToken}
                 </div>
               </div>
             </div>
-            <div className={styles.inlineActions} style={{ marginTop: 12 }}>
+            <div className={`${styles.inlineActions} ${styles.inlineActionsTight}`}>
               <button
                 className={styles.secondaryButton}
                 onClick={() => {
@@ -170,7 +170,7 @@ export default function AdminAccess() {
           <div className={styles.section}>
             <h2 className={styles.sectionTitle}>Enlistment Requests</h2>
             {pendingUsers.length === 0 ? (
-              <p style={{ fontSize: 13, color: 'var(--text-secondary)' }}>No pending enlistment requests.</p>
+              <p className={styles.emptyText}>No pending enlistment requests.</p>
             ) : (
               <div className={styles.table}>
                 <div className={styles.tableHeader}>
@@ -186,16 +186,14 @@ export default function AdminAccess() {
                     <div className={`${styles.badge} ${styles.badgePending}`}>Pending</div>
                     <div className={styles.inlineActions}>
                       <button
-                        className={styles.secondaryButton}
+                        className={`${styles.secondaryButton} ${styles.actionButtonSmall}`}
                         onClick={() => handleAction(user.id, 'approve')}
-                        style={{ fontSize: 10, padding: '6px 12px' }}
                       >
                         Authorize
                       </button>
                       <button
-                        className={styles.secondaryButton}
+                        className={`${styles.secondaryButton} ${styles.actionButtonSmall} ${styles.actionButtonDanger}`}
                         onClick={() => handleAction(user.id, 'reject')}
-                        style={{ fontSize: 10, padding: '6px 12px', color: '#f87171' }}
                       >
                         Reject
                       </button>
@@ -209,17 +207,11 @@ export default function AdminAccess() {
           {/* All users list */}
           <div className={styles.section}>
             <h2 className={styles.sectionTitle}>All Users</h2>
-            <div className={styles.inlineActions} style={{ marginBottom: 16 }}>
+            <div className={`${styles.inlineActions} ${styles.inlineActionsSpaced}`}>
               {(['all', 'ACTIVE', 'PENDING', 'REJECTED'] as const).map((f) => (
                 <button
                   key={f}
-                  className={styles.secondaryButton}
-                  style={{
-                    fontSize: 10,
-                    padding: '6px 12px',
-                    borderColor: filter === f ? 'var(--accent-gold)' : undefined,
-                    color: filter === f ? 'var(--accent-gold)' : undefined,
-                  }}
+                  className={`${styles.secondaryButton} ${styles.filterButton} ${filter === f ? styles.filterButtonActive : ''}`}
                   onClick={() => setFilter(f)}
                 >
                   {f === 'all' ? 'All' : f}
@@ -252,7 +244,7 @@ export default function AdminAccess() {
         </section>
 
         {/* Policy overview */}
-        <section className={styles.section} style={{ marginTop: 24 }}>
+        <section className={`${styles.section} ${styles.sectionSpacing}`}>
           <h2 className={styles.sectionTitle}>Access Flow</h2>
           <div className={styles.formGrid}>
             <div className={styles.field}>

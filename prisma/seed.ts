@@ -28,6 +28,52 @@ async function main() {
 
   console.log(`Admin user ready: ${user.userId} (${user.role}) — Status: ${user.status}`);
   console.log(`Login with User ID: ${adminUserId} and your admin password.`);
+
+  const properties = [
+    {
+      name: 'Obsidian Heights',
+      slug: 'obsidian-heights',
+      location: 'Victoria Island, Lagos',
+      status: 'AVAILABLE' as const,
+      basePrice: 4200000,
+    },
+    {
+      name: 'Veridian Atrium',
+      slug: 'veridian-atrium',
+      location: 'Ikoyi, Lagos',
+      status: 'AVAILABLE' as const,
+      basePrice: 6100000,
+    },
+    {
+      name: 'Gilded Loft',
+      slug: 'gilded-loft',
+      location: 'Banana Island, Lagos',
+      status: 'RESERVED' as const,
+      basePrice: 7800000,
+    },
+    {
+      name: 'Beachfront Paradise',
+      slug: 'beachfront-paradise',
+      location: 'Lekki Phase 1, Lagos',
+      status: 'AVAILABLE' as const,
+      basePrice: 5200000,
+    },
+  ];
+
+  for (const property of properties) {
+    await prisma.property.upsert({
+      where: { slug: property.slug },
+      update: {
+        name: property.name,
+        location: property.location,
+        status: property.status,
+        basePrice: property.basePrice,
+      },
+      create: property,
+    });
+  }
+
+  console.log(`Seeded ${properties.length} properties.`);
 }
 
 main()

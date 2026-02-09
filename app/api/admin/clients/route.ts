@@ -37,16 +37,16 @@ export async function GET() {
   });
 
   const clients = users.map((user) => {
-    const totals = user.clientProperties.reduce(
-      (acc, entry) => {
-        const quantity = entry.quantity || 0;
-        const price = entry.purchasePrice ? Number(entry.purchasePrice) : 0;
-        acc.propertyCount += quantity;
-        acc.portfolioValue += price * quantity;
-        return acc;
-      },
-      { propertyCount: 0, portfolioValue: 0 }
-    );
+    const totals = user.clientProperties.reduce<{
+      propertyCount: number;
+      portfolioValue: number;
+    }>((acc, entry) => {
+      const quantity = entry.quantity || 0;
+      const price = entry.purchasePrice ? Number(entry.purchasePrice) : 0;
+      acc.propertyCount += quantity;
+      acc.portfolioValue += price * quantity;
+      return acc;
+    }, { propertyCount: 0, portfolioValue: 0 });
 
     return {
       id: user.id,

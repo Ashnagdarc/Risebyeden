@@ -135,7 +135,7 @@ export default function ClientPortfolios() {
               </div>
               {clients.length === 0 ? (
                 <div className={styles.tableRow}>
-                  <div style={{ gridColumn: '1 / -1', color: 'var(--text-secondary)' }}>
+                  <div className={styles.tableEmpty}>
                     No client accounts yet.
                   </div>
                 </div>
