@@ -2,5 +2,6 @@
   "files.associations": {
     "prisma/migrations/**/*.sql": "postgresql"
   },
-  "sql.validate.enable": false
+  "sql.validate.enable": false,
+  "sentry-issues-viewer.organization": "ashnag"
 }
