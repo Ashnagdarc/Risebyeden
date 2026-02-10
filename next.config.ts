@@ -6,6 +6,9 @@ const nextConfig: NextConfig = {
     config.output.globalObject = 'globalThis';
     return config;
   },
+  images: {
+    domains: ["www.gracefieldsisland.com"],
+  },
 };
 
 export default withSentryConfig(nextConfig, {
