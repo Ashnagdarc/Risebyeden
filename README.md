@@ -60,6 +60,8 @@ App runs at [http://localhost:3000](http://localhost:3000).
 docker compose up -d db valkey
 ```
 
+Set `POSTGRES_PASSWORD` in your environment (or `.env`) before starting docker compose.
+
 This starts:
 - Postgres `16.6-alpine` on `5432`
 - Valkey `9.0.2` on `6379`
@@ -97,4 +99,3 @@ npx prisma migrate status
 - `lib/cache` - cache client and key catalog
 - `prisma` - schema and migrations
 - `scripts/test-cache-hooks.js` - guard test for cache invalidation wiring
-

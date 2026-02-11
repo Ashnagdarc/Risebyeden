@@ -5,6 +5,16 @@ import prisma from '@/lib/prisma';
 import { consumeRateLimit, resetRateLimit } from '@/lib/security/rate-limit';
 import { verifyStoredToken } from '@/lib/security/token';
 
+function readPositiveIntEnv(key: string, fallback: number): number {
+  const raw = process.env[key];
+  if (!raw) {
+    return fallback;
+  }
+
+  const parsed = Number.parseInt(raw, 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+}
+
 const enlistPayloadSchema = z.object({
   userId: z.string().trim().min(1),
   accessKey: z.string().min(1),
@@ -13,10 +23,10 @@ const enlistPayloadSchema = z.object({
 }).strict();
 
 const ENLIST_RATE_LIMIT = {
-  windowMs: 5 * 60 * 1000,
-  maxAttempts: 6,
-  blockMs: 15 * 60 * 1000,
-} as const;
+  windowMs: readPositiveIntEnv('ENLIST_RATE_LIMIT_WINDOW_MS', 5 * 60 * 1000),
+  maxAttempts: readPositiveIntEnv('ENLIST_RATE_LIMIT_MAX_ATTEMPTS', 6),
+  blockMs: readPositiveIntEnv('ENLIST_RATE_LIMIT_BLOCK_MS', 15 * 60 * 1000),
+};
 
 function resolveClientIp(request: Request): string {
   const forwardedFor = request.headers.get('x-forwarded-for');

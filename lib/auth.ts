@@ -5,11 +5,21 @@ import crypto from 'crypto';
 import prisma from '@/lib/prisma';
 import { consumeRateLimit, resetRateLimit } from '@/lib/security/rate-limit';
 
+function readPositiveIntEnv(key: string, fallback: number): number {
+  const raw = process.env[key];
+  if (!raw) {
+    return fallback;
+  }
+
+  const parsed = Number.parseInt(raw, 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+}
+
 const AUTH_RATE_LIMIT = {
-  windowMs: 5 * 60 * 1000,
-  maxAttempts: 8,
-  blockMs: 15 * 60 * 1000,
-} as const;
+  windowMs: readPositiveIntEnv('AUTH_RATE_LIMIT_WINDOW_MS', 5 * 60 * 1000),
+  maxAttempts: readPositiveIntEnv('AUTH_RATE_LIMIT_MAX_ATTEMPTS', 8),
+  blockMs: readPositiveIntEnv('AUTH_RATE_LIMIT_BLOCK_MS', 15 * 60 * 1000),
+};
 
 function normalizeHeaderValue(value: string | string[] | undefined): string {
   if (!value) {
