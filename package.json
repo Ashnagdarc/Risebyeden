@@ -7,8 +7,10 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint app components lib prisma --max-warnings=0",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "test:cache-hooks": "node scripts/test-cache-hooks.js",
-    "test:ci": "npm run -s test:cache-hooks",
+    "test:ci": "npm run -s test && npm run -s test:cache-hooks",
     "postinstall": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:seed": "npx tsx prisma/seed.ts"
@@ -38,6 +40,7 @@
     "eslint-config-next": "15.1.4",
     "prisma": "^5.22.0",
     "tsx": "^4.21.0",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^4.0.18"
   }
 }
