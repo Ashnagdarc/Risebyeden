@@ -53,3 +53,11 @@
   font-size: 28px;
   font-weight: 500;
 }
+
+@media (max-width: 768px) {
+  .statSlab {
+    grid-column: span 1;
+    height: 170px;
+    padding: 24px;
+  }
+}

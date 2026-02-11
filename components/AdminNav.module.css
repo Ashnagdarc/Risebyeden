@@ -17,6 +17,7 @@
   background: rgba(10, 10, 10, 0.7);
   text-decoration: none;
   transition: all 0.2s ease;
+  outline: none;
 }
 
 .navLink:hover {
@@ -24,8 +25,19 @@
   border-color: rgba(197, 163, 104, 0.25);
 }
 
+.navLink:focus-visible {
+  border-color: rgba(197, 163, 104, 0.5);
+  box-shadow: 0 0 0 2px rgba(197, 163, 104, 0.2);
+}
+
 .active {
   color: var(--accent-gold);
   border-color: rgba(197, 163, 104, 0.4);
   background: rgba(197, 163, 104, 0.08);
+}
+
+@media (max-width: 768px) {
+  .nav {
+    display: none;
+  }
 }

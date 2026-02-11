@@ -14,7 +14,7 @@
   justify-content: space-between;
   align-items: flex-start;
   gap: 32px;
-  margin-bottom: 24px;
+  margin-bottom: 32px;
 }
 
 .kicker {
@@ -37,6 +37,7 @@
   font-size: var(--type-subtitle-size);
   color: var(--text-secondary);
   max-width: 520px;
+  line-height: 1.5;
 }
 
 .primaryButton {
@@ -52,10 +53,17 @@
   color: #0a0a0a;
   transition: all 0.3s ease;
   white-space: nowrap;
+  outline: none;
 }
 
 .primaryButton:hover {
   transform: translateY(-2px);
+}
+
+.primaryButton:focus-visible,
+.secondaryButton:focus-visible {
+  outline: 2px solid rgba(197, 163, 104, 0.9);
+  outline-offset: 2px;
 }
 
 .statGrid {
@@ -116,13 +124,13 @@
   text-transform: uppercase;
   color: var(--accent-gold);
   font-family: var(--mono-font);
-  margin-bottom: 20px;
+  margin-bottom: 16px;
 }
 
 .table {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
 }
 
 .tableHeader,
@@ -131,6 +139,11 @@
   grid-template-columns: 1.2fr 1fr 1fr 1fr;
   align-items: center;
   gap: 12px;
+}
+
+.tableCell {
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .tableHeaderActions,
@@ -157,6 +170,8 @@
   border-radius: 10px;
   background: var(--obsidian-surface);
   border: 1px solid rgba(255, 255, 255, 0.03);
+  font-size: 13px;
+  line-height: 1.45;
 }
 
 .tableRow:hover {
@@ -240,6 +255,7 @@
   border: 1px solid rgba(255, 255, 255, 0.08);
   color: var(--text-primary);
   transition: all 0.2s ease;
+  outline: none;
 }
 
 .secondaryButton:hover {
@@ -437,16 +453,52 @@
 
 @media (max-width: 768px) {
   .main {
-    padding: 40px 24px;
+    padding: 32px 16px;
+  }
+
+  .header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+
+  .primaryButton {
+    width: 100%;
+    text-align: center;
+    justify-content: center;
   }
 
   .statGrid {
     grid-template-columns: 1fr;
   }
 
-  .tableHeader,
+  .tableHeader {
+    display: none;
+  }
+
   .tableRow {
     grid-template-columns: 1fr;
+    gap: 8px;
+    padding: 14px;
+  }
+
+  .tableCell {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    font-size: 13px;
+    line-height: 1.4;
+  }
+
+  .tableCell::before {
+    content: attr(data-label);
+    font-family: var(--mono-font);
+    font-size: 11px;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    flex-shrink: 0;
   }
 
   .tableHeaderActions,

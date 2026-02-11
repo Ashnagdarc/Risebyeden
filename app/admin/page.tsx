@@ -116,11 +116,19 @@ export default function AdminOverview() {
               ) : (
                 interestRequests.map((request) => (
                   <div key={request.id} className={styles.tableRow}>
-                    <div>{request.id.slice(0, 6).toUpperCase()}</div>
-                    <div>{request.user?.name || request.user?.userId || '—'}</div>
-                    <div>{request.property?.name || '—'}</div>
-                    <div className={request.status === 'SCHEDULED' || request.status === 'APPROVED' ? `${styles.badge} ${styles.badgeSuccess}` : `${styles.badge} ${styles.badgePending}`}>
-                      {request.status}
+                    <div className={styles.tableCell} data-label="Request">
+                      {request.id.slice(0, 6).toUpperCase()}
+                    </div>
+                    <div className={styles.tableCell} data-label="Client">
+                      {request.user?.name || request.user?.userId || '—'}
+                    </div>
+                    <div className={styles.tableCell} data-label="Property">
+                      {request.property?.name || '—'}
+                    </div>
+                    <div className={styles.tableCell} data-label="Status">
+                      <span className={request.status === 'SCHEDULED' || request.status === 'APPROVED' ? `${styles.badge} ${styles.badgeSuccess}` : `${styles.badge} ${styles.badgePending}`}>
+                        {request.status}
+                      </span>
                     </div>
                   </div>
                 ))
@@ -144,10 +152,18 @@ export default function AdminOverview() {
               ) : (
                 priceUpdates.map((update) => (
                   <div key={update.id} className={styles.tableRow}>
-                    <div>{update.id.slice(0, 6).toUpperCase()}</div>
-                    <div>{update.property?.name || '—'}</div>
-                    <div>{currencyFormatter.format(Number(update.price))}</div>
-                    <div>{new Date(update.effectiveDate).toLocaleDateString()}</div>
+                    <div className={styles.tableCell} data-label="Update">
+                      {update.id.slice(0, 6).toUpperCase()}
+                    </div>
+                    <div className={styles.tableCell} data-label="Preset">
+                      {update.property?.name || '—'}
+                    </div>
+                    <div className={styles.tableCell} data-label="Price">
+                      {currencyFormatter.format(Number(update.price))}
+                    </div>
+                    <div className={styles.tableCell} data-label="Date">
+                      {new Date(update.effectiveDate).toLocaleDateString()}
+                    </div>
                   </div>
                 ))
               )}

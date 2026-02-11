@@ -13,7 +13,7 @@
 .gridLayout {
   display: grid;
   grid-template-columns: repeat(12, 1fr);
-  gap: 32px;
+  gap: 24px;
 }
 
 .chartLine {
@@ -106,20 +106,30 @@
   cursor: pointer;
   text-decoration: none;
   letter-spacing: var(--type-button-track);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  outline: none;
 }
 
 .viewAll:hover {
-  text-decoration: underline;
+  opacity: 0.85;
+  transform: translateX(2px);
+}
+
+.viewAll:focus-visible {
+  outline: 2px solid rgba(197, 163, 104, 0.9);
+  outline-offset: 2px;
+  border-radius: 6px;
 }
 
 /* Quick Actions Panel */
 .quickActionsPanel {
   grid-column: span 6;
   padding: 24px;
-  border-radius: 10px;
+  border-radius: 12px;
   background: rgba(10, 10, 10, 0.8);
   border: 1px solid rgba(255, 255, 255, 0.05);
   box-shadow: var(--relief-shadow);
+  backdrop-filter: blur(6px);
 }
 
 .panelTitle {
@@ -147,15 +157,22 @@
   border: 1px solid rgba(255, 255, 255, 0.04);
   color: var(--text-primary);
   font-size: 13px;
+  line-height: 1.35;
   text-decoration: none;
   cursor: pointer;
   transition: all 0.3s ease;
+  outline: none;
 }
 
 .actionItem:hover {
   background: rgba(197, 163, 104, 0.1);
   border-color: rgba(197, 163, 104, 0.3);
   transform: translateY(-2px);
+}
+
+.actionItem:focus-visible {
+  border-color: rgba(197, 163, 104, 0.6);
+  box-shadow: 0 0 0 2px rgba(197, 163, 104, 0.25);
 }
 
 .actionIcon {
@@ -177,10 +194,11 @@
 .activityPanel {
   grid-column: span 6;
   padding: 24px;
-  border-radius: 10px;
+  border-radius: 12px;
   background: rgba(10, 10, 10, 0.8);
   border: 1px solid rgba(255, 255, 255, 0.05);
   box-shadow: var(--relief-shadow);
+  backdrop-filter: blur(6px);
 }
 
 .activityList {
@@ -212,6 +230,7 @@
   font-size: 13px;
   color: var(--text-primary);
   margin-bottom: 4px;
+  line-height: 1.45;
 }
 
 .activityTime {
@@ -228,7 +247,37 @@
 }
 
 @media (max-width: 768px) {
+  .main {
+    padding: 32px 16px;
+  }
+
+  .gridLayout {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  .propertyHeader {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .quickActionsPanel,
+  .activityPanel,
+  .propertyListSlab {
+    grid-column: span 1;
+  }
+
+  .viewAll {
+    font-size: 11px;
+  }
+
   .actionsList {
     grid-template-columns: 1fr;
+  }
+
+  .quickActionsPanel,
+  .activityPanel {
+    padding: 20px;
   }
 }
