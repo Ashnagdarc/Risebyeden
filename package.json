@@ -13,6 +13,11 @@
     "test:ci": "npm run -s test && npm run -s test:cache-hooks",
     "postinstall": "prisma generate",
     "db:migrate": "prisma migrate dev",
+    "db:migrate:status": "prisma migrate status",
+    "db:migrate:deploy": "prisma migrate deploy",
+    "db:backup": "bash scripts/db-backup.sh",
+    "db:restore": "bash scripts/db-restore.sh",
+    "db:monitor": "tsx scripts/db-monitor.ts",
     "db:seed": "npx tsx prisma/seed.ts"
   },
   "prisma": {

@@ -73,7 +73,11 @@ Both services include healthchecks.
 ```bash
 npm run lint
 npm run build
+npm run test
 npm run test:cache-hooks
+npm run db:migrate:status
+npm run db:monitor
+npm run db:backup
 npx prisma validate
 npx prisma migrate status
 ```
@@ -82,9 +86,15 @@ npx prisma migrate status
 
 - Set strong secrets for `NEXTAUTH_SECRET` / `AUTH_SECRET`.
 - Set `DATABASE_URL` and `VALKEY_URL` to production services.
+- Set `DIRECT_DATABASE_URL` for direct Postgres admin operations (migrations/backups/restore).
 - Use TLS-enabled SMTP credentials if consultation email notifications are required.
 - Build with the provided multi-stage `Dockerfile` (non-root runtime image).
 - CI workflow (`.github/workflows/ci.yml`) runs lint, build, Prisma validation, and cache-hook checks.
+
+## Database Operations
+
+- Runbook: `docs/database-ops.md`
+- Includes backup/restore procedures, rollback strategy, pooling guidance, and monitoring thresholds.
 
 ## Cache + Invalidation
 

@@ -60,3 +60,11 @@ This checklist tracks production-hardening work identified during the deep audit
 - [x] `npm run build` passes.
 - [x] Custom route/cache checks pass.
 - [x] Prisma validation + migration status pass.
+
+## 9) Database Ops Maturity
+
+- [x] Add repeatable backup command with retention (`npm run db:backup`).
+- [x] Add restore command with explicit destructive confirmation (`npm run db:restore`).
+- [x] Document rollback/runbook process in `docs/database-ops.md`.
+- [x] Add DB monitoring snapshot command (`npm run db:monitor`).
+- [ ] Roll out managed DB alerting dashboards in infra (outside app repo).
