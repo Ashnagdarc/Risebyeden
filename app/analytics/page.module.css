@@ -235,6 +235,11 @@
   transition: all 0.3s ease;
 }
 
+.performerCardEmpty {
+  display: block;
+  text-align: left;
+}
+
 .performerCard:hover {
   background: var(--obsidian-elevated);
   border-color: rgba(255, 255, 255, 0.1);
@@ -258,16 +263,19 @@
   font-size: 16px;
   font-weight: 500;
   margin-bottom: 4px;
+  line-height: 1.25;
 }
 
 .performerInfo p {
   font-size: 12px;
   color: var(--text-secondary);
+  line-height: 1.4;
 }
 
 .performerMetrics {
   display: flex;
   gap: 32px;
+  min-width: 0;
 }
 
 .performerMetric {
@@ -280,6 +288,7 @@
   font-size: 10px;
   color: var(--text-secondary);
   text-transform: uppercase;
+  letter-spacing: 0.08em;
   margin-bottom: 4px;
 }
 
@@ -377,14 +386,74 @@
 
 @media (max-width: 768px) {
   .main {
-    padding: 40px 24px;
+    padding: 32px 16px;
   }
 
   .metricsRow {
     grid-template-columns: 1fr;
   }
 
+  .header {
+    margin-bottom: 36px;
+  }
+
   .pageTitle {
     font-size: 2rem;
+  }
+
+  .chartSection,
+  .performersSection,
+  .insightsSection {
+    padding: 20px;
+    border-radius: 18px;
+  }
+
+  .sectionTitle {
+    font-size: 11px;
+    margin-bottom: 18px;
+    letter-spacing: 0.14em;
+  }
+
+  .performerCard {
+    grid-template-columns: 44px minmax(0, 1fr);
+    gap: 10px 12px;
+    padding: 14px;
+  }
+
+  .performerCard:hover {
+    transform: none;
+  }
+
+  .performerRank {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    font-size: 16px;
+  }
+
+  .performerInfo p {
+    font-size: 11px;
+  }
+
+  .performerMetrics {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    width: 100%;
+    padding-top: 10px;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+  }
+
+  .performerMetric {
+    text-align: left;
+  }
+
+  .performerMetricLabel {
+    margin-bottom: 2px;
+  }
+
+  .performerMetricValue {
+    font-size: 13px;
   }
 }

@@ -218,7 +218,7 @@ export default function Analytics() {
             <h2 className={styles.sectionTitle}>Top Performing Assets</h2>
             <div className={styles.performersList}>
               {topPerformers.length === 0 && (
-                <div className={styles.performerCard}>No performance data available.</div>
+                <div className={`${styles.performerCard} ${styles.performerCardEmpty}`}>No performance data available.</div>
               )}
               {topPerformers.map((property, index) => (
                 <div key={index} className={styles.performerCard}>
