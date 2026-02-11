@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import prisma from '@/lib/prisma';
 import { authOptions } from '@/lib/auth';
+import { CACHE_KEYS } from '@/lib/cache/keys';
+import { getCachedJson, setCachedJson } from '@/lib/cache/valkey';
 
 async function requireUser() {
   const session = await getServerSession(authOptions);
@@ -15,6 +17,11 @@ export async function GET() {
   const session = await requireUser();
   if (!session) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  const cached = await getCachedJson<{ properties: unknown[] }>(CACHE_KEYS.clientPropertiesAvailable);
+  if (cached) {
+    return NextResponse.json(cached);
   }
 
   const properties = await prisma.property.findMany({
@@ -40,5 +47,8 @@ export async function GET() {
     },
   });
 
-  return NextResponse.json({ properties });
+  const payload = { properties };
+  await setCachedJson(CACHE_KEYS.clientPropertiesAvailable, payload, 120);
+
+  return NextResponse.json(payload);
 }

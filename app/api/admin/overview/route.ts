@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import prisma from '@/lib/prisma';
 import { authOptions } from '@/lib/auth';
+import { CACHE_KEYS } from '@/lib/cache/keys';
+import { getCachedJson, setCachedJson } from '@/lib/cache/valkey';
 
 async function requireAdmin() {
   const session = await getServerSession(authOptions);
@@ -16,6 +18,15 @@ export async function GET() {
   const session = await requireAdmin();
   if (!session) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  const cached = await getCachedJson<{
+    stats: Record<string, number>;
+    recentInterests: unknown[];
+    recentPriceUpdates: unknown[];
+  }>(CACHE_KEYS.adminOverview);
+  if (cached) {
+    return NextResponse.json(cached);
   }
 
   const now = new Date();
@@ -52,7 +63,7 @@ export async function GET() {
     },
   });
 
-  return NextResponse.json({
+  const payload = {
     stats: {
       pendingInterests,
       activePresets,
@@ -61,5 +72,9 @@ export async function GET() {
     },
     recentInterests,
     recentPriceUpdates,
-  });
+  };
+
+  await setCachedJson(CACHE_KEYS.adminOverview, payload, 30);
+
+  return NextResponse.json(payload);
 }

@@ -5,6 +5,8 @@ import crypto from 'crypto';
 import prisma from '@/lib/prisma';
 import { authOptions } from '@/lib/auth';
 import { hashToken } from '@/lib/security/token';
+import { CACHE_KEYS } from '@/lib/cache/keys';
+import { deleteCacheKeys } from '@/lib/cache/valkey';
 
 function generateShortId(): string {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -142,6 +144,8 @@ export async function PATCH(request: Request) {
         status: true,
       },
     });
+
+    await deleteCacheKeys([CACHE_KEYS.adminOverview]);
 
     return NextResponse.json({ user });
   } catch {

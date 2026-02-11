@@ -3,6 +3,8 @@ import { getServerSession } from 'next-auth/next';
 import type { Prisma } from '@prisma/client';
 import prisma from '@/lib/prisma';
 import { authOptions } from '@/lib/auth';
+import { CACHE_KEYS } from '@/lib/cache/keys';
+import { deleteCacheKeys } from '@/lib/cache/valkey';
 
 async function requireAdmin() {
   const session = await getServerSession(authOptions);
@@ -155,6 +157,8 @@ export async function PATCH(request: Request) {
       },
     });
 
+    await deleteCacheKeys([CACHE_KEYS.adminOverview]);
+
     return NextResponse.json({ client });
   } catch {
     return NextResponse.json({ error: 'Unable to update client' }, { status: 500 });
@@ -193,6 +197,8 @@ export async function DELETE(request: Request) {
       prisma.clientProfile.deleteMany({ where: { userId: client.id } }),
       prisma.user.delete({ where: { id: client.id } }),
     ]);
+
+    await deleteCacheKeys([CACHE_KEYS.adminOverview]);
 
     return NextResponse.json({ ok: true });
   } catch {

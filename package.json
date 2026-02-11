@@ -22,7 +22,8 @@
     "next-auth": "^4.24.7",
     "nodemailer": "^7.0.13",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "redis": "^4.7.1"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.2",

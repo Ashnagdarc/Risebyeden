@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import prisma from '@/lib/prisma';
 import { authOptions } from '@/lib/auth';
+import { CACHE_KEYS } from '@/lib/cache/keys';
+import { deleteCacheKeys } from '@/lib/cache/valkey';
 
 async function requireAdmin() {
   const session = await getServerSession(authOptions);
@@ -68,6 +70,8 @@ export async function POST(request: Request) {
       },
     });
 
+    await deleteCacheKeys([CACHE_KEYS.clientAdvisorsActive, CACHE_KEYS.adminOverview]);
+
     return NextResponse.json({ advisor });
   } catch {
     return NextResponse.json({ error: 'Unable to create advisor' }, { status: 500 });
@@ -102,6 +106,8 @@ export async function PATCH(request: Request) {
         status: true,
       },
     });
+
+    await deleteCacheKeys([CACHE_KEYS.clientAdvisorsActive, CACHE_KEYS.adminOverview]);
 
     return NextResponse.json({ advisor });
   } catch {

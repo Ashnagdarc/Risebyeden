@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import prisma from '@/lib/prisma';
 import { authOptions } from '@/lib/auth';
+import { CACHE_KEYS } from '@/lib/cache/keys';
+import { deleteCacheKeys } from '@/lib/cache/valkey';
 
 function slugify(value: string): string {
   return value
@@ -106,6 +108,12 @@ export async function POST(request: Request) {
     },
   });
 
+  await deleteCacheKeys([
+    CACHE_KEYS.clientPropertiesAvailable,
+    CACHE_KEYS.adminOverview,
+    CACHE_KEYS.clientPropertyById(property.id),
+  ]);
+
   return NextResponse.json({ property });
 }
 
@@ -175,6 +183,12 @@ export async function PATCH(request: Request) {
     },
   });
 
+  await deleteCacheKeys([
+    CACHE_KEYS.clientPropertiesAvailable,
+    CACHE_KEYS.adminOverview,
+    CACHE_KEYS.clientPropertyById(body.id),
+  ]);
+
   return NextResponse.json({ property });
 }
 
@@ -196,6 +210,12 @@ export async function DELETE(request: Request) {
   await prisma.priceUpdate.deleteMany({ where: { propertyId: body.id } });
 
   await prisma.property.delete({ where: { id: body.id } });
+
+  await deleteCacheKeys([
+    CACHE_KEYS.clientPropertiesAvailable,
+    CACHE_KEYS.adminOverview,
+    CACHE_KEYS.clientPropertyById(body.id),
+  ]);
 
   return NextResponse.json({ ok: true });
 }
