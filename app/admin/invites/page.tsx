@@ -10,7 +10,6 @@ type InviteRecord = {
   email: string;
   role: string;
   status: string;
-  token: string;
   expiresAt: string | null;
   createdAt: string;
   organization: { id: string; name: string } | null;
@@ -43,6 +42,7 @@ export default function AdminInvites() {
   const [expiresAt, setExpiresAt] = useState('');
   const [statusMessage, setStatusMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [issuedToken, setIssuedToken] = useState('');
   const [copyMessage, setCopyMessage] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'SENT' | 'ACCEPTED' | 'EXPIRED' | 'REVOKED'>('ALL');
@@ -63,6 +63,7 @@ export default function AdminInvites() {
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setStatusMessage('');
+    setIssuedToken('');
 
     if (!email.trim()) {
       setStatusMessage('Email is required.');
@@ -87,7 +88,9 @@ export default function AdminInvites() {
     });
 
     if (res.ok) {
-      setStatusMessage('Invite created.');
+      const data = await res.json();
+      setIssuedToken(String(data.issuedToken || ''));
+      setStatusMessage('Invite created. Save the token now; it will not be shown again.');
       setEmail('');
       setOrganizationId('');
       setExpiresAt('');
@@ -106,7 +109,6 @@ export default function AdminInvites() {
       const matchesRole = roleFilter === 'ALL' || invite.role === roleFilter;
       const matchesSearch = !normalizedSearch || [
         invite.email,
-        invite.token,
         invite.organization?.name || '',
         invite.organization?.id || '',
       ].some((value) => value.toLowerCase().includes(normalizedSearch));
@@ -139,7 +141,7 @@ export default function AdminInvites() {
                 <input
                   className={styles.input}
                   id="inviteSearch"
-                  placeholder="Email, token, org"
+                  placeholder="Email, org"
                   value={searchTerm}
                   onChange={(event) => setSearchTerm(event.target.value)}
                 />
@@ -180,7 +182,7 @@ export default function AdminInvites() {
                 <div>Role</div>
                 <div>Status</div>
                 <div>Expires</div>
-                <div>Token</div>
+                <div>Created</div>
               </div>
               {filteredInvites.length === 0 ? (
                 <div className={styles.tableRow}>
@@ -198,18 +200,7 @@ export default function AdminInvites() {
                     <div>{invite.role}</div>
                     <div className={getStatusBadge(invite.status)}>{invite.status}</div>
                     <div>{invite.expiresAt ? new Date(invite.expiresAt).toLocaleDateString() : '—'}</div>
-                    <div className={styles.tableActions}>
-                      <span className={styles.monoText}>{invite.token}</span>
-                      <button
-                        className={`${styles.secondaryButton} ${styles.actionButtonSmall}`}
-                        onClick={() => {
-                          navigator.clipboard.writeText(invite.token);
-                          setCopyMessage('Invite token copied.');
-                        }}
-                      >
-                        Copy
-                      </button>
-                    </div>
+                    <div>{new Date(invite.createdAt).toLocaleDateString()}</div>
                   </div>
                 ))
               )}
@@ -274,6 +265,21 @@ export default function AdminInvites() {
                 {statusMessage && <span className={`${styles.badge} ${styles.badgeMuted}`}>{statusMessage}</span>}
               </div>
             </form>
+            {issuedToken && (
+              <div className={styles.inlineActions}>
+                <span className={styles.monoText}>{issuedToken}</span>
+                <button
+                  className={`${styles.secondaryButton} ${styles.actionButtonSmall}`}
+                  onClick={() => {
+                    navigator.clipboard.writeText(issuedToken);
+                    setCopyMessage('Issued invite token copied.');
+                  }}
+                  type="button"
+                >
+                  Copy Token
+                </button>
+              </div>
+            )}
           </div>
         </section>
       </main>

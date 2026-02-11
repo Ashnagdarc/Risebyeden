@@ -33,6 +33,15 @@ function mapType(rawType: string | undefined) {
   return null;
 }
 
+function escapeHtml(value: string | null | undefined): string {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 export async function GET() {
   const session = await requireUser();
   if (!session) {
@@ -117,16 +126,25 @@ export async function POST(request: Request) {
 
     if (recipients.length) {
       const subject = `New consultation request (${requestRecord.type})`;
+      const clientName = escapeHtml(user?.name || 'Unnamed');
+      const clientUserId = escapeHtml(user?.userId || 'N/A');
+      const clientEmail = escapeHtml(user?.email || 'N/A');
+      const consultationType = escapeHtml(requestRecord.type);
+      const preferredDateLabel = escapeHtml(requestRecord.preferredDate.toDateString());
+      const preferredTimeLabel = escapeHtml(requestRecord.preferredTime || 'Not specified');
+      const advisorName = escapeHtml(requestRecord.advisor?.name || 'No preference');
+      const advisorTitle = requestRecord.advisor?.title ? ` (${escapeHtml(requestRecord.advisor.title)})` : '';
+      const notes = escapeHtml(requestRecord.notes || '—');
       const html = `
         <div style="font-family: Arial, sans-serif; color: #111;">
           <h2>New Consultation Request</h2>
-          <p><strong>Client:</strong> ${user?.name || 'Unnamed'} (${user?.userId || 'N/A'})</p>
-          <p><strong>Email:</strong> ${user?.email || 'N/A'}</p>
-          <p><strong>Type:</strong> ${requestRecord.type}</p>
-          <p><strong>Preferred Date:</strong> ${requestRecord.preferredDate.toDateString()}</p>
-          <p><strong>Preferred Time:</strong> ${requestRecord.preferredTime || 'Not specified'}</p>
-          <p><strong>Preferred Advisor:</strong> ${requestRecord.advisor?.name || 'No preference'} ${requestRecord.advisor?.title ? `(${requestRecord.advisor.title})` : ''}</p>
-          <p><strong>Notes:</strong> ${requestRecord.notes || '—'}</p>
+          <p><strong>Client:</strong> ${clientName} (${clientUserId})</p>
+          <p><strong>Email:</strong> ${clientEmail}</p>
+          <p><strong>Type:</strong> ${consultationType}</p>
+          <p><strong>Preferred Date:</strong> ${preferredDateLabel}</p>
+          <p><strong>Preferred Time:</strong> ${preferredTimeLabel}</p>
+          <p><strong>Preferred Advisor:</strong> ${advisorName}${advisorTitle}</p>
+          <p><strong>Notes:</strong> ${notes}</p>
         </div>
       `;
 

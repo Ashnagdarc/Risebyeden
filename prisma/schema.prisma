@@ -97,7 +97,7 @@ model User {
   role           UserRole   @default(CLIENT)
   status         UserStatus @default(PENDING)
   hashedPassword String                         // Access Key (hashed)
-  accessToken    String?    @unique             // One-time enlist token
+  accessToken    String?    @unique             // One-time enlist token hash
   tokenUsed      Boolean    @default(false)
   createdAt      DateTime   @default(now())
   updatedAt      DateTime   @updatedAt
@@ -313,7 +313,7 @@ model InviteRequest {
   organizationId String?
   role           UserRole     @default(CLIENT)
   status         InviteStatus @default(SENT)
-  token          String       @unique
+  token          String       @unique            // Invite token hash
   expiresAt      DateTime?
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt

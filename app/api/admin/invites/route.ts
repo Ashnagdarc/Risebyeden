@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth/next';
 import crypto from 'crypto';
 import prisma from '@/lib/prisma';
 import { authOptions } from '@/lib/auth';
+import { hashToken } from '@/lib/security/token';
 
 async function requireAdmin() {
   const session = await getServerSession(authOptions);
@@ -25,7 +26,6 @@ export async function GET() {
       email: true,
       role: true,
       status: true,
-      token: true,
       expiresAt: true,
       createdAt: true,
       organization: {
@@ -56,6 +56,7 @@ export async function POST(request: Request) {
   }
 
   const token = crypto.randomBytes(16).toString('hex').toUpperCase();
+  const tokenHash = await hashToken(token);
   const expiresAt = body.expiresAt ? new Date(body.expiresAt) : null;
 
   const invite = await prisma.inviteRequest.create({
@@ -63,7 +64,7 @@ export async function POST(request: Request) {
       email: body.email.toLowerCase().trim(),
       role: body.role || 'CLIENT',
       organizationId: body.organizationId || null,
-      token,
+      token: tokenHash,
       expiresAt: expiresAt && !Number.isNaN(expiresAt.getTime()) ? expiresAt : null,
     },
     select: {
@@ -71,11 +72,10 @@ export async function POST(request: Request) {
       email: true,
       role: true,
       status: true,
-      token: true,
       expiresAt: true,
       createdAt: true,
     },
   });
 
-  return NextResponse.json({ invite });
+  return NextResponse.json({ invite, issuedToken: token });
 }

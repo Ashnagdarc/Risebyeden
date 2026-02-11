@@ -4,6 +4,7 @@ import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import prisma from '@/lib/prisma';
 import { authOptions } from '@/lib/auth';
+import { hashToken } from '@/lib/security/token';
 
 function generateShortId(): string {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -47,6 +48,7 @@ export async function POST(request: Request) {
   const accessKey = generateAccessKey();
   const accessToken = generateAccessToken();
   const hashedPassword = await bcrypt.hash(accessKey, 12);
+  const hashedAccessToken = await hashToken(accessToken);
 
   try {
     const user = await prisma.user.create({
@@ -55,7 +57,7 @@ export async function POST(request: Request) {
         name: body.name || null,
         email: body.email?.toLowerCase() || null,
         hashedPassword,
-        accessToken,
+        accessToken: hashedAccessToken,
         role: body.role,
         status: body.role === 'ADMIN' ? 'ACTIVE' : 'PENDING',
       },

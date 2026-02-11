@@ -1,11 +1,19 @@
 import bcrypt from 'bcryptjs';
 import prisma from '../lib/prisma';
 
+function requireEnv(name: string): string {
+  const value = process.env[name];
+  if (!value || !value.trim()) {
+    throw new Error(`Missing required environment variable: ${name}`);
+  }
+  return value.trim();
+}
+
 async function main() {
-  const adminUserId = process.env.ADMIN_USER_ID || 'RBE-ADMN';
-  const adminPass = process.env.ADMIN_PASSWORD || 'AdminSecure2026!';
-  const adminName = process.env.ADMIN_NAME || 'Eden Admin';
-  const adminEmail = process.env.ADMIN_EMAIL || 'admin@risebyeden.com';
+  const adminUserId = requireEnv('ADMIN_USER_ID');
+  const adminPass = requireEnv('ADMIN_PASSWORD');
+  const adminName = requireEnv('ADMIN_NAME');
+  const adminEmail = requireEnv('ADMIN_EMAIL');
 
   const hashedPassword = await bcrypt.hash(adminPass, 12);
 

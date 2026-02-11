@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import prisma from '@/lib/prisma';
+import { consumeRateLimit, resetRateLimit } from '@/lib/security/rate-limit';
+import { verifyStoredToken } from '@/lib/security/token';
 
 type EnlistPayload = {
   userId: string;
@@ -9,16 +11,41 @@ type EnlistPayload = {
   organization: string;
 };
 
+const ENLIST_RATE_LIMIT = {
+  windowMs: 5 * 60 * 1000,
+  maxAttempts: 6,
+  blockMs: 15 * 60 * 1000,
+} as const;
+
+function resolveClientIp(request: Request): string {
+  const forwardedFor = request.headers.get('x-forwarded-for');
+  if (forwardedFor) {
+    return forwardedFor.split(',')[0].trim();
+  }
+  return request.headers.get('x-real-ip')?.trim() || 'unknown';
+}
+
 // POST — Client uses userId + accessKey + accessToken to request access
 export async function POST(request: Request) {
   const body = (await request.json()) as Partial<EnlistPayload>;
+  const normalizedUserId = String(body.userId || '').trim().toUpperCase();
+  const clientIp = resolveClientIp(request);
+  const rateLimitKey = `enlist:${normalizedUserId || 'unknown'}:${clientIp}`;
 
-  if (!body.userId || !body.accessKey || !body.accessToken || !body.organization) {
+  const limit = consumeRateLimit(rateLimitKey, ENLIST_RATE_LIMIT);
+  if (!limit.allowed) {
+    return NextResponse.json(
+      { error: 'Too many attempts. Try again later.' },
+      { status: 429, headers: { 'Retry-After': String(limit.retryAfterSeconds) } }
+    );
+  }
+
+  if (!normalizedUserId || !body.accessKey || !body.accessToken || !body.organization) {
     return NextResponse.json({ error: 'All fields are required' }, { status: 400 });
   }
 
   const user = await prisma.user.findUnique({
-    where: { userId: body.userId.toUpperCase() },
+    where: { userId: normalizedUserId },
   });
 
   if (!user) {
@@ -32,7 +59,8 @@ export async function POST(request: Request) {
   }
 
   // Verify access token
-  if (user.accessToken !== body.accessToken.toUpperCase()) {
+  const tokenIsValid = await verifyStoredToken(body.accessToken, user.accessToken);
+  if (!tokenIsValid) {
     return NextResponse.json({ error: 'Invalid access token' }, { status: 401 });
   }
 
@@ -52,6 +80,8 @@ export async function POST(request: Request) {
       tokenUsed: true,
     },
   });
+
+  resetRateLimit(rateLimitKey);
 
   return NextResponse.json({
     message: 'Access request submitted. Awaiting admin authorization.',

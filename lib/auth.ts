@@ -2,6 +2,13 @@ import type { NextAuthOptions } from 'next-auth';
 import Credentials from 'next-auth/providers/credentials';
 import bcrypt from 'bcryptjs';
 import prisma from '@/lib/prisma';
+import { consumeRateLimit, resetRateLimit } from '@/lib/security/rate-limit';
+
+const AUTH_RATE_LIMIT = {
+  windowMs: 5 * 60 * 1000,
+  maxAttempts: 8,
+  blockMs: 15 * 60 * 1000,
+} as const;
 
 export const authOptions: NextAuthOptions = {
   session: { strategy: 'jwt' },
@@ -20,6 +27,13 @@ export const authOptions: NextAuthOptions = {
         const identifier = String(credentials?.identifier || '').trim().toUpperCase();
         const accessKey = String(credentials?.accessKey || '').trim();
         const adminOnly = String(credentials?.adminOnly || '').trim() === 'true';
+        const rateLimitKey = `auth:${identifier || 'unknown'}`;
+
+        const limit = consumeRateLimit(rateLimitKey, AUTH_RATE_LIMIT);
+        if (!limit.allowed) {
+          console.warn('auth:rate-limited', { identifier, retryAfterSeconds: limit.retryAfterSeconds });
+          return null;
+        }
 
         if (!identifier || !accessKey) {
           console.warn('auth:missing-credentials', { identifierPresent: !!identifier, accessKeyPresent: !!accessKey });
@@ -51,6 +65,8 @@ export const authOptions: NextAuthOptions = {
           console.warn('auth:admin-required', { identifier, role: user.role });
           return null;
         }
+
+        resetRateLimit(rateLimitKey);
 
         return {
           id: user.id,
