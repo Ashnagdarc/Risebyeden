@@ -184,6 +184,18 @@
   border-color: rgba(255, 255, 255, 0.08);
 }
 
+.tableRowButton {
+  width: 100%;
+  text-align: left;
+  color: inherit;
+  cursor: pointer;
+}
+
+.tableRowButton:focus-visible {
+  outline: 2px solid rgba(197, 163, 104, 0.9);
+  outline-offset: 2px;
+}
+
 .badge {
   display: inline-flex;
   align-items: center;
@@ -444,6 +456,12 @@
   border: 1px solid rgba(255, 255, 255, 0.08);
   padding: 24px;
   box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6);
+}
+
+.modalCardWide {
+  width: min(560px, 100%);
+  max-height: 80vh;
+  overflow-y: auto;
 }
 
 .modalTitle {

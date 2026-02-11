@@ -5,6 +5,7 @@ import { authOptions } from '@/lib/auth';
 import prisma from '@/lib/prisma';
 import { QUERY_LIMITS } from '@/lib/db/query-limits';
 import styles from '../admin/admin.module.css';
+import AgentDashboardClient from './AgentDashboardClient';
 
 export default async function AgentDashboardPage() {
   const session = await getServerSession(authOptions);
@@ -55,16 +56,44 @@ export default async function AgentDashboardPage() {
             userId: true,
             name: true,
             email: true,
+            organization: true,
+            clientProfile: {
+              select: {
+                phone: true,
+                city: true,
+                region: true,
+                country: true,
+              },
+            },
           },
         },
         property: {
           select: {
             name: true,
+            location: true,
+            city: true,
+            state: true,
+            propertyType: true,
+            status: true,
+            appreciation: true,
+            capRate: true,
+            occupancy: true,
           },
         },
       },
     }),
   ]);
+
+  const serializedNotifications = notifications.map((notification) => ({
+    ...notification,
+    createdAt: notification.createdAt.toISOString(),
+  }));
+
+  const serializedAssignedRequests = assignedRequests.map((request) => ({
+    ...request,
+    createdAt: request.createdAt.toISOString(),
+    assignedAt: request.assignedAt ? request.assignedAt.toISOString() : null,
+  }));
 
   return (
     <div className={styles.container}>
@@ -78,56 +107,10 @@ export default async function AgentDashboardPage() {
           </div>
         </header>
 
-        <section className={styles.grid}>
-          <div className={styles.section}>
-            <h2 className={styles.sectionTitle}>Lead Queue</h2>
-            <div className={styles.table}>
-              <div className={`${styles.tableHeader} ${styles.tableHeaderActionsWide}`}>
-                <div>Request</div>
-                <div>Client</div>
-                <div>Property</div>
-                <div>Status</div>
-                <div>Assigned</div>
-                <div>Contact</div>
-              </div>
-              {assignedRequests.length === 0 ? (
-                <div className={styles.tableRow}>
-                  <div className={styles.tableEmpty}>No assigned requests yet.</div>
-                </div>
-              ) : (
-                assignedRequests.map((request) => (
-                  <div key={request.id} className={`${styles.tableRow} ${styles.tableRowActionsWide}`}>
-                    <div>{request.id.slice(0, 6).toUpperCase()}</div>
-                    <div>{request.user?.name || request.user?.userId || '—'}</div>
-                    <div>{request.property?.name || '—'}</div>
-                    <div className={`${styles.badge} ${styles.badgeSuccess}`}>{request.status === 'SCHEDULED' ? 'ASSIGNED' : request.status}</div>
-                    <div>{new Date(request.assignedAt || request.createdAt).toLocaleString()}</div>
-                    <div>{request.user?.email || request.user?.userId || '—'}</div>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-
-          <div className={styles.section}>
-            <h2 className={styles.sectionTitle}>Notifications</h2>
-            <div className={styles.table}>
-              {notifications.length === 0 ? (
-                <p className={styles.emptyText}>No notifications yet.</p>
-              ) : (
-                notifications.map((notification) => (
-                  <div key={notification.id} className={styles.statusHintItem}>
-                    <div>
-                      <div>{notification.title}</div>
-                      <div className={styles.emptyText}>{notification.body}</div>
-                      <div className={styles.monoText}>{new Date(notification.createdAt).toLocaleString()}</div>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-        </section>
+        <AgentDashboardClient
+          assignedRequests={serializedAssignedRequests}
+          notifications={serializedNotifications}
+        />
       </main>
     </div>
   );

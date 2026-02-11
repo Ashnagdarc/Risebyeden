@@ -32,15 +32,7 @@ export default function AuthPage() {
     });
 
     if (result?.ok) {
-      await new Promise((resolve) => setTimeout(resolve, 150));
-      const sessionRes = await fetch('/api/auth/session');
-      const session = await sessionRes.json();
-
-      if (session?.user) {
-        router.replace('/');
-      } else {
-        setAuthError('Login succeeded, but session was not established. Check NEXTAUTH_URL and cookies.');
-      }
+      router.replace(result.url || '/');
     } else {
       setAuthError('Invalid User ID or Access Key. Verify your credentials.');
     }

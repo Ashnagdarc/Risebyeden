@@ -212,6 +212,7 @@ export default function AdminInterestRequests() {
                 filteredRequests.map((request) => {
                   const selectedAgent = agentSelections[request.id] || '';
                   const isRejected = request.status === 'REJECTED';
+                  const isAssigned = request.status === 'SCHEDULED' || request.status === 'APPROVED';
 
                   return (
                     <div key={request.id} className={`${styles.tableRow} ${styles.tableRowActionsXL}`}>
@@ -223,6 +224,7 @@ export default function AdminInterestRequests() {
                           className={styles.select}
                           aria-label={`Assigned agent for ${request.id}`}
                           value={selectedAgent}
+                          disabled={isRejected || isAssigned}
                           onChange={(event) => {
                             const value = event.target.value;
                             setAgentSelections((prev) => ({ ...prev, [request.id]: value }));
@@ -242,9 +244,9 @@ export default function AdminInterestRequests() {
                         <button
                           className={`${styles.secondaryButton} ${styles.actionButtonSmall}`}
                           onClick={() => assignAgent(request.id)}
-                          disabled={isRejected || agents.length === 0 || !selectedAgent || updatingId === request.id}
+                          disabled={isRejected || isAssigned || agents.length === 0 || !selectedAgent || updatingId === request.id}
                         >
-                          Assign
+                          {isAssigned ? 'Assigned' : 'Assign'}
                         </button>
                         <button
                           className={`${styles.secondaryButton} ${styles.actionButtonSmall} ${styles.actionButtonDanger}`}
