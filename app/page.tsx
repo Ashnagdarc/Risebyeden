@@ -7,6 +7,7 @@ import StatSlab from '@/components/StatSlab';
 import PropertyRow from '@/components/PropertyRow';
 import { authOptions } from '@/lib/auth';
 import prisma from '@/lib/prisma';
+import { QUERY_LIMITS } from '@/lib/db/query-limits';
 import styles from './page.module.css';
 
 export default async function Home() {
@@ -27,6 +28,8 @@ export default async function Home() {
 
   const clientProperties = await prisma.clientProperty.findMany({
     where: { userId },
+    orderBy: { purchasedAt: 'desc' },
+    take: QUERY_LIMITS.clientProperties,
     select: {
       quantity: true,
       purchasePrice: true,

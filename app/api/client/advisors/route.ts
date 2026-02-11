@@ -4,6 +4,7 @@ import prisma from '@/lib/prisma';
 import { authOptions } from '@/lib/auth';
 import { CACHE_KEYS } from '@/lib/cache/keys';
 import { getCachedJson, setCachedJson } from '@/lib/cache/valkey';
+import { QUERY_LIMITS } from '@/lib/db/query-limits';
 
 async function requireUser() {
   const session = await getServerSession(authOptions);
@@ -27,6 +28,7 @@ export async function GET() {
   const advisors = await prisma.advisor.findMany({
     where: { status: { not: 'INACTIVE' } },
     orderBy: { createdAt: 'asc' },
+    take: QUERY_LIMITS.clientAdvisors,
     select: {
       id: true,
       name: true,

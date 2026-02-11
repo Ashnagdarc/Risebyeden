@@ -61,38 +61,38 @@ export async function GET(request: Request) {
     status: parsedQuery.data.status,
   } satisfies Prisma.UserWhereInput;
 
-  const clientQuery = {
-    where,
-    select: {
-      id: true,
-      userId: true,
-      name: true,
-      organization: true,
-      status: true,
-      clientProfile: {
-        select: {
-          tierOverride: true,
-          tierOverrideEnabled: true,
-        },
-      },
-      clientProperties: {
-        select: {
-          quantity: true,
-          purchasePrice: true,
-        },
+  const clientSelect = {
+    id: true,
+    userId: true,
+    name: true,
+    organization: true,
+    status: true,
+    clientProfile: {
+      select: {
+        tierOverride: true,
+        tierOverrideEnabled: true,
       },
     },
-    orderBy: { createdAt: 'desc' },
-    skip: pagination.skip,
-    take: pagination.take,
-  } satisfies Prisma.UserFindManyArgs;
+    clientProperties: {
+      select: {
+        quantity: true,
+        purchasePrice: true,
+      },
+    },
+  } satisfies Prisma.UserSelect;
 
   const [users, total] = await prisma.$transaction([
-    prisma.user.findMany(clientQuery),
+    prisma.user.findMany({
+      where,
+      select: clientSelect,
+      orderBy: { createdAt: 'desc' },
+      skip: pagination.skip,
+      take: pagination.take,
+    }),
     prisma.user.count({ where }),
   ]);
 
-  const clients = (users as Prisma.UserGetPayload<typeof clientQuery>[]).map((user) => {
+  const clients = (users as Prisma.UserGetPayload<{ select: typeof clientSelect }>[]).map((user) => {
     const totals = user.clientProperties.reduce<{
       propertyCount: number;
       portfolioValue: number;

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import prisma from '@/lib/prisma';
 import { authOptions } from '@/lib/auth';
+import { QUERY_LIMITS } from '@/lib/db/query-limits';
 
 async function requireUser() {
   const session = await getServerSession(authOptions);
@@ -24,6 +25,8 @@ export async function GET() {
 
   const clientProperties = await prisma.clientProperty.findMany({
     where: { userId },
+    orderBy: { purchasedAt: 'desc' },
+    take: QUERY_LIMITS.clientProperties,
     select: {
       quantity: true,
       purchasePrice: true,

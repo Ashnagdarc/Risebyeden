@@ -4,6 +4,7 @@ import { z } from 'zod';
 import prisma from '@/lib/prisma';
 import { authOptions } from '@/lib/auth';
 import { parseJsonBody } from '@/lib/api/validation';
+import { QUERY_LIMITS } from '@/lib/db/query-limits';
 
 const profilePatchSchema = z.object({
   name: z.string().trim().min(1).max(120).nullable().optional(),
@@ -120,6 +121,8 @@ export async function GET() {
 
     const clientProperties = await prisma.clientProperty.findMany({
       where: { userId },
+      orderBy: { purchasedAt: 'desc' },
+      take: QUERY_LIMITS.clientProperties,
       select: {
         quantity: true,
         property: {

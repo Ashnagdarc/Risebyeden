@@ -5,6 +5,7 @@ import prisma from '@/lib/prisma';
 import { authOptions } from '@/lib/auth';
 import { sendConsultationEmail } from '@/lib/email';
 import { parseJsonBody } from '@/lib/api/validation';
+import { QUERY_LIMITS } from '@/lib/db/query-limits';
 
 const consultationPayloadSchema = z.object({
   type: z.enum(['portfolio', 'acquisition', 'market']),
@@ -56,6 +57,7 @@ export async function GET() {
   const requests = await prisma.consultationRequest.findMany({
     where: { userId },
     orderBy: { createdAt: 'desc' },
+    take: QUERY_LIMITS.clientConsultations,
     select: {
       id: true,
       type: true,
