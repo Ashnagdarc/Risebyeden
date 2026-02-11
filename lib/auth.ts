@@ -1,6 +1,7 @@
 import type { NextAuthOptions } from 'next-auth';
 import Credentials from 'next-auth/providers/credentials';
 import bcrypt from 'bcryptjs';
+import crypto from 'crypto';
 import prisma from '@/lib/prisma';
 import { consumeRateLimit, resetRateLimit } from '@/lib/security/rate-limit';
 
@@ -29,6 +30,18 @@ function resolveClientIp(req: unknown): string {
 
   const realIp = normalizeHeaderValue(headers?.['x-real-ip']);
   return realIp.trim() || 'unknown';
+}
+
+function hashIdentifier(identifier: string): string {
+  if (!identifier) {
+    return 'unknown';
+  }
+
+  return crypto.createHash('sha256').update(identifier).digest('hex').slice(0, 12);
+}
+
+function logAuthWarning(event: string, details: Record<string, unknown>): void {
+  console.warn(`auth:${event}`, details);
 }
 
 export const authOptions: NextAuthOptions = {
@@ -66,12 +79,19 @@ export const authOptions: NextAuthOptions = {
         );
 
         if (!identifierLimit.allowed || !ipLimit.allowed || !pairLimit.allowed) {
-          console.warn('auth:rate-limited', { identifier, clientIp, retryAfterSeconds });
+          logAuthWarning('rate-limited', {
+            identifierHash: hashIdentifier(identifier),
+            retryAfterSeconds,
+          });
           return null;
         }
 
         if (!identifier || !accessKey) {
-          console.warn('auth:missing-credentials', { identifierPresent: !!identifier, accessKeyPresent: !!accessKey });
+          logAuthWarning('missing-credentials', {
+            identifierHash: hashIdentifier(identifier),
+            identifierPresent: !!identifier,
+            accessKeyPresent: !!accessKey,
+          });
           return null;
         }
 
@@ -80,24 +100,34 @@ export const authOptions: NextAuthOptions = {
         });
 
         if (!user) {
-          console.warn('auth:user-not-found', { identifier });
+          logAuthWarning('user-not-found', {
+            identifierHash: hashIdentifier(identifier),
+          });
           return null;
         }
 
         // Must be ACTIVE to log in
         if (user.status !== 'ACTIVE') {
-          console.warn('auth:user-not-active', { identifier, status: user.status });
+          logAuthWarning('user-not-active', {
+            identifierHash: hashIdentifier(identifier),
+            status: user.status,
+          });
           return null;
         }
 
         const isValid = await bcrypt.compare(accessKey, user.hashedPassword);
         if (!isValid) {
-          console.warn('auth:invalid-access-key', { identifier });
+          logAuthWarning('invalid-access-key', {
+            identifierHash: hashIdentifier(identifier),
+          });
           return null;
         }
 
         if (adminOnly && user.role !== 'ADMIN') {
-          console.warn('auth:admin-required', { identifier, role: user.role });
+          logAuthWarning('admin-required', {
+            identifierHash: hashIdentifier(identifier),
+            role: user.role,
+          });
           return null;
         }
 

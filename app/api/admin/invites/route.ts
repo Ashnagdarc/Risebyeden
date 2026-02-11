@@ -25,7 +25,13 @@ const createInviteSchema = z.object({
   email: z.string().trim().email(),
   role: z.enum(['ADMIN', 'CLIENT', 'AGENT']).optional(),
   organizationId: z.string().min(1).nullable().optional(),
-  expiresAt: z.string().trim().min(1).nullable().optional(),
+  expiresAt: z.string()
+    .datetime({ offset: true })
+    .refine((value) => new Date(value).getTime() > Date.now(), {
+      message: 'expiresAt must be a future ISO-8601 timestamp with timezone offset',
+    })
+    .nullable()
+    .optional(),
 }).strict();
 
 export async function GET(request: Request) {
@@ -84,6 +90,16 @@ export async function POST(request: Request) {
   }
   const body = parsedBody.data;
 
+  if (body.organizationId) {
+    const organization = await prisma.organization.findUnique({
+      where: { id: body.organizationId },
+      select: { id: true },
+    });
+    if (!organization) {
+      return NextResponse.json({ error: 'Organization not found' }, { status: 404 });
+    }
+  }
+
   const token = crypto.randomBytes(16).toString('hex').toUpperCase();
   const tokenHash = await hashToken(token);
   const expiresAt = body.expiresAt ? new Date(body.expiresAt) : null;
@@ -94,7 +110,7 @@ export async function POST(request: Request) {
       role: body.role || 'CLIENT',
       organizationId: body.organizationId || null,
       token: tokenHash,
-      expiresAt: expiresAt && !Number.isNaN(expiresAt.getTime()) ? expiresAt : null,
+      expiresAt,
     },
     select: {
       id: true,

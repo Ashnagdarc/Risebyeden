@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
+import { Prisma } from '@prisma/client';
 import { z } from 'zod';
 import prisma from '@/lib/prisma';
 import { authOptions } from '@/lib/auth';
@@ -254,12 +255,46 @@ export async function DELETE(request: Request) {
   }
   const body = parsedBody.data;
 
-  await prisma.document.deleteMany({ where: { propertyId: body.id } });
-  await prisma.clientProperty.deleteMany({ where: { propertyId: body.id } });
-  await prisma.transaction.deleteMany({ where: { propertyId: body.id } });
-  await prisma.priceUpdate.deleteMany({ where: { propertyId: body.id } });
+  const deleted = await prisma.$transaction(async (tx) => {
+    const existing = await tx.property.findUnique({
+      where: { id: body.id },
+      select: { id: true },
+    });
 
-  await prisma.property.delete({ where: { id: body.id } });
+    if (!existing) {
+      return false;
+    }
+
+    const relatedTransactions = await tx.transaction.findMany({
+      where: { propertyId: body.id },
+      select: { id: true },
+    });
+
+    if (relatedTransactions.length) {
+      await tx.payment.deleteMany({
+        where: {
+          transactionId: {
+            in: relatedTransactions.map((entry) => entry.id),
+          },
+        },
+      });
+    }
+
+    await tx.document.deleteMany({ where: { propertyId: body.id } });
+    await tx.interestRequest.deleteMany({ where: { propertyId: body.id } });
+    await tx.clientProperty.deleteMany({ where: { propertyId: body.id } });
+    await tx.priceUpdate.deleteMany({ where: { propertyId: body.id } });
+    await tx.transaction.deleteMany({ where: { propertyId: body.id } });
+    await tx.property.delete({ where: { id: body.id } });
+
+    return true;
+  }, {
+    isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
+  });
+
+  if (!deleted) {
+    return NextResponse.json({ error: 'Property not found' }, { status: 404 });
+  }
 
   await deleteCacheKeys([
     CACHE_KEYS.clientPropertiesAvailable,
