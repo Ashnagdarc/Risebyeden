@@ -9,6 +9,7 @@ import { parseJsonBody, parseQuery } from '@/lib/api/validation';
 import { sendInterestAssignmentEmail } from '@/lib/email';
 import { requireSessionPolicy } from '@/lib/security/policy';
 import { logError, logInfo } from '@/lib/observability/logger';
+import { bindRequestContextToSentry, getRequestContext, withRequestId } from '@/lib/observability/request-context';
 
 const interestStatusSchema = z.enum(['PENDING', 'SCHEDULED', 'APPROVED', 'REJECTED']);
 
@@ -29,14 +30,19 @@ const interestPatchSchema = z.union([
 ]);
 
 export async function GET(request: Request) {
+  const requestContext = getRequestContext(request);
+  bindRequestContextToSentry(requestContext);
+  const respond = (body: unknown, init?: ResponseInit) =>
+    withRequestId(NextResponse.json(body, init), requestContext.requestId);
+
   const auth = await requireSessionPolicy({ allowedRoles: ['admin'] });
   if (!auth.ok) {
-    return auth.response;
+    return withRequestId(auth.response, requestContext.requestId);
   }
 
   const parsedQuery = parseQuery(request, interestListQuerySchema);
   if (!parsedQuery.success) {
-    return parsedQuery.response;
+    return withRequestId(parsedQuery.response, requestContext.requestId);
   }
   const pagination = parsePagination(request, { defaultLimit: 50, maxLimit: 200 });
   const where = parsedQuery.data.status ? { status: parsedQuery.data.status } : undefined;
@@ -60,7 +66,7 @@ export async function GET(request: Request) {
     prisma.interestRequest.count({ where }),
   ]);
 
-  return NextResponse.json({
+  return respond({
     requests,
     pagination: buildPaginationMeta({
       page: pagination.page,
@@ -71,14 +77,19 @@ export async function GET(request: Request) {
 }
 
 export async function PATCH(request: Request) {
+  const requestContext = getRequestContext(request);
+  bindRequestContextToSentry(requestContext);
+  const respond = (body: unknown, init?: ResponseInit) =>
+    withRequestId(NextResponse.json(body, init), requestContext.requestId);
+
   const auth = await requireSessionPolicy({ allowedRoles: ['admin'] });
   if (!auth.ok) {
-    return auth.response;
+    return withRequestId(auth.response, requestContext.requestId);
   }
 
   const parsedBody = await parseJsonBody(request, interestPatchSchema);
   if (!parsedBody.success) {
-    return parsedBody.response;
+    return withRequestId(parsedBody.response, requestContext.requestId);
   }
   const body = parsedBody.data;
 
@@ -94,7 +105,7 @@ export async function PATCH(request: Request) {
   });
 
   if (!current) {
-    return NextResponse.json({ error: 'Request not found' }, { status: 404 });
+    return respond({ error: 'Request not found' }, { status: 404 });
   }
 
   try {
@@ -119,10 +130,11 @@ export async function PATCH(request: Request) {
 
       await deleteCacheKeys([CACHE_KEYS.adminOverview]);
       logInfo('admin.interest_request.rejected', {
-        requestId: requestRecord.id,
+        requestId: requestContext.requestId,
+        interestRequestId: requestRecord.id,
         previousStatus: current.status,
       });
-      return NextResponse.json({ request: requestRecord });
+      return respond({ request: requestRecord });
     }
 
     const agent = await prisma.user.findFirst({
@@ -140,11 +152,11 @@ export async function PATCH(request: Request) {
     });
 
     if (!agent) {
-      return NextResponse.json({ error: 'Active agent not found' }, { status: 404 });
+      return respond({ error: 'Active agent not found' }, { status: 404 });
     }
 
     if (current.status === 'REJECTED') {
-      return NextResponse.json({ error: 'Rejected requests cannot be assigned' }, { status: 409 });
+      return respond({ error: 'Rejected requests cannot be assigned' }, { status: 409 });
     }
 
     const assignedAt = new Date();
@@ -201,22 +213,24 @@ export async function PATCH(request: Request) {
     ]);
 
     logInfo('admin.interest_request.assigned', {
-      requestId: requestRecord.id,
+      requestId: requestContext.requestId,
+      interestRequestId: requestRecord.id,
       agentId: agent.id,
       agentUserId: agent.userId,
       notifyEmailSent: Boolean(agent.email),
     });
 
-    return NextResponse.json({ request: requestRecord });
+    return respond({ request: requestRecord });
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
-      return NextResponse.json({ error: 'Request not found' }, { status: 404 });
+      return respond({ error: 'Request not found' }, { status: 404 });
     }
 
     logError('admin.interest_request.update_failed', error, {
-      requestId: body.id,
+      requestId: requestContext.requestId,
+      interestRequestId: body.id,
       action: body.action,
     });
-    return NextResponse.json({ error: 'Unable to update request' }, { status: 500 });
+    return respond({ error: 'Unable to update request' }, { status: 500 });
   }
 }

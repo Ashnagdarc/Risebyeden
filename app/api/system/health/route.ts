@@ -2,10 +2,14 @@ import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getCacheHealth } from '@/lib/cache/valkey';
 import { logError } from '@/lib/observability/logger';
+import { bindRequestContextToSentry, getRequestContext, withRequestId } from '@/lib/observability/request-context';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
+export async function GET(request: Request) {
+  const requestContext = getRequestContext(request);
+  bindRequestContextToSentry(requestContext);
+
   const startedAt = Date.now();
 
   let databaseHealthy = true;
@@ -13,7 +17,7 @@ export async function GET() {
     await prisma.$queryRaw`SELECT 1`;
   } catch (error) {
     databaseHealthy = false;
-    logError('system.health.database_failed', error);
+    logError('system.health.database_failed', error, { requestId: requestContext.requestId });
   }
 
   const cacheHealth = await getCacheHealth();
@@ -29,11 +33,13 @@ export async function GET() {
     latencyMs: Date.now() - startedAt,
   };
 
-  return NextResponse.json(payload, {
-    status: overallHealthy ? 200 : 503,
-    headers: {
-      'Cache-Control': 'no-store, no-cache, must-revalidate',
-    },
-  });
+  return withRequestId(
+    NextResponse.json(payload, {
+      status: overallHealthy ? 200 : 503,
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate',
+      },
+    }),
+    requestContext.requestId,
+  );
 }
-

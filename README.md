@@ -101,6 +101,7 @@ npx prisma migrate status
 - Health endpoint: `GET /api/system/health` (DB + cache status for alert probes).
 - Runtime endpoint: `GET /api/system/runtime` (node metadata for diagnostics).
 - Structured JSON logging helper: `lib/observability/logger.ts`.
+- Request correlation: middleware + API routes propagate `x-request-id` and include it in logs/Sentry tags.
 - Sentry remains enabled for request and runtime error capture.
 - Runbook: `docs/observability.md`
 

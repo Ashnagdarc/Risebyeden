@@ -32,14 +32,25 @@ Current high-impact coverage includes:
   - `checkedAt`
   - `latencyMs`
 
-## 3) Sentry integration
+## 3) Request correlation
+
+- Correlation header: `x-request-id`
+- Middleware behavior:
+  - protected app routes get a generated/request-forwarded `x-request-id`
+  - response includes the same `x-request-id` header
+- API behavior:
+  - routes generate/use `x-request-id`
+  - route logs include `requestId`
+  - Sentry request context includes the same request ID
+
+## 4) Sentry integration
 
 - Sentry request/error capture remains enabled via:
   - `instrumentation.ts`
   - `sentry.server.config.ts`
   - `sentry.edge.config.ts`
 
-## 4) Alerting guidance (infra layer)
+## 5) Alerting guidance (infra layer)
 
 Set up external monitors to alert on:
 
@@ -49,8 +60,8 @@ Set up external monitors to alert on:
 - spike in cache connection failures (`valkey.connect_failed`)
 - elevated Next.js 5xx responses in Sentry/APM
 
-## 5) Next improvements
+## 6) Next improvements
 
-- add request correlation IDs and include them in all logs
 - expose metrics to a TSDB (Prometheus/Datadog/CloudWatch)
 - define SLOs for auth, admin actions, and client request flows
+- propagate correlation IDs into asynchronous worker/email pipelines

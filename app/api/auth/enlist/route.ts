@@ -6,6 +6,7 @@ import prisma from '@/lib/prisma';
 import { consumeRateLimit, resetRateLimit } from '@/lib/security/rate-limit';
 import { verifyStoredToken } from '@/lib/security/token';
 import { logError, logInfo, logWarn } from '@/lib/observability/logger';
+import { bindRequestContextToSentry, getRequestContext, withRequestId } from '@/lib/observability/request-context';
 
 function readPositiveIntEnv(key: string, fallback: number): number {
   const raw = process.env[key];
@@ -41,6 +42,11 @@ function resolveClientIp(request: Request): string {
 
 // POST — Client uses userId + accessKey + accessToken to request access
 export async function POST(request: Request) {
+  const requestContext = getRequestContext(request);
+  bindRequestContextToSentry(requestContext);
+  const respond = (body: unknown, init?: ResponseInit) =>
+    withRequestId(NextResponse.json(body, init), requestContext.requestId);
+
   let normalizedUserId = '';
   let rateLimitKey = '';
 
@@ -49,7 +55,7 @@ export async function POST(request: Request) {
     try {
       rawBody = await request.json();
     } catch {
-      return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+      return respond({ error: 'Invalid JSON body' }, { status: 400 });
     }
 
     const preParsed = z.object({ userId: z.string().optional() }).passthrough().safeParse(rawBody);
@@ -60,10 +66,11 @@ export async function POST(request: Request) {
     const limit = await consumeRateLimit(rateLimitKey, ENLIST_RATE_LIMIT);
     if (!limit.allowed) {
       logWarn('auth.enlist.rate_limited', {
+        requestId: requestContext.requestId,
         userId: normalizedUserId || 'unknown',
         retryAfterSeconds: limit.retryAfterSeconds,
       });
-      return NextResponse.json(
+      return respond(
         { error: 'Too many attempts. Try again later.' },
         { status: 429, headers: { 'Retry-After': String(limit.retryAfterSeconds) } }
       );
@@ -71,7 +78,7 @@ export async function POST(request: Request) {
 
     const parsedBody = enlistPayloadSchema.safeParse(rawBody);
     if (!parsedBody.success) {
-      return NextResponse.json({ error: 'All fields are required' }, { status: 400 });
+      return respond({ error: 'All fields are required' }, { status: 400 });
     }
     const body = parsedBody.data;
 
@@ -80,25 +87,25 @@ export async function POST(request: Request) {
     });
 
     if (!user) {
-      return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
+      return respond({ error: 'Invalid credentials' }, { status: 401 });
     }
 
     const isKeyValid = await bcrypt.compare(body.accessKey, user.hashedPassword);
     if (!isKeyValid) {
-      return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
+      return respond({ error: 'Invalid credentials' }, { status: 401 });
     }
 
     const tokenIsValid = await verifyStoredToken(body.accessToken, user.accessToken);
     if (!tokenIsValid) {
-      return NextResponse.json({ error: 'Invalid access token' }, { status: 401 });
+      return respond({ error: 'Invalid access token' }, { status: 401 });
     }
 
     if (user.tokenUsed) {
-      return NextResponse.json({ error: 'Access token has already been used' }, { status: 400 });
+      return respond({ error: 'Access token has already been used' }, { status: 400 });
     }
 
     if (user.status === 'ACTIVE') {
-      return NextResponse.json({ error: 'Account is already active' }, { status: 400 });
+      return respond({ error: 'Account is already active' }, { status: 400 });
     }
 
     try {
@@ -112,19 +119,25 @@ export async function POST(request: Request) {
       });
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
-        return NextResponse.json({ error: 'Email address is already in use' }, { status: 409 });
+        return respond({ error: 'Email address is already in use' }, { status: 409 });
       }
       throw error;
     }
 
     await resetRateLimit(rateLimitKey);
-    logInfo('auth.enlist.submitted', { userId: normalizedUserId });
+    logInfo('auth.enlist.submitted', {
+      requestId: requestContext.requestId,
+      userId: normalizedUserId,
+    });
 
-    return NextResponse.json({
+    return respond({
       message: 'Access request submitted. Awaiting admin authorization.',
     });
   } catch (error) {
-    logError('auth.enlist.failed', error, { userId: normalizedUserId || 'unknown' });
-    return NextResponse.json({ error: 'Unable to process access request' }, { status: 500 });
+    logError('auth.enlist.failed', error, {
+      requestId: requestContext.requestId,
+      userId: normalizedUserId || 'unknown',
+    });
+    return respond({ error: 'Unable to process access request' }, { status: 500 });
   }
 }

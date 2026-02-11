@@ -6,6 +6,7 @@ import { parseJsonBody } from '@/lib/api/validation';
 import { QUERY_LIMITS } from '@/lib/db/query-limits';
 import { requireSessionPolicy } from '@/lib/security/policy';
 import { logError, logInfo } from '@/lib/observability/logger';
+import { bindRequestContextToSentry, getRequestContext, withRequestId } from '@/lib/observability/request-context';
 
 const consultationPayloadSchema = z.object({
   type: z.enum(['portfolio', 'acquisition', 'market']),
@@ -35,15 +36,20 @@ function escapeHtml(value: string | null | undefined): string {
     .replace(/'/g, '&#39;');
 }
 
-export async function GET() {
+export async function GET(request: Request) {
+  const requestContext = getRequestContext(request);
+  bindRequestContextToSentry(requestContext);
+  const respond = (body: unknown, init?: ResponseInit) =>
+    withRequestId(NextResponse.json(body, init), requestContext.requestId);
+
   const auth = await requireSessionPolicy({ requireUserId: true });
   if (!auth.ok) {
-    return auth.response;
+    return withRequestId(auth.response, requestContext.requestId);
   }
 
   const userId = auth.userId;
   if (!userId) {
-    return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    return respond({ error: 'User not found' }, { status: 404 });
   }
 
   const requests = await prisma.consultationRequest.findMany({
@@ -64,30 +70,35 @@ export async function GET() {
     },
   });
 
-  return NextResponse.json({ requests });
+  return respond({ requests });
 }
 
 export async function POST(request: Request) {
+  const requestContext = getRequestContext(request);
+  bindRequestContextToSentry(requestContext);
+  const respond = (body: unknown, init?: ResponseInit) =>
+    withRequestId(NextResponse.json(body, init), requestContext.requestId);
+
   const auth = await requireSessionPolicy({ requireUserId: true });
   if (!auth.ok) {
-    return auth.response;
+    return withRequestId(auth.response, requestContext.requestId);
   }
 
   const userId = auth.userId;
   if (!userId) {
-    return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    return respond({ error: 'User not found' }, { status: 404 });
   }
 
   const parsedBody = await parseJsonBody(request, consultationPayloadSchema);
   if (!parsedBody.success) {
-    return parsedBody.response;
+    return withRequestId(parsedBody.response, requestContext.requestId);
   }
   const body = parsedBody.data;
   const type = mapType(body.type);
 
   const preferredDate = new Date(body.preferredDate);
   if (Number.isNaN(preferredDate.getTime())) {
-    return NextResponse.json({ error: 'Invalid date' }, { status: 400 });
+    return respond({ error: 'Invalid date' }, { status: 400 });
   }
 
   try {
@@ -102,10 +113,10 @@ export async function POST(request: Request) {
       });
 
       if (!advisor) {
-        return NextResponse.json({ error: 'Advisor not found' }, { status: 404 });
+        return respond({ error: 'Advisor not found' }, { status: 404 });
       }
       if (advisor.advisorStatus === 'INACTIVE') {
-        return NextResponse.json({ error: 'Advisor is inactive' }, { status: 409 });
+        return respond({ error: 'Advisor is inactive' }, { status: 409 });
       }
     }
 
@@ -169,16 +180,20 @@ export async function POST(request: Request) {
     }
 
     logInfo('client.consultation.created', {
-      requestId: requestRecord.id,
+      requestId: requestContext.requestId,
+      consultationRequestId: requestRecord.id,
       userId,
       type: requestRecord.type,
       advisorId: requestRecord.advisor?.id || null,
       notifyRecipients: recipients.length,
     });
 
-    return NextResponse.json({ request: requestRecord });
+    return respond({ request: requestRecord });
   } catch (error) {
-    logError('client.consultation.create_failed', error, { userId });
-    return NextResponse.json({ error: 'Unable to create consultation request' }, { status: 500 });
+    logError('client.consultation.create_failed', error, {
+      requestId: requestContext.requestId,
+      userId,
+    });
+    return respond({ error: 'Unable to create consultation request' }, { status: 500 });
   }
 }

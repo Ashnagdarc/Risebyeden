@@ -73,5 +73,6 @@ This checklist tracks production-hardening work identified during the deep audit
 
 - [x] Add structured JSON logging utility and wire critical auth/admin/client error paths.
 - [x] Add machine-readable health endpoint for DB/cache (`/api/system/health`).
+- [x] Add request correlation IDs across middleware/API/Sentry tags (`x-request-id`).
 - [ ] Add external metrics dashboards + paging alerts in infra (outside app repo).
-- [ ] Add correlation/request IDs propagated across edge, API, and async workflows.
+- [ ] Propagate correlation/request IDs through async worker/email pipelines.
