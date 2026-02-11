@@ -1,29 +1,64 @@
 name: CI
 
 on:
-  push:
-    branches: ["**"]
   pull_request:
+  push:
+    branches:
+      - main
 
 jobs:
   verify:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: risebyeden_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d risebyeden_ci"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      NODE_ENV: test
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/risebyeden_ci?schema=public
+      NEXTAUTH_URL: http://localhost:3000
+      NEXTAUTH_SECRET: ci_nextauth_secret_change_me
+      VALKEY_URL: ''
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20.18.3
+          node-version: 20
           cache: npm
 
       - name: Install dependencies
         run: npm ci
 
+      - name: Prisma migration drift check
+        run: ./scripts/check-prisma-migrations.sh
+
       - name: Prisma schema validation
         run: npx prisma validate
+
+      - name: Prisma client generation
+        run: npx prisma generate
+
+      - name: Prisma migration deploy check
+        run: npx prisma migrate deploy
+
+      - name: Prisma migration status check
+        run: npx prisma migrate status
 
       - name: Lint
         run: npm run lint
@@ -31,5 +66,5 @@ jobs:
       - name: Build
         run: npm run build
 
-      - name: Cache hook checks
-        run: npm run test:cache-hooks
+      - name: Tests
+        run: npm run test:ci

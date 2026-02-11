@@ -1,0 +1,116 @@
+name: Deploy
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      target:
+        description: Deployment target
+        required: true
+        default: staging
+        type: choice
+        options:
+          - staging
+          - production
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  preflight:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: risebyeden_deploy
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d risebyeden_deploy"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      NODE_ENV: test
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/risebyeden_deploy?schema=public
+      NEXTAUTH_URL: http://localhost:3000
+      NEXTAUTH_SECRET: deploy_preflight_secret_change_me
+      VALKEY_URL: ''
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Prisma migration drift check
+        run: ./scripts/check-prisma-migrations.sh
+
+      - name: Prisma schema validation
+        run: npx prisma validate
+
+      - name: Prisma client generation
+        run: npx prisma generate
+
+      - name: Prisma migration deploy check
+        run: npx prisma migrate deploy
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Build
+        run: npm run build
+
+      - name: Tests
+        run: npm run test:ci
+
+  deploy-staging:
+    runs-on: ubuntu-latest
+    needs: preflight
+    if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.event.inputs.target == 'staging')
+    environment: staging
+    steps:
+      - name: Trigger staging deploy
+        env:
+          DEPLOY_STAGING_WEBHOOK_URL: ${{ secrets.DEPLOY_STAGING_WEBHOOK_URL }}
+        run: |
+          if [ -z "$DEPLOY_STAGING_WEBHOOK_URL" ]; then
+            echo "DEPLOY_STAGING_WEBHOOK_URL is not configured. Skipping staging deploy trigger."
+            exit 0
+          fi
+
+          curl -fsSL -X POST "$DEPLOY_STAGING_WEBHOOK_URL"
+          echo "Staging deploy triggered."
+
+  deploy-production:
+    runs-on: ubuntu-latest
+    needs: preflight
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.target == 'production'
+    environment: production
+    steps:
+      - name: Trigger production deploy
+        env:
+          DEPLOY_PRODUCTION_WEBHOOK_URL: ${{ secrets.DEPLOY_PRODUCTION_WEBHOOK_URL }}
+        run: |
+          if [ -z "$DEPLOY_PRODUCTION_WEBHOOK_URL" ]; then
+            echo "DEPLOY_PRODUCTION_WEBHOOK_URL is required for production deploys."
+            exit 1
+          fi
+
+          curl -fsSL -X POST "$DEPLOY_PRODUCTION_WEBHOOK_URL"
+          echo "Production deploy triggered."
