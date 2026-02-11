@@ -1,9 +1,11 @@
 import nodemailer from 'nodemailer';
+import { logError, logInfo, logWarn } from '@/lib/observability/logger';
 
 type EmailPayload = {
   to: string[];
   subject: string;
   html: string;
+  requestId?: string;
 };
 
 function getTransporter() {
@@ -31,22 +33,52 @@ function getTransporter() {
 export async function sendConsultationEmail(payload: EmailPayload) {
   const transporter = getTransporter();
   if (!transporter) {
+    logWarn('email.smtp_not_configured', {
+      requestId: payload.requestId || null,
+      recipientCount: payload.to.length,
+    });
     return { sent: false, reason: 'SMTP not configured' };
   }
 
   const from = process.env.SMTP_FROM || process.env.SMTP_USER || '';
   if (!from) {
+    logWarn('email.sender_missing', {
+      requestId: payload.requestId || null,
+      recipientCount: payload.to.length,
+    });
     return { sent: false, reason: 'Missing sender address' };
   }
 
-  await transporter.sendMail({
-    from,
-    to: payload.to,
-    subject: payload.subject,
-    html: payload.html,
-  });
+  try {
+    const info = await transporter.sendMail({
+      from,
+      to: payload.to,
+      subject: payload.subject,
+      html: payload.html,
+      headers: payload.requestId
+        ? {
+          'X-Request-Id': payload.requestId,
+          'X-Correlation-Id': payload.requestId,
+        }
+        : undefined,
+    });
 
-  return { sent: true };
+    logInfo('email.sent', {
+      requestId: payload.requestId || null,
+      recipientCount: payload.to.length,
+      messageId: info.messageId,
+      acceptedCount: info.accepted.length,
+      rejectedCount: info.rejected.length,
+    });
+
+    return { sent: true, messageId: info.messageId };
+  } catch (error) {
+    logError('email.send_failed', error, {
+      requestId: payload.requestId || null,
+      recipientCount: payload.to.length,
+    });
+    throw error;
+  }
 }
 
 type InterestAssignmentPayload = {
@@ -57,6 +89,7 @@ type InterestAssignmentPayload = {
   propertyName: string;
   requestedAt: Date;
   dashboardUrl: string;
+  requestId?: string;
 };
 
 function escapeHtml(value: string): string {
@@ -90,5 +123,6 @@ export async function sendInterestAssignmentEmail(payload: InterestAssignmentPay
         <p><a href="${dashboardUrl}">Open Agent Dashboard</a></p>
       </div>
     `,
+    requestId: payload.requestId,
   });
 }

@@ -160,7 +160,7 @@ export async function PATCH(request: Request) {
     }
 
     const assignedAt = new Date();
-    const requestRecord = await prisma.$transaction(async (tx) => {
+    const transactionResult = await prisma.$transaction(async (tx) => {
       const updated = await tx.interestRequest.update({
         where: { id: body.id },
         data: {
@@ -179,7 +179,7 @@ export async function PATCH(request: Request) {
         },
       });
 
-      await tx.notification.create({
+      const notification = await tx.notification.create({
         data: {
           userId: agent.id,
           type: 'INTEREST_ASSIGNED',
@@ -187,13 +187,22 @@ export async function PATCH(request: Request) {
           body: `Reach out to ${current.user?.name || current.user?.userId || 'the client'} about ${current.property?.name || 'their requested property'} as soon as possible.`,
           link: '/agent',
         },
+        select: {
+          id: true,
+        },
       });
 
-      return updated;
+      return {
+        request: updated,
+        notificationId: notification.id,
+      };
     }, {
       isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
     });
+    const requestRecord = transactionResult.request;
+    const notificationId = transactionResult.notificationId;
 
+    let emailSent = false;
     if (agent.email) {
       const appUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
       await sendInterestAssignmentEmail({
@@ -204,7 +213,9 @@ export async function PATCH(request: Request) {
         propertyName: current.property?.name || 'Requested Property',
         requestedAt: current.createdAt,
         dashboardUrl: `${appUrl}/agent`,
+        requestId: requestContext.requestId,
       });
+      emailSent = true;
     }
 
     await deleteCacheKeys([
@@ -217,7 +228,8 @@ export async function PATCH(request: Request) {
       interestRequestId: requestRecord.id,
       agentId: agent.id,
       agentUserId: agent.userId,
-      notifyEmailSent: Boolean(agent.email),
+      notificationId,
+      notifyEmailSent: emailSent,
     });
 
     return respond({ request: requestRecord });

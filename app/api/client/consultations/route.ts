@@ -147,6 +147,7 @@ export async function POST(request: Request) {
     const recipients = process.env.CONSULTATION_NOTIFY_TO
       ? process.env.CONSULTATION_NOTIFY_TO.split(',').map((entry) => entry.trim()).filter(Boolean)
       : [];
+    let emailSent = false;
 
     if (recipients.length) {
       const subject = `New consultation request (${requestRecord.type})`;
@@ -176,7 +177,9 @@ export async function POST(request: Request) {
         to: recipients,
         subject,
         html,
+        requestId: requestContext.requestId,
       });
+      emailSent = true;
     }
 
     logInfo('client.consultation.created', {
@@ -186,6 +189,7 @@ export async function POST(request: Request) {
       type: requestRecord.type,
       advisorId: requestRecord.advisor?.id || null,
       notifyRecipients: recipients.length,
+      notifyEmailSent: emailSent,
     });
 
     return respond({ request: requestRecord });

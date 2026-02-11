@@ -102,6 +102,7 @@ npx prisma migrate status
 - Runtime endpoint: `GET /api/system/runtime` (node metadata for diagnostics).
 - Structured JSON logging helper: `lib/observability/logger.ts`.
 - Request correlation: middleware + API routes propagate `x-request-id` and include it in logs/Sentry tags.
+- Async correlation: outbound SMTP emails include `X-Request-Id` / `X-Correlation-Id`.
 - Sentry remains enabled for request and runtime error capture.
 - Runbook: `docs/observability.md`
 

@@ -42,6 +42,7 @@ Current high-impact coverage includes:
   - routes generate/use `x-request-id`
   - route logs include `requestId`
   - Sentry request context includes the same request ID
+  - outbound SMTP sends include `X-Request-Id` and `X-Correlation-Id` headers via `lib/email.ts`
 
 ## 4) Sentry integration
 
@@ -64,4 +65,4 @@ Set up external monitors to alert on:
 
 - expose metrics to a TSDB (Prometheus/Datadog/CloudWatch)
 - define SLOs for auth, admin actions, and client request flows
-- propagate correlation IDs into asynchronous worker/email pipelines
+- propagate correlation IDs into future queue/worker pipelines (if/when introduced)
