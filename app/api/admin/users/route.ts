@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
+import { Prisma } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import { z } from 'zod';
@@ -177,7 +178,11 @@ export async function PATCH(request: Request) {
     await deleteCacheKeys([CACHE_KEYS.adminOverview]);
 
     return NextResponse.json({ user });
-  } catch {
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
+
     return NextResponse.json({ error: 'Unable to update user' }, { status: 500 });
   }
 }

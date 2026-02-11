@@ -3,14 +3,14 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { signOut } from 'next-auth/react';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import styles from './Sidebar.module.css';
 
 type NavItem = {
   href: string;
   label: string;
   mobileLabel?: string;
-  icon: () => JSX.Element;
+  icon: () => ReactNode;
   desktopBottom?: boolean;
 };
 

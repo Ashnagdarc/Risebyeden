@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
+import { Prisma } from '@prisma/client';
 import { z } from 'zod';
 import prisma from '@/lib/prisma';
 import { authOptions } from '@/lib/auth';
@@ -107,7 +108,11 @@ export async function PATCH(request: Request) {
     });
 
     return NextResponse.json({ consultation });
-  } catch {
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
+      return NextResponse.json({ error: 'Consultation not found' }, { status: 404 });
+    }
+
     return NextResponse.json({ error: 'Unable to update consultation' }, { status: 500 });
   }
 }

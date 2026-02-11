@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
+import { Prisma } from '@prisma/client';
 import { z } from 'zod';
 import prisma from '@/lib/prisma';
 import { authOptions } from '@/lib/auth';
@@ -148,7 +149,11 @@ export async function PATCH(request: Request) {
     await deleteCacheKeys([CACHE_KEYS.clientAdvisorsActive, CACHE_KEYS.adminOverview]);
 
     return NextResponse.json({ advisor });
-  } catch {
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
+      return NextResponse.json({ error: 'Advisor not found' }, { status: 404 });
+    }
+
     return NextResponse.json({ error: 'Unable to update advisor' }, { status: 500 });
   }
 }

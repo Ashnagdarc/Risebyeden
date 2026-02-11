@@ -196,51 +196,63 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ error: 'Invalid base price' }, { status: 400 });
   }
 
-  const imageUrls = Array.isArray(body.imageUrls)
-    ? body.imageUrls.map((url) => url.trim()).filter(Boolean)
-    : null;
+  const imageUrls = body.imageUrls?.map((url) => url.trim()).filter(Boolean);
 
-  if (imageUrls) {
-    await prisma.document.deleteMany({
-      where: { propertyId: body.id, type: 'OTHER' },
-    });
-  }
+  try {
+    const property = await prisma.$transaction(async (tx) => {
+      const updatedProperty = await tx.property.update({
+        where: { id: body.id },
+        data: {
+          name: body.name?.trim() || undefined,
+          slug: body.slug ? slugify(body.slug) : undefined,
+          location: body.location === undefined ? undefined : body.location?.trim() || null,
+          description: body.description === undefined ? undefined : body.description?.trim() || null,
+          status: body.status || undefined,
+          basePrice: basePrice === undefined ? undefined : basePrice,
+        },
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+          status: true,
+          basePrice: true,
+        },
+      });
 
-  const property = await prisma.property.update({
-    where: { id: body.id },
-    data: {
-      name: body.name?.trim() || undefined,
-      slug: body.slug ? slugify(body.slug) : undefined,
-      location: body.location === undefined ? undefined : body.location?.trim() || null,
-      description: body.description === undefined ? undefined : body.description?.trim() || null,
-      status: body.status || undefined,
-      basePrice: basePrice === undefined ? undefined : basePrice,
-      documents: imageUrls && imageUrls.length
-        ? {
-            create: imageUrls.map((url, index) => ({
-              name: `${body.name?.trim() || 'Property'} Image ${index + 1}`,
+      if (imageUrls !== undefined) {
+        await tx.document.deleteMany({
+          where: { propertyId: body.id, type: 'OTHER' },
+        });
+
+        if (imageUrls.length > 0) {
+          await tx.document.createMany({
+            data: imageUrls.map((url, index) => ({
+              propertyId: body.id,
+              name: `${updatedProperty.name} Image ${index + 1}`,
               url,
               type: 'OTHER',
             })),
-          }
-        : undefined,
-    },
-    select: {
-      id: true,
-      name: true,
-      slug: true,
-      status: true,
-      basePrice: true,
-    },
-  });
+          });
+        }
+      }
 
-  await deleteCacheKeys([
-    CACHE_KEYS.clientPropertiesAvailable,
-    CACHE_KEYS.adminOverview,
-    CACHE_KEYS.clientPropertyById(property.id),
-  ]);
+      return updatedProperty;
+    });
 
-  return NextResponse.json({ property });
+    await deleteCacheKeys([
+      CACHE_KEYS.clientPropertiesAvailable,
+      CACHE_KEYS.adminOverview,
+      CACHE_KEYS.clientPropertyById(property.id),
+    ]);
+
+    return NextResponse.json({ property });
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
+      return NextResponse.json({ error: 'Property not found' }, { status: 404 });
+    }
+
+    return NextResponse.json({ error: 'Unable to update property' }, { status: 500 });
+  }
 }
 
 export async function DELETE(request: Request) {
