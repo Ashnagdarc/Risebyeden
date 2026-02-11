@@ -96,6 +96,14 @@ npx prisma migrate status
 - Runbook: `docs/database-ops.md`
 - Includes backup/restore procedures, rollback strategy, pooling guidance, and monitoring thresholds.
 
+## Observability
+
+- Health endpoint: `GET /api/system/health` (DB + cache status for alert probes).
+- Runtime endpoint: `GET /api/system/runtime` (node metadata for diagnostics).
+- Structured JSON logging helper: `lib/observability/logger.ts`.
+- Sentry remains enabled for request and runtime error capture.
+- Runbook: `docs/observability.md`
+
 ## Cache + Invalidation
 
 - Cache backend: Valkey via `lib/cache/valkey.ts`

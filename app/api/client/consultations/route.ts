@@ -5,6 +5,7 @@ import { sendConsultationEmail } from '@/lib/email';
 import { parseJsonBody } from '@/lib/api/validation';
 import { QUERY_LIMITS } from '@/lib/db/query-limits';
 import { requireSessionPolicy } from '@/lib/security/policy';
+import { logError, logInfo } from '@/lib/observability/logger';
 
 const consultationPayloadSchema = z.object({
   type: z.enum(['portfolio', 'acquisition', 'market']),
@@ -167,9 +168,17 @@ export async function POST(request: Request) {
       });
     }
 
+    logInfo('client.consultation.created', {
+      requestId: requestRecord.id,
+      userId,
+      type: requestRecord.type,
+      advisorId: requestRecord.advisor?.id || null,
+      notifyRecipients: recipients.length,
+    });
+
     return NextResponse.json({ request: requestRecord });
   } catch (error) {
-    console.error('Failed to create consultation request', error);
+    logError('client.consultation.create_failed', error, { userId });
     return NextResponse.json({ error: 'Unable to create consultation request' }, { status: 500 });
   }
 }

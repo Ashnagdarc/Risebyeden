@@ -5,6 +5,7 @@ import { z } from 'zod';
 import prisma from '@/lib/prisma';
 import { consumeRateLimit, resetRateLimit } from '@/lib/security/rate-limit';
 import { verifyStoredToken } from '@/lib/security/token';
+import { logError, logInfo, logWarn } from '@/lib/observability/logger';
 
 function readPositiveIntEnv(key: string, fallback: number): number {
   const raw = process.env[key];
@@ -40,80 +41,90 @@ function resolveClientIp(request: Request): string {
 
 // POST — Client uses userId + accessKey + accessToken to request access
 export async function POST(request: Request) {
-  let rawBody: unknown;
+  let normalizedUserId = '';
+  let rateLimitKey = '';
+
   try {
-    rawBody = await request.json();
-  } catch {
-    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
-  }
+    let rawBody: unknown;
+    try {
+      rawBody = await request.json();
+    } catch {
+      return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+    }
 
-  const preParsed = z.object({ userId: z.string().optional() }).passthrough().safeParse(rawBody);
-  const normalizedUserId = String(preParsed.success ? preParsed.data.userId || '' : '').trim().toUpperCase();
-  const clientIp = resolveClientIp(request);
-  const rateLimitKey = `enlist:${normalizedUserId || 'unknown'}:${clientIp}`;
+    const preParsed = z.object({ userId: z.string().optional() }).passthrough().safeParse(rawBody);
+    normalizedUserId = String(preParsed.success ? preParsed.data.userId || '' : '').trim().toUpperCase();
+    const clientIp = resolveClientIp(request);
+    rateLimitKey = `enlist:${normalizedUserId || 'unknown'}:${clientIp}`;
 
-  const limit = await consumeRateLimit(rateLimitKey, ENLIST_RATE_LIMIT);
-  if (!limit.allowed) {
-    return NextResponse.json(
-      { error: 'Too many attempts. Try again later.' },
-      { status: 429, headers: { 'Retry-After': String(limit.retryAfterSeconds) } }
-    );
-  }
+    const limit = await consumeRateLimit(rateLimitKey, ENLIST_RATE_LIMIT);
+    if (!limit.allowed) {
+      logWarn('auth.enlist.rate_limited', {
+        userId: normalizedUserId || 'unknown',
+        retryAfterSeconds: limit.retryAfterSeconds,
+      });
+      return NextResponse.json(
+        { error: 'Too many attempts. Try again later.' },
+        { status: 429, headers: { 'Retry-After': String(limit.retryAfterSeconds) } }
+      );
+    }
 
-  const parsedBody = enlistPayloadSchema.safeParse(rawBody);
-  if (!parsedBody.success) {
-    return NextResponse.json({ error: 'All fields are required' }, { status: 400 });
-  }
-  const body = parsedBody.data;
+    const parsedBody = enlistPayloadSchema.safeParse(rawBody);
+    if (!parsedBody.success) {
+      return NextResponse.json({ error: 'All fields are required' }, { status: 400 });
+    }
+    const body = parsedBody.data;
 
-  const user = await prisma.user.findUnique({
-    where: { userId: normalizedUserId },
-  });
+    const user = await prisma.user.findUnique({
+      where: { userId: normalizedUserId },
+    });
 
-  if (!user) {
-    return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
-  }
+    if (!user) {
+      return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
+    }
 
-  // Verify access key
-  const isKeyValid = await bcrypt.compare(body.accessKey, user.hashedPassword);
-  if (!isKeyValid) {
-    return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
-  }
+    const isKeyValid = await bcrypt.compare(body.accessKey, user.hashedPassword);
+    if (!isKeyValid) {
+      return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
+    }
 
-  // Verify access token
-  const tokenIsValid = await verifyStoredToken(body.accessToken, user.accessToken);
-  if (!tokenIsValid) {
-    return NextResponse.json({ error: 'Invalid access token' }, { status: 401 });
-  }
+    const tokenIsValid = await verifyStoredToken(body.accessToken, user.accessToken);
+    if (!tokenIsValid) {
+      return NextResponse.json({ error: 'Invalid access token' }, { status: 401 });
+    }
 
-  if (user.tokenUsed) {
-    return NextResponse.json({ error: 'Access token has already been used' }, { status: 400 });
-  }
+    if (user.tokenUsed) {
+      return NextResponse.json({ error: 'Access token has already been used' }, { status: 400 });
+    }
 
-  if (user.status === 'ACTIVE') {
-    return NextResponse.json({ error: 'Account is already active' }, { status: 400 });
-  }
+    if (user.status === 'ACTIVE') {
+      return NextResponse.json({ error: 'Account is already active' }, { status: 400 });
+    }
 
-  // Mark token as used and persist identity details for profile/settings screens.
-  try {
-    await prisma.user.update({
-      where: { id: user.id },
-      data: {
-        name: body.fullName.trim(),
-        email: body.email.trim().toLowerCase(),
-        tokenUsed: true,
-      },
+    try {
+      await prisma.user.update({
+        where: { id: user.id },
+        data: {
+          name: body.fullName.trim(),
+          email: body.email.trim().toLowerCase(),
+          tokenUsed: true,
+        },
+      });
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+        return NextResponse.json({ error: 'Email address is already in use' }, { status: 409 });
+      }
+      throw error;
+    }
+
+    await resetRateLimit(rateLimitKey);
+    logInfo('auth.enlist.submitted', { userId: normalizedUserId });
+
+    return NextResponse.json({
+      message: 'Access request submitted. Awaiting admin authorization.',
     });
   } catch (error) {
-    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
-      return NextResponse.json({ error: 'Email address is already in use' }, { status: 409 });
-    }
-    throw error;
+    logError('auth.enlist.failed', error, { userId: normalizedUserId || 'unknown' });
+    return NextResponse.json({ error: 'Unable to process access request' }, { status: 500 });
   }
-
-  await resetRateLimit(rateLimitKey);
-
-  return NextResponse.json({
-    message: 'Access request submitted. Awaiting admin authorization.',
-  });
 }

@@ -68,3 +68,10 @@ This checklist tracks production-hardening work identified during the deep audit
 - [x] Document rollback/runbook process in `docs/database-ops.md`.
 - [x] Add DB monitoring snapshot command (`npm run db:monitor`).
 - [ ] Roll out managed DB alerting dashboards in infra (outside app repo).
+
+## 10) Observability Completeness
+
+- [x] Add structured JSON logging utility and wire critical auth/admin/client error paths.
+- [x] Add machine-readable health endpoint for DB/cache (`/api/system/health`).
+- [ ] Add external metrics dashboards + paging alerts in infra (outside app repo).
+- [ ] Add correlation/request IDs propagated across edge, API, and async workflows.

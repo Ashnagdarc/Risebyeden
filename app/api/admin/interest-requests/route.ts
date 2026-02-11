@@ -8,6 +8,7 @@ import { buildPaginationMeta, parsePagination } from '@/lib/api/pagination';
 import { parseJsonBody, parseQuery } from '@/lib/api/validation';
 import { sendInterestAssignmentEmail } from '@/lib/email';
 import { requireSessionPolicy } from '@/lib/security/policy';
+import { logError, logInfo } from '@/lib/observability/logger';
 
 const interestStatusSchema = z.enum(['PENDING', 'SCHEDULED', 'APPROVED', 'REJECTED']);
 
@@ -117,6 +118,10 @@ export async function PATCH(request: Request) {
       });
 
       await deleteCacheKeys([CACHE_KEYS.adminOverview]);
+      logInfo('admin.interest_request.rejected', {
+        requestId: requestRecord.id,
+        previousStatus: current.status,
+      });
       return NextResponse.json({ request: requestRecord });
     }
 
@@ -195,12 +200,23 @@ export async function PATCH(request: Request) {
       CACHE_KEYS.agentNotifications(agent.id),
     ]);
 
+    logInfo('admin.interest_request.assigned', {
+      requestId: requestRecord.id,
+      agentId: agent.id,
+      agentUserId: agent.userId,
+      notifyEmailSent: Boolean(agent.email),
+    });
+
     return NextResponse.json({ request: requestRecord });
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
       return NextResponse.json({ error: 'Request not found' }, { status: 404 });
     }
 
+    logError('admin.interest_request.update_failed', error, {
+      requestId: body.id,
+      action: body.action,
+    });
     return NextResponse.json({ error: 'Unable to update request' }, { status: 500 });
   }
 }

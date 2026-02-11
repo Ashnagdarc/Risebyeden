@@ -4,6 +4,7 @@ import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import prisma from '@/lib/prisma';
 import { consumeRateLimit, resetRateLimit } from '@/lib/security/rate-limit';
+import { logWarn } from '@/lib/observability/logger';
 
 function readPositiveIntEnv(key: string, fallback: number): number {
   const raw = process.env[key];
@@ -51,7 +52,7 @@ function hashIdentifier(identifier: string): string {
 }
 
 function logAuthWarning(event: string, details: Record<string, unknown>): void {
-  console.warn(`auth:${event}`, details);
+  logWarn(`auth.${event}`, details);
 }
 
 export const authOptions: NextAuthOptions = {

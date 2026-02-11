@@ -1,4 +1,5 @@
 import { createClient } from 'redis';
+import { logError, logInfo } from '@/lib/observability/logger';
 
 type ValkeyClient = ReturnType<typeof createClient>;
 
@@ -43,7 +44,7 @@ function trace(event: string, payload: Record<string, unknown>) {
   if (!CACHE_DEBUG) {
     return;
   }
-  console.info(`valkey:${event}`, payload);
+  logInfo(`valkey.${event}`, payload);
 }
 
 async function getClient(): Promise<ValkeyClient | null> {
@@ -61,7 +62,7 @@ async function getClient(): Promise<ValkeyClient | null> {
 
   const client = createClient({ url: VALKEY_URL });
   client.on('error', (error) => {
-    console.error('valkey:error', error);
+    logError('valkey.error', error);
   });
 
   globalForValkey.__risebyedenValkeyConnectPromise = client.connect()
@@ -70,7 +71,7 @@ async function getClient(): Promise<ValkeyClient | null> {
       return client;
     })
     .catch((error) => {
-      console.error('valkey:connect-failed', error);
+      logError('valkey.connect_failed', error);
       return null;
     })
     .finally(() => {
@@ -102,7 +103,7 @@ export async function getCachedJson<T>(key: string): Promise<T | null> {
     return parsed.data;
   } catch (error) {
     cacheStats.errors += 1;
-    console.error('valkey:get-failed', { key, error });
+    logError('valkey.get_failed', error, { key });
     return null;
   }
 }
@@ -122,7 +123,7 @@ export async function setCachedJson<T>(key: string, value: T, ttlSeconds: number
     trace('set', { key, ttlSeconds });
   } catch (error) {
     cacheStats.errors += 1;
-    console.error('valkey:set-failed', { key, error });
+    logError('valkey.set_failed', error, { key });
   }
 }
 
@@ -144,10 +145,30 @@ export async function deleteCacheKeys(keys: string[]): Promise<void> {
     trace('delete', { keys });
   } catch (error) {
     cacheStats.errors += 1;
-    console.error('valkey:delete-failed', { keys, error });
+    logError('valkey.delete_failed', error, { keyCount: keys.length });
   }
 }
 
 export function getCacheStats(): CacheStats {
   return { ...cacheStats };
+}
+
+export async function getCacheHealth(): Promise<{ configured: boolean; healthy: boolean }> {
+  if (!isCacheConfigured()) {
+    return { configured: false, healthy: false };
+  }
+
+  try {
+    const client = await getClient();
+    if (!client) {
+      return { configured: true, healthy: false };
+    }
+
+    await client.ping();
+    return { configured: true, healthy: true };
+  } catch (error) {
+    cacheStats.errors += 1;
+    logError('valkey.health_check_failed', error);
+    return { configured: true, healthy: false };
+  }
 }
