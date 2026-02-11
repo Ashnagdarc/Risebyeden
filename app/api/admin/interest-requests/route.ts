@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import prisma from '@/lib/prisma';
 import { authOptions } from '@/lib/auth';
+import { CACHE_KEYS } from '@/lib/cache/keys';
+import { deleteCacheKeys } from '@/lib/cache/valkey';
 
 async function requireAdmin() {
   const session = await getServerSession(authOptions);
@@ -84,6 +86,8 @@ export async function PATCH(request: Request) {
         property: { select: { name: true } },
       },
     });
+
+    await deleteCacheKeys([CACHE_KEYS.adminOverview]);
 
     return NextResponse.json({ request: requestRecord });
   } catch {
