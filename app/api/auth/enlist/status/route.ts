@@ -28,7 +28,7 @@ export async function POST(request: Request) {
   const clientIp = resolveClientIp(request);
   const rateLimitKey = `enlist-status:${normalizedUserId || 'unknown'}:${clientIp}`;
 
-  const limit = consumeRateLimit(rateLimitKey, STATUS_RATE_LIMIT);
+  const limit = await consumeRateLimit(rateLimitKey, STATUS_RATE_LIMIT);
   if (!limit.allowed) {
     return NextResponse.json(
       { error: 'Too many attempts. Try again later.' },
@@ -54,7 +54,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
   }
 
-  resetRateLimit(rateLimitKey);
+  await resetRateLimit(rateLimitKey);
 
   return NextResponse.json({ status: user.status });
 }

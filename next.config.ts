@@ -2,7 +2,7 @@ import { withSentryConfig } from "@sentry/nextjs";
 import type { NextConfig } from "next";
 
 const isProduction = process.env.NODE_ENV === "production";
-const scriptSource = isProduction ? "'self' 'unsafe-inline'" : "'self' 'unsafe-inline' 'unsafe-eval'";
+const scriptSource = isProduction ? "'self'" : "'self' 'unsafe-inline' 'unsafe-eval'";
 const cspDirectives = [
   "default-src 'self'",
   `script-src ${scriptSource}`,

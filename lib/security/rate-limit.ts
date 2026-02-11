@@ -1,17 +1,9 @@
+import prisma from '@/lib/prisma';
+
 type RateLimitConfig = {
   windowMs: number;
   maxAttempts: number;
   blockMs: number;
-};
-
-type RateLimitEntry = {
-  windowStartedAt: number;
-  attempts: number;
-  blockedUntil: number;
-};
-
-type RateLimitState = {
-  entries: Map<string, RateLimitEntry>;
 };
 
 type RateLimitResult = {
@@ -19,62 +11,60 @@ type RateLimitResult = {
   retryAfterSeconds: number;
 };
 
-const globalForRateLimit = globalThis as unknown as {
-  __risebyedenRateLimit?: RateLimitState;
-};
+export async function consumeRateLimit(key: string, config: RateLimitConfig): Promise<RateLimitResult> {
+  const now = new Date();
 
-const state: RateLimitState = globalForRateLimit.__risebyedenRateLimit ?? {
-  entries: new Map<string, RateLimitEntry>(),
-};
+  const existing = await prisma.rateLimitBucket.findUnique({ where: { key } });
 
-if (!globalForRateLimit.__risebyedenRateLimit) {
-  globalForRateLimit.__risebyedenRateLimit = state;
-}
-
-function getOrCreateEntry(key: string, now: number): RateLimitEntry {
-  const existing = state.entries.get(key);
-  if (existing) {
-    return existing;
+  if (!existing) {
+    await prisma.rateLimitBucket.create({
+      data: {
+        key,
+        attempts: 1,
+        windowStartedAt: now,
+      },
+    });
+    return { allowed: true, retryAfterSeconds: 0 };
   }
 
-  const created: RateLimitEntry = {
-    windowStartedAt: now,
-    attempts: 0,
-    blockedUntil: 0,
-  };
-  state.entries.set(key, created);
-  return created;
-}
-
-export function consumeRateLimit(key: string, config: RateLimitConfig): RateLimitResult {
-  const now = Date.now();
-  const entry = getOrCreateEntry(key, now);
-
-  if (entry.blockedUntil > now) {
+  if (existing.blockedUntil && existing.blockedUntil.getTime() > now.getTime()) {
     return {
       allowed: false,
-      retryAfterSeconds: Math.ceil((entry.blockedUntil - now) / 1000),
+      retryAfterSeconds: Math.ceil((existing.blockedUntil.getTime() - now.getTime()) / 1000),
     };
   }
 
-  if (now - entry.windowStartedAt >= config.windowMs) {
-    entry.windowStartedAt = now;
-    entry.attempts = 0;
-  }
+  const shouldResetWindow = now.getTime() - existing.windowStartedAt.getTime() >= config.windowMs;
+  const attempts = shouldResetWindow ? 1 : existing.attempts + 1;
 
-  entry.attempts += 1;
+  if (attempts > config.maxAttempts) {
+    const blockedUntil = new Date(now.getTime() + config.blockMs);
+    await prisma.rateLimitBucket.update({
+      where: { key },
+      data: {
+        attempts,
+        blockedUntil,
+      },
+    });
 
-  if (entry.attempts > config.maxAttempts) {
-    entry.blockedUntil = now + config.blockMs;
     return {
       allowed: false,
       retryAfterSeconds: Math.ceil(config.blockMs / 1000),
     };
   }
 
+  await prisma.rateLimitBucket.update({
+    where: { key },
+    data: {
+      attempts,
+      windowStartedAt: shouldResetWindow ? now : existing.windowStartedAt,
+      blockedUntil: null,
+    },
+  });
+
   return { allowed: true, retryAfterSeconds: 0 };
 }
 
-export function resetRateLimit(key: string) {
-  state.entries.delete(key);
+export async function resetRateLimit(key: string): Promise<void> {
+  await prisma.rateLimitBucket.deleteMany({ where: { key } });
 }

@@ -321,6 +321,15 @@ model InviteRequest {
   organization Organization? @relation(fields: [organizationId], references: [id])
 }
 
+model RateLimitBucket {
+  key             String   @id
+  attempts        Int      @default(0)
+  windowStartedAt DateTime
+  blockedUntil    DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
 model Document {
   id             String       @id @default(cuid())
   name           String

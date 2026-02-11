@@ -6,7 +6,7 @@ import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 Sentry.init({
   dsn: process.env.SENTRY_DSN,
   tracesSampleRate: 1.0,
-  sendDefaultPii: true,
+  sendDefaultPii: false,
 });
 
 const baseServer = new McpServer({

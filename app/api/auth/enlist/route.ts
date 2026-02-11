@@ -32,7 +32,7 @@ export async function POST(request: Request) {
   const clientIp = resolveClientIp(request);
   const rateLimitKey = `enlist:${normalizedUserId || 'unknown'}:${clientIp}`;
 
-  const limit = consumeRateLimit(rateLimitKey, ENLIST_RATE_LIMIT);
+  const limit = await consumeRateLimit(rateLimitKey, ENLIST_RATE_LIMIT);
   if (!limit.allowed) {
     return NextResponse.json(
       { error: 'Too many attempts. Try again later.' },
@@ -81,7 +81,7 @@ export async function POST(request: Request) {
     },
   });
 
-  resetRateLimit(rateLimitKey);
+  await resetRateLimit(rateLimitKey);
 
   return NextResponse.json({
     message: 'Access request submitted. Awaiting admin authorization.',

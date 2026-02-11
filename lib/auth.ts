@@ -10,6 +10,27 @@ const AUTH_RATE_LIMIT = {
   blockMs: 15 * 60 * 1000,
 } as const;
 
+function normalizeHeaderValue(value: string | string[] | undefined): string {
+  if (!value) {
+    return '';
+  }
+  if (Array.isArray(value)) {
+    return value[0] || '';
+  }
+  return value;
+}
+
+function resolveClientIp(req: unknown): string {
+  const headers = (req as { headers?: Record<string, string | string[] | undefined> } | undefined)?.headers;
+  const forwarded = normalizeHeaderValue(headers?.['x-forwarded-for']);
+  if (forwarded) {
+    return forwarded.split(',')[0].trim();
+  }
+
+  const realIp = normalizeHeaderValue(headers?.['x-real-ip']);
+  return realIp.trim() || 'unknown';
+}
+
 export const authOptions: NextAuthOptions = {
   session: { strategy: 'jwt' },
   pages: {
@@ -23,15 +44,29 @@ export const authOptions: NextAuthOptions = {
         accessKey: { label: 'Access Key', type: 'password' },
         adminOnly: { label: 'Admin Only', type: 'text' },
       },
-      async authorize(credentials) {
+      async authorize(credentials, req) {
         const identifier = String(credentials?.identifier || '').trim().toUpperCase();
         const accessKey = String(credentials?.accessKey || '').trim();
         const adminOnly = String(credentials?.adminOnly || '').trim() === 'true';
-        const rateLimitKey = `auth:${identifier || 'unknown'}`;
+        const clientIp = resolveClientIp(req);
+        const identifierKey = `auth:identifier:${identifier || 'unknown'}`;
+        const ipKey = `auth:ip:${clientIp}`;
+        const pairKey = `auth:pair:${identifier || 'unknown'}:${clientIp}`;
 
-        const limit = consumeRateLimit(rateLimitKey, AUTH_RATE_LIMIT);
-        if (!limit.allowed) {
-          console.warn('auth:rate-limited', { identifier, retryAfterSeconds: limit.retryAfterSeconds });
+        const [identifierLimit, ipLimit, pairLimit] = await Promise.all([
+          consumeRateLimit(identifierKey, AUTH_RATE_LIMIT),
+          consumeRateLimit(ipKey, AUTH_RATE_LIMIT),
+          consumeRateLimit(pairKey, AUTH_RATE_LIMIT),
+        ]);
+
+        const retryAfterSeconds = Math.max(
+          identifierLimit.retryAfterSeconds,
+          ipLimit.retryAfterSeconds,
+          pairLimit.retryAfterSeconds
+        );
+
+        if (!identifierLimit.allowed || !ipLimit.allowed || !pairLimit.allowed) {
+          console.warn('auth:rate-limited', { identifier, clientIp, retryAfterSeconds });
           return null;
         }
 
@@ -66,7 +101,10 @@ export const authOptions: NextAuthOptions = {
           return null;
         }
 
-        resetRateLimit(rateLimitKey);
+        await Promise.all([
+          resetRateLimit(identifierKey),
+          resetRateLimit(pairKey),
+        ]);
 
         return {
           id: user.id,
