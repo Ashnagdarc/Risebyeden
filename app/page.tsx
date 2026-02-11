@@ -21,6 +21,9 @@ export default async function Home() {
   if (role === 'admin') {
     redirect('/admin');
   }
+  if (role === 'agent') {
+    redirect('/agent');
+  }
   const userId = (session?.user as { id?: string } | undefined)?.id;
   if (!userId) {
     redirect('/auth');

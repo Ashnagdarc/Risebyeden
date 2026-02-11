@@ -150,7 +150,11 @@ export const authOptions: NextAuthOptions = {
           id: user.id,
           name: user.name || user.userId,
           email: user.email || user.userId,
-          role: user.role === 'ADMIN' ? 'admin' : 'client',
+          role: user.role === 'ADMIN'
+            ? 'admin'
+            : user.role === 'AGENT'
+              ? 'agent'
+              : 'client',
         };
       },
     }),

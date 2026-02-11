@@ -30,7 +30,7 @@ function generateAccessToken(): string {
 }
 
 const createUserSchema = z.object({
-  role: z.enum(['ADMIN', 'CLIENT']),
+  role: z.enum(['ADMIN', 'CLIENT', 'AGENT']),
   name: z.string().trim().min(1).max(120).optional(),
   email: z.string().trim().email().optional(),
 }).strict();
@@ -42,6 +42,7 @@ const updateUserSchema = z.object({
 
 const userListQuerySchema = z.object({
   status: z.enum(['PENDING', 'ACTIVE', 'REJECTED']).optional(),
+  role: z.enum(['ADMIN', 'CLIENT', 'AGENT']).optional(),
 });
 
 // POST — Admin provisions a new user (generates userId, accessKey, accessToken)
@@ -74,7 +75,7 @@ export async function POST(request: Request) {
         hashedPassword,
         accessToken: hashedAccessToken,
         role: body.role,
-        status: body.role === 'ADMIN' ? 'ACTIVE' : 'PENDING',
+        status: body.role === 'CLIENT' ? 'PENDING' : 'ACTIVE',
       },
       select: {
         id: true,
@@ -114,7 +115,10 @@ export async function GET(request: Request) {
   }
 
   const pagination = parsePagination(request, { defaultLimit: 50, maxLimit: 200 });
-  const where = parsedQuery.data.status ? { status: parsedQuery.data.status } : undefined;
+  const where = {
+    status: parsedQuery.data.status,
+    role: parsedQuery.data.role,
+  };
 
   const [users, total] = await prisma.$transaction([
     prisma.user.findMany({

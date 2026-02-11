@@ -4,4 +4,6 @@ export const QUERY_LIMITS = {
   clientAdvisors: 100,
   updates: 100,
   scriptsUsers: 200,
+  agentAssignedRequests: 100,
+  agentNotifications: 50,
 } as const;

@@ -29,6 +29,7 @@ export const config = {
     '/consultation/:path*',
     '/acquire/:path*',
     '/updates/:path*',
+    '/agent/:path*',
     '/performance/:path*',
     '/admin/:path*',
   ],

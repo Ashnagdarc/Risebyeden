@@ -65,12 +65,6 @@ CREATE INDEX "PriceUpdate_effectiveDate_idx" ON "PriceUpdate"("effectiveDate");
 CREATE INDEX "Property_status_createdAt_idx" ON "Property"("status", "createdAt");
 
 -- CreateIndex
-CREATE INDEX "RateLimitBucket_windowStartedAt_idx" ON "RateLimitBucket"("windowStartedAt");
-
--- CreateIndex
-CREATE INDEX "RateLimitBucket_blockedUntil_idx" ON "RateLimitBucket"("blockedUntil");
-
--- CreateIndex
 CREATE INDEX "Transaction_userId_idx" ON "Transaction"("userId");
 
 -- CreateIndex

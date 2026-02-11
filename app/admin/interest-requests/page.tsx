@@ -7,24 +7,44 @@ import styles from '../admin.module.css';
 
 type InterestRequest = {
   id: string;
-  status: string;
+  status: 'PENDING' | 'SCHEDULED' | 'APPROVED' | 'REJECTED';
   createdAt: string;
+  assignedAt: string | null;
   user: { userId: string; name: string | null } | null;
   property: { name: string } | null;
+  assignedAgent: { id: string; userId: string; name: string | null; email: string | null } | null;
 };
 
-function getStatusBadge(status: string): string {
-  if (status === 'APPROVED' || status === 'SCHEDULED') {
+type AgentUser = {
+  id: string;
+  userId: string;
+  name: string | null;
+  email: string | null;
+  role: 'AGENT';
+  status: 'ACTIVE';
+};
+
+function getStatusBadge(status: InterestRequest['status']): string {
+  if (status === 'SCHEDULED' || status === 'APPROVED') {
     return `${styles.badge} ${styles.badgeSuccess}`;
   }
-  if (status === 'REJECTED' || status === 'CANCELLED') {
+  if (status === 'REJECTED') {
     return `${styles.badge} ${styles.badgeMuted}`;
   }
   return `${styles.badge} ${styles.badgePending}`;
 }
 
+function getStatusLabel(status: InterestRequest['status']): string {
+  if (status === 'SCHEDULED') {
+    return 'ASSIGNED';
+  }
+  return status;
+}
+
 export default function AdminInterestRequests() {
   const [requests, setRequests] = useState<InterestRequest[]>([]);
+  const [agents, setAgents] = useState<AgentUser[]>([]);
+  const [agentSelections, setAgentSelections] = useState<Record<string, string>>({});
   const [statusMessage, setStatusMessage] = useState('');
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -38,9 +58,28 @@ export default function AdminInterestRequests() {
     }
   }, []);
 
+  const fetchAgents = useCallback(async () => {
+    const res = await fetch('/api/admin/users?status=ACTIVE&role=AGENT');
+    if (res.ok) {
+      const data = await res.json();
+      setAgents((data.users || []) as AgentUser[]);
+    }
+  }, []);
+
   useEffect(() => {
     fetchRequests();
-  }, [fetchRequests]);
+    fetchAgents();
+  }, [fetchAgents, fetchRequests]);
+
+  useEffect(() => {
+    const nextSelections: Record<string, string> = {};
+    requests.forEach((request) => {
+      if (request.assignedAgent?.id) {
+        nextSelections[request.id] = request.assignedAgent.id;
+      }
+    });
+    setAgentSelections((prev) => ({ ...prev, ...nextSelections }));
+  }, [requests]);
 
   const filteredRequests = useMemo(() => {
     const normalizedSearch = searchTerm.trim().toLowerCase();
@@ -50,6 +89,8 @@ export default function AdminInterestRequests() {
         request.user?.name || '',
         request.user?.userId || '',
         request.property?.name || '',
+        request.assignedAgent?.name || '',
+        request.assignedAgent?.userId || '',
         request.id,
       ].some((value) => value.toLowerCase().includes(normalizedSearch));
 
@@ -57,21 +98,49 @@ export default function AdminInterestRequests() {
     });
   }, [requests, searchTerm, statusFilter]);
 
-  const updateStatus = async (id: string, status: 'APPROVED' | 'REJECTED' | 'SCHEDULED') => {
+  const assignAgent = async (id: string) => {
+    const agentUserId = agentSelections[id];
+    if (!agentUserId) {
+      setStatusMessage('Select an agent before assigning.');
+      return;
+    }
+
     setStatusMessage('');
     setUpdatingId(id);
 
     const res = await fetch('/api/admin/interest-requests', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id, status }),
+      body: JSON.stringify({ id, action: 'ASSIGN', agentUserId }),
     });
 
     if (res.ok) {
-      setStatusMessage('Request updated.');
-      fetchRequests();
+      setStatusMessage('Request assigned. Agent notified by email and in-app alert.');
+      await fetchRequests();
     } else {
-      setStatusMessage('Failed to update request.');
+      const payload = await res.json().catch(() => ({}));
+      setStatusMessage(payload.error || 'Failed to assign request.');
+    }
+
+    setUpdatingId(null);
+  };
+
+  const rejectRequest = async (id: string) => {
+    setStatusMessage('');
+    setUpdatingId(id);
+
+    const res = await fetch('/api/admin/interest-requests', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, action: 'REJECT' }),
+    });
+
+    if (res.ok) {
+      setStatusMessage('Request rejected.');
+      await fetchRequests();
+    } else {
+      const payload = await res.json().catch(() => ({}));
+      setStatusMessage(payload.error || 'Failed to reject request.');
     }
 
     setUpdatingId(null);
@@ -86,7 +155,7 @@ export default function AdminInterestRequests() {
           <div>
             <p className={styles.kicker}>Admin</p>
             <h1 className={styles.pageTitle}>Interest Requests</h1>
-            <p className={styles.subtitle}>Review incoming interest requests and track their current status.</p>
+            <p className={styles.subtitle}>Assign each request to an active agent for immediate outreach.</p>
           </div>
         </header>
 
@@ -95,6 +164,9 @@ export default function AdminInterestRequests() {
         <section className={styles.grid}>
           <div className={styles.section}>
             <h2 className={styles.sectionTitle}>All Requests</h2>
+            {agents.length === 0 && (
+              <p className={styles.emptyText}>No active agents found. Create/activate AGENT users before assigning requests.</p>
+            )}
             <div className={styles.filterBar}>
               <div className={styles.filterField}>
                 <label className={styles.label} htmlFor="requestSearch">Search</label>
@@ -116,17 +188,18 @@ export default function AdminInterestRequests() {
                 >
                   <option value="ALL">All</option>
                   <option value="PENDING">Pending</option>
-                  <option value="SCHEDULED">Scheduled</option>
+                  <option value="SCHEDULED">Assigned</option>
                   <option value="APPROVED">Approved</option>
                   <option value="REJECTED">Rejected</option>
                 </select>
               </div>
             </div>
             <div className={styles.table}>
-              <div className={`${styles.tableHeader} ${styles.tableHeaderActionsWide}`}>
+              <div className={`${styles.tableHeader} ${styles.tableHeaderActionsXL}`}>
                 <div>Request</div>
                 <div>Client</div>
                 <div>Property</div>
+                <div>Agent</div>
                 <div>Status</div>
                 <div>Date</div>
                 <div>Actions</div>
@@ -136,45 +209,79 @@ export default function AdminInterestRequests() {
                   <div className={styles.tableEmpty}>No requests match the current filters.</div>
                 </div>
               ) : (
-                filteredRequests.map((request) => (
-                  <div key={request.id} className={`${styles.tableRow} ${styles.tableRowActionsWide}`}>
-                    <div>{request.id.slice(0, 6).toUpperCase()}</div>
-                    <div>{request.user?.name || request.user?.userId || '—'}</div>
-                    <div>{request.property?.name || '—'}</div>
-                    <div className={getStatusBadge(request.status)}>{request.status}</div>
-                    <div>{new Date(request.createdAt).toLocaleDateString()}</div>
-                    <div className={styles.tableActions}>
-                      <button
-                        className={`${styles.secondaryButton} ${styles.actionButtonSmall}`}
-                        onClick={() => updateStatus(request.id, 'SCHEDULED')}
-                        disabled={updatingId === request.id || request.status === 'SCHEDULED'}
-                      >
-                        Schedule
-                      </button>
-                      <button
-                        className={`${styles.secondaryButton} ${styles.actionButtonSmall}`}
-                        onClick={() => updateStatus(request.id, 'APPROVED')}
-                        disabled={updatingId === request.id || request.status === 'APPROVED'}
-                      >
-                        Approve
-                      </button>
-                      <button
-                        className={`${styles.secondaryButton} ${styles.actionButtonSmall} ${styles.actionButtonDanger}`}
-                        onClick={() => updateStatus(request.id, 'REJECTED')}
-                        disabled={updatingId === request.id || request.status === 'REJECTED'}
-                      >
-                        Reject
-                      </button>
+                filteredRequests.map((request) => {
+                  const selectedAgent = agentSelections[request.id] || '';
+                  const isRejected = request.status === 'REJECTED';
+
+                  return (
+                    <div key={request.id} className={`${styles.tableRow} ${styles.tableRowActionsXL}`}>
+                      <div>{request.id.slice(0, 6).toUpperCase()}</div>
+                      <div>{request.user?.name || request.user?.userId || '—'}</div>
+                      <div>{request.property?.name || '—'}</div>
+                      <div>
+                        <select
+                          className={styles.select}
+                          aria-label={`Assigned agent for ${request.id}`}
+                          value={selectedAgent}
+                          onChange={(event) => {
+                            const value = event.target.value;
+                            setAgentSelections((prev) => ({ ...prev, [request.id]: value }));
+                          }}
+                        >
+                          <option value="">Select agent</option>
+                          {agents.map((agent) => (
+                            <option key={agent.id} value={agent.id}>
+                              {agent.name || agent.userId}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className={getStatusBadge(request.status)}>{getStatusLabel(request.status)}</div>
+                      <div>{new Date(request.createdAt).toLocaleDateString()}</div>
+                      <div className={styles.tableActions}>
+                        <button
+                          className={`${styles.secondaryButton} ${styles.actionButtonSmall}`}
+                          onClick={() => assignAgent(request.id)}
+                          disabled={isRejected || agents.length === 0 || !selectedAgent || updatingId === request.id}
+                        >
+                          Assign
+                        </button>
+                        <button
+                          className={`${styles.secondaryButton} ${styles.actionButtonSmall} ${styles.actionButtonDanger}`}
+                          onClick={() => rejectRequest(request.id)}
+                          disabled={isRejected || updatingId === request.id}
+                        >
+                          Reject
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                ))
+                  );
+                })
               )}
             </div>
             {statusMessage && <p className={styles.emptyText}>{statusMessage}</p>}
           </div>
+
           <div className={styles.section}>
-            <h2 className={styles.sectionTitle}>Next Steps</h2>
-            <p className={styles.emptyText}>Track follow-ups and finalize approvals after client contact.</p>
+            <h2 className={styles.sectionTitle}>Status Meaning</h2>
+            <div className={styles.statusHintList}>
+              <div className={styles.statusHintItem}>
+                <p className={styles.hintTitle}>Pending</p>
+                <p className={styles.hintBody}>New request waiting for admin assignment.</p>
+              </div>
+              <div className={styles.statusHintItem}>
+                <p className={styles.hintTitle}>Assigned (Scheduled)</p>
+                <p className={styles.hintBody}>Admin assigned an agent. Agent receives email + in-app notification and should contact the client immediately.</p>
+              </div>
+              <div className={styles.statusHintItem}>
+                <p className={styles.hintTitle}>Approved</p>
+                <p className={styles.hintBody}>Lead accepted/finalized after outreach.</p>
+              </div>
+              <div className={styles.statusHintItem}>
+                <p className={styles.hintTitle}>Rejected</p>
+                <p className={styles.hintBody}>Request declined and removed from assignment flow.</p>
+              </div>
+            </div>
           </div>
         </section>
       </main>

@@ -156,6 +156,11 @@
   grid-template-columns: 1.2fr 1fr 1fr 1fr 0.8fr 1.2fr;
 }
 
+.tableHeaderActionsXL,
+.tableRowActionsXL {
+  grid-template-columns: 1.2fr 1fr 1fr 1.3fr 0.9fr 0.8fr 1.1fr;
+}
+
 .tableHeader {
   font-family: var(--mono-font);
   font-size: var(--type-section-size);
@@ -354,6 +359,35 @@
 .emptyText {
   font-size: 13px;
   color: var(--text-secondary);
+}
+
+.statusHintList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.statusHintItem {
+  padding: 12px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.hintTitle {
+  margin: 0 0 6px;
+  font-size: 12px;
+  color: var(--accent-gold);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-family: var(--mono-font);
+}
+
+.hintBody {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.45;
 }
 
 .tableEmpty {

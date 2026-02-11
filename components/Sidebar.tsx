@@ -142,6 +142,12 @@ const clientNavItems: NavItem[] = [
   { href: '/settings', label: 'Settings', mobileLabel: 'Settings', icon: SettingsIcon, desktopBottom: true },
 ];
 
+const agentNavItems: NavItem[] = [
+  { href: '/agent', label: 'Assigned leads', mobileLabel: 'Leads', icon: DashboardIcon },
+  { href: '/profile', label: 'Profile', mobileLabel: 'Profile', icon: ProfileIcon },
+  { href: '/settings', label: 'Settings', mobileLabel: 'Settings', icon: SettingsIcon, desktopBottom: true },
+];
+
 const isPathActive = (pathname: string, href: string) => {
   if (href === '/' || href === '/admin') {
     return pathname === href;
@@ -153,10 +159,12 @@ const isPathActive = (pathname: string, href: string) => {
 export default function Sidebar() {
   const pathname = usePathname();
   const isAdminRoute = pathname.startsWith('/admin');
+  const isAgentRoute = pathname.startsWith('/agent');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  const navItems = isAdminRoute ? adminNavItems : clientNavItems;
-  const mobileMenuLabel = isAdminRoute ? 'Admin menu' : 'Client menu';
+  const navItems = isAdminRoute ? adminNavItems : isAgentRoute ? agentNavItems : clientNavItems;
+  const mobileMenuLabel = isAdminRoute ? 'Admin menu' : isAgentRoute ? 'Agent menu' : 'Client menu';
+  const logoHref = isAdminRoute ? '/admin' : isAgentRoute ? '/agent' : '/';
   const activeNavItem = navItems.find((item) => isPathActive(pathname, item.href)) || navItems[0];
   const MobilePrimaryIcon = activeNavItem.icon;
 
@@ -182,7 +190,7 @@ export default function Sidebar() {
   return (
     <>
       <aside className={styles.sidebar}>
-        <Link href="/" className={styles.logo} aria-label="Go to dashboard" title="Dashboard"></Link>
+        <Link href={logoHref} className={styles.logo} aria-label="Go to dashboard" title="Dashboard"></Link>
 
         {navItems.map((item) => {
           const Icon = item.icon;

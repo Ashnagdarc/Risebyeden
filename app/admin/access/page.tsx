@@ -28,6 +28,7 @@ export default function AdminAccess() {
   const [credentials, setCredentials] = useState<Credentials | null>(null);
   const [statusMessage, setStatusMessage] = useState('');
   const [isProvisioning, setIsProvisioning] = useState(false);
+  const [provisionRole, setProvisionRole] = useState<'CLIENT' | 'AGENT'>('CLIENT');
   const [filter, setFilter] = useState<'all' | 'PENDING' | 'ACTIVE' | 'REJECTED'>('all');
 
   const fetchUsers = useCallback(async () => {
@@ -53,13 +54,13 @@ export default function AdminAccess() {
     const res = await fetch('/api/admin/users', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ role: 'CLIENT' }),
+      body: JSON.stringify({ role: provisionRole }),
     });
 
     if (res.ok) {
       const data = await res.json();
       setCredentials(data.credentials);
-      setStatusMessage('Credentials generated. Share securely with the client.');
+      setStatusMessage(`Credentials generated for ${provisionRole}. Share securely.`);
       fetchUsers();
     } else {
       setStatusMessage('Failed to provision user.');
@@ -94,13 +95,24 @@ export default function AdminAccess() {
             <h1 className={styles.pageTitle}>Access Control</h1>
             <p className={styles.subtitle}>Provision client credentials, manage enlistment requests, and control access.</p>
           </div>
-          <button
-            className={styles.primaryButton}
-            onClick={handleProvision}
-            disabled={isProvisioning}
-          >
-            {isProvisioning ? 'Generating...' : 'Provision Client'}
-          </button>
+          <div className={styles.inlineActions}>
+            <select
+              className={styles.select}
+              aria-label="Provision role"
+              value={provisionRole}
+              onChange={(event) => setProvisionRole(event.target.value as 'CLIENT' | 'AGENT')}
+            >
+              <option value="CLIENT">Client</option>
+              <option value="AGENT">Agent</option>
+            </select>
+            <button
+              className={styles.primaryButton}
+              onClick={handleProvision}
+              disabled={isProvisioning}
+            >
+              {isProvisioning ? 'Generating...' : `Provision ${provisionRole === 'CLIENT' ? 'Client' : 'Agent'}`}
+            </button>
+          </div>
         </header>
 
         <AdminNav />
@@ -126,9 +138,9 @@ export default function AdminAccess() {
         {/* Generated credentials display */}
         {credentials && (
           <section className={`${styles.section} ${styles.credentialSection}`}>
-            <h2 className={styles.sectionTitle}>New Client Credentials</h2>
+            <h2 className={styles.sectionTitle}>New {provisionRole === 'CLIENT' ? 'Client' : 'Agent'} Credentials</h2>
             <p className={styles.credentialNote}>
-              Share these securely with the client. The access key and token are shown only once.
+              Share these securely. The access key and token are shown only once.
             </p>
             <div className={styles.formGrid}>
               <div className={styles.field}>

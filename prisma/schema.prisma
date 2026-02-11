@@ -88,6 +88,11 @@ enum AdvisorStatus {
   INACTIVE
 }
 
+enum NotificationType {
+  SYSTEM
+  INTEREST_ASSIGNED
+}
+
 model User {
   id             String     @id @default(cuid())
   userId         String     @unique            // Short unique ID like RBE-4X9K
@@ -108,8 +113,10 @@ model User {
   transactions    Transaction[]
   documents       Document[]
   organizationMembers OrganizationMember[]
-  interestRequests InterestRequest[]
+  interestRequests InterestRequest[] @relation("InterestRequester")
+  assignedInterestRequests InterestRequest[] @relation("InterestAssignedAgent")
   consultationRequests ConsultationRequest[]
+  notifications   Notification[]
 
   @@index([role, status, createdAt])
   @@index([status, createdAt])
@@ -276,15 +283,19 @@ model InterestRequest {
   id          String         @id @default(cuid())
   userId      String
   propertyId  String
+  assignedAgentId String?
+  assignedAt  DateTime?
   status      InterestStatus @default(PENDING)
   createdAt   DateTime       @default(now())
 
-  user     User     @relation(fields: [userId], references: [id])
+  user     User     @relation("InterestRequester", fields: [userId], references: [id])
   property Property @relation(fields: [propertyId], references: [id])
+  assignedAgent User? @relation("InterestAssignedAgent", fields: [assignedAgentId], references: [id])
 
   @@index([status, createdAt])
   @@index([userId, createdAt])
   @@index([propertyId])
+  @@index([assignedAgentId, status, createdAt])
 }
 
 model Announcement {
@@ -364,6 +375,21 @@ model RateLimitBucket {
 
   @@index([windowStartedAt])
   @@index([blockedUntil])
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  type      NotificationType @default(SYSTEM)
+  title     String
+  body      String
+  link      String?
+  read      Boolean          @default(false)
+  createdAt DateTime         @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId, read, createdAt])
 }
 
 model Document {

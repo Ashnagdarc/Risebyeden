@@ -9,3 +9,9 @@ CREATE TABLE "RateLimitBucket" (
 
     CONSTRAINT "RateLimitBucket_pkey" PRIMARY KEY ("key")
 );
+
+-- CreateIndex
+CREATE INDEX "RateLimitBucket_windowStartedAt_idx" ON "RateLimitBucket"("windowStartedAt");
+
+-- CreateIndex
+CREATE INDEX "RateLimitBucket_blockedUntil_idx" ON "RateLimitBucket"("blockedUntil");
