@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { Prisma } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import { z } from 'zod';
 import prisma from '@/lib/prisma';
@@ -19,7 +20,8 @@ const enlistPayloadSchema = z.object({
   userId: z.string().trim().min(1),
   accessKey: z.string().min(1),
   accessToken: z.string().min(1),
-  organization: z.string().trim().min(1).max(160),
+  fullName: z.string().trim().min(1).max(120),
+  email: z.string().trim().email().max(320),
 }).strict();
 
 const ENLIST_RATE_LIMIT = {
@@ -92,14 +94,22 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Account is already active' }, { status: 400 });
   }
 
-  // Mark token as used, save organization, keep status PENDING for admin approval
-  await prisma.user.update({
-    where: { id: user.id },
-    data: {
-      organization: body.organization,
-      tokenUsed: true,
-    },
-  });
+  // Mark token as used and persist identity details for profile/settings screens.
+  try {
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        name: body.fullName.trim(),
+        email: body.email.trim().toLowerCase(),
+        tokenUsed: true,
+      },
+    });
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+      return NextResponse.json({ error: 'Email address is already in use' }, { status: 409 });
+    }
+    throw error;
+  }
 
   await resetRateLimit(rateLimitKey);
 

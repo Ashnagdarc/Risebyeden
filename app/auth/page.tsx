@@ -12,7 +12,8 @@ export default function AuthPage() {
   const [mode, setMode] = useState<AuthMode>('login');
   const [identifier, setIdentifier] = useState('');
   const [accessKey, setAccessKey] = useState('');
-  const [organization, setOrganization] = useState('');
+  const [fullName, setFullName] = useState('');
+  const [email, setEmail] = useState('');
   const [accessToken, setAccessToken] = useState('');
   const [enlistSuccess, setEnlistSuccess] = useState(false);
   const [enlistStatus, setEnlistStatus] = useState<'PENDING' | 'ACTIVE' | 'REJECTED' | 'UNKNOWN'>('PENDING');
@@ -50,7 +51,8 @@ export default function AuthPage() {
           userId: identifier,
           accessKey,
           accessToken,
-          organization,
+          fullName,
+          email,
         }),
       });
 
@@ -126,7 +128,7 @@ export default function AuthPage() {
                 <span className={styles.welcomeLabel}>
                   {enlistStatus === 'ACTIVE' ? 'Neural Handshake Established' : 'Pending Authorization'}
                 </span>
-                <span className={styles.welcomeName}>{organization || 'Your Organization'}</span>
+                <span className={styles.welcomeName}>{fullName || 'Investor'}</span>
               </h2>
               <p className={styles.welcomeSubtitle}>
                 {enlistStatus === 'ACTIVE'
@@ -161,7 +163,8 @@ export default function AuthPage() {
                     setMode('login');
                     setIdentifier('');
                     setAccessKey('');
-                    setOrganization('');
+                    setFullName('');
+                    setEmail('');
                     setAccessToken('');
                     setEnlistStatus('PENDING');
                   }}
@@ -234,18 +237,36 @@ export default function AuthPage() {
 
               {mode === 'enlist' && (
                 <div className={styles.inputGroup}>
-                  <label htmlFor="organization">Organization</label>
+                  <label htmlFor="fullName">Full Name</label>
                   <div className={styles.inputWrapper}>
                     <input
-                      id="organization"
+                      id="fullName"
                       type="text"
-                      placeholder="FIRM_NAME //"
+                      placeholder="FULL_NAME //"
                       spellCheck={false}
                       required
-                      value={organization}
-                      onChange={(e) => setOrganization(e.target.value)}
+                      value={fullName}
+                      onChange={(e) => setFullName(e.target.value)}
                     />
-                    <span className={styles.dataStatus}>ORG</span>
+                    <span className={styles.dataStatus}>NAM</span>
+                  </div>
+                </div>
+              )}
+
+              {mode === 'enlist' && (
+                <div className={styles.inputGroup}>
+                  <label htmlFor="email">Email Address</label>
+                  <div className={styles.inputWrapper}>
+                    <input
+                      id="email"
+                      type="email"
+                      placeholder="YOU@MAIL.COM //"
+                      spellCheck={false}
+                      required
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                    />
+                    <span className={styles.dataStatus}>EML</span>
                   </div>
                 </div>
               )}

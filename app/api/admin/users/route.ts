@@ -127,6 +127,7 @@ export async function GET(request: Request) {
         id: true,
         userId: true,
         name: true,
+        email: true,
         organization: true,
         role: true,
         status: true,

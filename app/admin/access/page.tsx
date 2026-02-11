@@ -9,6 +9,7 @@ type UserRecord = {
   id: string;
   userId: string;
   name: string | null;
+  email: string | null;
   organization: string | null;
   role: string;
   status: string;
@@ -189,14 +190,14 @@ export default function AdminAccess() {
               <div className={styles.table}>
                 <div className={styles.tableHeader}>
                   <div>User ID</div>
-                  <div>Organization</div>
+                  <div>Name</div>
                   <div>Status</div>
                   <div>Actions</div>
                 </div>
                 {pendingUsers.map((user) => (
                   <div key={user.id} className={styles.tableRow}>
                     <div>{user.userId}</div>
-                    <div>{user.organization || '—'}</div>
+                    <div>{user.name || user.email || '—'}</div>
                     <div className={`${styles.badge} ${styles.badgePending}`}>Pending</div>
                     <div className={styles.inlineActions}>
                       <button
@@ -235,14 +236,14 @@ export default function AdminAccess() {
             <div className={styles.table}>
               <div className={styles.tableHeader}>
                 <div>User ID</div>
-                <div>Organization</div>
+                <div>Name</div>
                 <div>Role</div>
                 <div>Status</div>
               </div>
               {filteredUsers.map((user) => (
                 <div key={user.id} className={styles.tableRow}>
                   <div>{user.userId}</div>
-                  <div>{user.organization || '—'}</div>
+                  <div>{user.name || user.email || '—'}</div>
                   <div>{user.role}</div>
                   <div className={`${styles.badge} ${
                     user.status === 'ACTIVE' ? styles.badgeSuccess :
@@ -271,7 +272,7 @@ export default function AdminAccess() {
             </div>
             <div className={styles.field}>
               <label className={styles.label}>Step 3</label>
-              <div className={`${styles.badge} ${styles.badgeMuted}`}>Client uses Enlist form with all 3 credentials + org name</div>
+              <div className={`${styles.badge} ${styles.badgeMuted}`}>Client uses Enlist form with credentials + full name + email</div>
             </div>
             <div className={styles.field}>
               <label className={styles.label}>Step 4</label>
