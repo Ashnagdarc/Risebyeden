@@ -117,7 +117,7 @@ export default function AuthPage() {
       cancelled = true;
       clearInterval(interval);
     };
-  }, [accessKey, enlistSuccess, identifier]);
+  }, [accessKey, enlistSuccess, identifier, router]);
 
   const handleSubmit = mode === 'login' ? handleLogin : handleEnlist;
 
