@@ -110,6 +110,9 @@ model User {
   organizationMembers OrganizationMember[]
   interestRequests InterestRequest[]
   consultationRequests ConsultationRequest[]
+
+  @@index([role, status, createdAt])
+  @@index([status, createdAt])
 }
 
 model Organization {
@@ -134,6 +137,7 @@ model OrganizationMember {
   user         User         @relation(fields: [userId], references: [id])
 
   @@unique([organizationId, userId])
+  @@index([userId])
 }
 
 model ClientProfile {
@@ -184,6 +188,8 @@ model Advisor {
   updatedAt DateTime      @updatedAt
 
   consultations ConsultationRequest[]
+
+  @@index([status, createdAt])
 }
 
 model ConsultationRequest {
@@ -200,6 +206,10 @@ model ConsultationRequest {
 
   user    User    @relation(fields: [userId], references: [id])
   advisor Advisor? @relation(fields: [advisorId], references: [id])
+
+  @@index([userId, createdAt])
+  @@index([status, createdAt])
+  @@index([advisorId])
 }
 
 model Property {
@@ -228,6 +238,8 @@ model Property {
   transactions Transaction[]
   priceUpdates PriceUpdate[]
   interestRequests InterestRequest[]
+
+  @@index([status, createdAt])
 }
 
 model ClientProperty {
@@ -241,6 +253,9 @@ model ClientProperty {
 
   user     User     @relation(fields: [userId], references: [id])
   property Property @relation(fields: [propertyId], references: [id])
+
+  @@index([userId])
+  @@index([propertyId])
 }
 
 model PriceUpdate {
@@ -254,6 +269,7 @@ model PriceUpdate {
   property Property @relation(fields: [propertyId], references: [id])
 
   @@unique([propertyId, effectiveDate])
+  @@index([effectiveDate])
 }
 
 model InterestRequest {
@@ -265,6 +281,10 @@ model InterestRequest {
 
   user     User     @relation(fields: [userId], references: [id])
   property Property @relation(fields: [propertyId], references: [id])
+
+  @@index([status, createdAt])
+  @@index([userId, createdAt])
+  @@index([propertyId])
 }
 
 model Announcement {
@@ -274,6 +294,8 @@ model Announcement {
   description String
   isNew       Boolean    @default(false)
   createdAt   DateTime   @default(now())
+
+  @@index([createdAt])
 }
 
 model Transaction {
@@ -290,6 +312,10 @@ model Transaction {
   user     User     @relation(fields: [userId], references: [id])
   property Property @relation(fields: [propertyId], references: [id])
   payments Payment[]
+
+  @@index([userId])
+  @@index([propertyId])
+  @@index([status, createdAt])
 }
 
 model Payment {
@@ -305,6 +331,10 @@ model Payment {
 
   transaction Transaction @relation(fields: [transactionId], references: [id])
   user        User        @relation(fields: [userId], references: [id])
+
+  @@index([transactionId])
+  @@index([userId])
+  @@index([status, createdAt])
 }
 
 model InviteRequest {
@@ -319,6 +349,9 @@ model InviteRequest {
   updatedAt      DateTime     @updatedAt
 
   organization Organization? @relation(fields: [organizationId], references: [id])
+
+  @@index([status, createdAt])
+  @@index([email])
 }
 
 model RateLimitBucket {
@@ -328,6 +361,9 @@ model RateLimitBucket {
   blockedUntil    DateTime?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
+
+  @@index([windowStartedAt])
+  @@index([blockedUntil])
 }
 
 model Document {
@@ -343,4 +379,9 @@ model Document {
   user         User?         @relation(fields: [userId], references: [id])
   property     Property?     @relation(fields: [propertyId], references: [id])
   organization Organization? @relation(fields: [organizationId], references: [id])
+
+  @@index([userId])
+  @@index([propertyId])
+  @@index([organizationId])
+  @@index([propertyId, type])
 }

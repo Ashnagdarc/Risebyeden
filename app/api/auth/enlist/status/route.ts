@@ -1,12 +1,13 @@
 import { NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
+import { z } from 'zod';
 import prisma from '@/lib/prisma';
 import { consumeRateLimit, resetRateLimit } from '@/lib/security/rate-limit';
 
-type StatusPayload = {
-  userId?: string;
-  accessKey?: string;
-};
+const statusPayloadSchema = z.object({
+  userId: z.string().trim().min(1),
+  accessKey: z.string().min(1),
+}).strict();
 
 const STATUS_RATE_LIMIT = {
   windowMs: 5 * 60 * 1000,
@@ -23,8 +24,15 @@ function resolveClientIp(request: Request): string {
 }
 
 export async function POST(request: Request) {
-  const body = (await request.json()) as StatusPayload;
-  const normalizedUserId = String(body.userId || '').trim().toUpperCase();
+  let rawBody: unknown;
+  try {
+    rawBody = await request.json();
+  } catch {
+    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+  }
+
+  const preParsed = z.object({ userId: z.string().optional() }).passthrough().safeParse(rawBody);
+  const normalizedUserId = String(preParsed.success ? preParsed.data.userId || '' : '').trim().toUpperCase();
   const clientIp = resolveClientIp(request);
   const rateLimitKey = `enlist-status:${normalizedUserId || 'unknown'}:${clientIp}`;
 
@@ -36,9 +44,11 @@ export async function POST(request: Request) {
     );
   }
 
-  if (!normalizedUserId || !body.accessKey) {
+  const parsedBody = statusPayloadSchema.safeParse(rawBody);
+  if (!parsedBody.success) {
     return NextResponse.json({ error: 'User ID and access key are required' }, { status: 400 });
   }
+  const body = parsedBody.data;
 
   const user = await prisma.user.findUnique({
     where: { userId: normalizedUserId },

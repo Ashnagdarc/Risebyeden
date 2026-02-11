@@ -1,10 +1,13 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import type { Prisma } from '@prisma/client';
+import { z } from 'zod';
 import prisma from '@/lib/prisma';
 import { authOptions } from '@/lib/auth';
 import { CACHE_KEYS } from '@/lib/cache/keys';
 import { deleteCacheKeys } from '@/lib/cache/valkey';
+import { buildPaginationMeta, parsePagination } from '@/lib/api/pagination';
+import { parseJsonBody, parseQuery } from '@/lib/api/validation';
 
 async function requireAdmin() {
   const session = await getServerSession(authOptions);
@@ -25,14 +28,41 @@ function resolveTierLabel(propertyCount: number) {
   return 'Core';
 }
 
-export async function GET() {
+const clientListQuerySchema = z.object({
+  status: z.enum(['PENDING', 'ACTIVE', 'REJECTED']).optional(),
+});
+
+const clientPatchSchema = z.object({
+  id: z.string().min(1),
+  name: z.string().trim().min(1).max(120).nullable().optional(),
+  organization: z.string().trim().min(1).max(160).nullable().optional(),
+  status: z.enum(['PENDING', 'ACTIVE', 'REJECTED']).optional(),
+  tierOverride: z.string().trim().min(1).max(80).nullable().optional(),
+  tierOverrideEnabled: z.boolean().optional(),
+}).strict();
+
+const clientDeleteSchema = z.object({
+  id: z.string().min(1),
+}).strict();
+
+export async function GET(request: Request) {
   const session = await requireAdmin();
   if (!session) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
+  const parsedQuery = parseQuery(request, clientListQuerySchema);
+  if (!parsedQuery.success) {
+    return parsedQuery.response;
+  }
+  const pagination = parsePagination(request, { defaultLimit: 50, maxLimit: 200 });
+  const where = {
+    role: 'CLIENT',
+    status: parsedQuery.data.status,
+  } satisfies Prisma.UserWhereInput;
+
   const clientQuery = {
-    where: { role: 'CLIENT' },
+    where,
     select: {
       id: true,
       userId: true,
@@ -53,9 +83,14 @@ export async function GET() {
       },
     },
     orderBy: { createdAt: 'desc' },
+    skip: pagination.skip,
+    take: pagination.take,
   } satisfies Prisma.UserFindManyArgs;
 
-  const users = await prisma.user.findMany(clientQuery);
+  const [users, total] = await prisma.$transaction([
+    prisma.user.findMany(clientQuery),
+    prisma.user.count({ where }),
+  ]);
 
   const clients = (users as Prisma.UserGetPayload<typeof clientQuery>[]).map((user) => {
     const totals = user.clientProperties.reduce<{
@@ -89,7 +124,14 @@ export async function GET() {
     };
   });
 
-  return NextResponse.json({ clients });
+  return NextResponse.json({
+    clients,
+    pagination: buildPaginationMeta({
+      page: pagination.page,
+      limit: pagination.limit,
+      total,
+    }),
+  });
 }
 
 export async function PATCH(request: Request) {
@@ -98,18 +140,11 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const body = (await request.json()) as {
-    id?: string;
-    name?: string | null;
-    organization?: string | null;
-    status?: 'PENDING' | 'ACTIVE' | 'REJECTED';
-    tierOverride?: string | null;
-    tierOverrideEnabled?: boolean;
-  };
-
-  if (!body.id) {
-    return NextResponse.json({ error: 'Client id is required' }, { status: 400 });
+  const parsedBody = await parseJsonBody(request, clientPatchSchema);
+  if (!parsedBody.success) {
+    return parsedBody.response;
   }
+  const body = parsedBody.data;
 
   try {
     const updateResult = await prisma.user.updateMany({
@@ -171,11 +206,11 @@ export async function DELETE(request: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const body = (await request.json()) as { id?: string };
-
-  if (!body.id) {
-    return NextResponse.json({ error: 'Client id is required' }, { status: 400 });
+  const parsedBody = await parseJsonBody(request, clientDeleteSchema);
+  if (!parsedBody.success) {
+    return parsedBody.response;
   }
+  const body = parsedBody.data;
 
   const client = await prisma.user.findUnique({
     where: { id: body.id },

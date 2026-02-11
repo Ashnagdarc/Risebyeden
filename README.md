@@ -1,163 +1,100 @@
-# Risebyeden Portfolio Dashboard
+# Risebyeden
 
-A minimal dark-themed property investment portfolio dashboard built with Next.js 15, React 19, and TypeScript.
+Risebyeden is a Next.js 15 property investment platform with role-based admin/client workflows, API-backed portfolio data, consultation flows, and Valkey-backed response caching.
 
-![Dashboard Preview](screenshot.png)
+## Stack
+
+- Next.js 15 (App Router)
+- React 19 + TypeScript
+- Prisma + PostgreSQL
+- NextAuth credentials auth
+- Valkey (Redis protocol) cache layer
+- Sentry-ready instrumentation hooks
 
 ## Features
 
-- Sleek obsidian-inspired dark UI with vitreous glass effects
-- Real-time portfolio metrics and analytics
-- Property asset distribution with detailed metrics
-- Performance tracking with interactive charts
-- Smooth animations and 3D hover effects
-- Fully responsive design
-- Multi-page navigation (Dashboard, Analytics, Performance, Acquire Property)
-- Built with Next.js App Router and TypeScript
+- Admin APIs for users, clients, properties, advisors, consultations, invites, and price updates
+- Client APIs for portfolio, properties, profile/settings, interest requests, and consultations
+- Rate limiting on auth and enlist endpoints with automatic stale bucket cleanup
+- API response caching + invalidation hooks for high-read endpoints
+- Pagination support on all admin list endpoints
 
-## Tech Stack
+## Requirements
 
-- **Framework:** Next.js 15
-- **UI Library:** React 19
-- **Language:** TypeScript
-- **Styling:** CSS Modules
-- **Fonts:** Inter & JetBrains Mono (Google Fonts)
+- Node.js 20+
+- npm 10+
+- PostgreSQL 16+
+- Valkey 9+ (or Redis-compatible service)
 
-## Getting Started
-
-### Prerequisites
-
-- Node.js 18.x or later
-- npm, yarn, pnpm, or bun
-
-### Installation
+## Setup
 
 1. Install dependencies:
 
 ```bash
-npm install
-# or
-yarn install
-# or
-pnpm install
+npm ci
 ```
 
-2. Run the development server:
+2. Copy env template and set values:
+
+```bash
+cp .env.example .env
+```
+
+3. Run database migrations:
+
+```bash
+npx prisma migrate dev
+```
+
+4. Start dev server:
 
 ```bash
 npm run dev
-
-## MCP Server (Sentry)
-
-An MCP server is available under [mcp-server](mcp-server).
-
-```
-cd mcp-server
-npm install
-SENTRY_DSN=your_dsn_here npm run start
-```
-# or
-yarn dev
-# or
-pnpm dev
 ```
 
-3. Open [http://localhost:3000](http://localhost:3000) in your browser to see the result.
+App runs at [http://localhost:3000](http://localhost:3000).
 
-## Project Structure
-
-```
-├── app/
-│   ├── layout.tsx              # Root layout with font configuration
-│   ├── page.tsx                # Main dashboard page
-│   ├── page.module.css         # Dashboard styles
-│   ├── globals.css             # Global styles and CSS variables
-│   ├── acquire/
-│   │   ├── page.tsx            # Acquire property form page
-│   │   └── page.module.css
-│   ├── analytics/
-│   │   ├── page.tsx            # Analytics dashboard with pie chart
-│   │   └── page.module.css
-│   └── performance/
-│       ├── page.tsx            # Performance tracking with bar chart
-│       └── page.module.css
-├── components/
-│   ├── Sidebar.tsx             # Navigation sidebar component
-│   Main Dashboard
-- **Total Managed Assets**: Portfolio value with percentage change
-- **Net Annual Yield**: Investment return percentage
-- **Portfolio LTV**: Loan-to-value ratio visualization
-- **Occupancy Rate**: Real-time occupancy status
-- **Property List**: Asset distribution with detailed metrics
-
-### Analytics Page
-- **Portfolio Distribution**: Interactive pie chart showing asset allocation
-- **Performance Metrics**: YoY growth, ROI, and portfolio statistics
-- **Top Performers**: Ranking of best-performing properties
-- **Market Insights**: AI-driven recommendations and alerts
-
-### Performance Page
-- **Revenue/Expense Tracking**: Monthly comparison bar chart
-- **Property Performance Table**: Occupancy rates and revenue by property
-- **Quick Stats**: Key performance indicators at a glance
-
-### Acquire Property Page
-- **Comprehensive Form**: Add new properties to your portfolio
-- **Financial Metrics**: Purchase price, valuation, cap rate tracking
-- **Property Details**: Full specifications including location, type, and amenities
-- **Smart Validation**: Form validation with helpful input guidancessets:** Portfolio value with percentage change
-- **Net Annual Yield:** Investment return percentage
-- **Portfolio LTV:** Loan-to-value ratio visualization
-- **Occupancy Rate:** Real-time occupancy status
-
-### Property List
-Each property shows:
-- Name and location
-- Property type (Mixed Use, Residential, Commercial)
-- Appreciation percentage
-- Cap rate
-- Current valuation
-
-## Customization
-
-### Colors
-Edit CSS variables in [app/globals.css](app/globals.css):
-
-```css
-:root {
-  --obsidian-base: #050505;
-  --obsidian-surface: #0a0a0a;
-  --accent-gold: #c5a368;
-  --text-primary: #e5e5e5;
-  /* ... more variables */
-}
-```
-
-### Data
-Update property data in [app/page.tsx](app/page.tsx):
-
-```typescript
-const properties = [
-  {
-    name: "Your Property",
-    location: "City, Country",
-    type: "Type",
-    // ... more fields
-  }
-];
-```
-
-## Build for Production
+## Docker Services (DB + Cache)
 
 ```bash
-npm run build
-npm run start
+docker compose up -d db valkey
 ```
 
-## License
+This starts:
+- Postgres `16.6-alpine` on `5432`
+- Valkey `9.0.2` on `6379`
 
-MIT
+Both services include healthchecks.
 
-## Author
+## Useful Commands
 
-Built with ❤️ for Rise by Eden
+```bash
+npm run lint
+npm run build
+npm run test:cache-hooks
+npx prisma validate
+npx prisma migrate status
+```
+
+## Production Notes
+
+- Set strong secrets for `NEXTAUTH_SECRET` / `AUTH_SECRET`.
+- Set `DATABASE_URL` and `VALKEY_URL` to production services.
+- Use TLS-enabled SMTP credentials if consultation email notifications are required.
+- Build with the provided multi-stage `Dockerfile` (non-root runtime image).
+- CI workflow (`.github/workflows/ci.yml`) runs lint, build, Prisma validation, and cache-hook checks.
+
+## Cache + Invalidation
+
+- Cache backend: Valkey via `lib/cache/valkey.ts`
+- Key definitions: `lib/cache/keys.ts`
+- Write endpoints clear affected keys to keep admin/client reads consistent.
+
+## Project Structure (Key Areas)
+
+- `app/api` - API route handlers
+- `lib/security` - token + rate-limit logic
+- `lib/cache` - cache client and key catalog
+- `prisma` - schema and migrations
+- `scripts/test-cache-hooks.js` - guard test for cache invalidation wiring
+

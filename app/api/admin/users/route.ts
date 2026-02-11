@@ -2,11 +2,14 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
+import { z } from 'zod';
 import prisma from '@/lib/prisma';
 import { authOptions } from '@/lib/auth';
 import { hashToken } from '@/lib/security/token';
 import { CACHE_KEYS } from '@/lib/cache/keys';
 import { deleteCacheKeys } from '@/lib/cache/valkey';
+import { buildPaginationMeta, parsePagination } from '@/lib/api/pagination';
+import { parseJsonBody, parseQuery } from '@/lib/api/validation';
 
 function generateShortId(): string {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -25,11 +28,20 @@ function generateAccessToken(): string {
   return crypto.randomBytes(8).toString('hex').toUpperCase();
 }
 
-type CreateUserPayload = {
-  role: 'ADMIN' | 'CLIENT';
-  name?: string;
-  email?: string;
-};
+const createUserSchema = z.object({
+  role: z.enum(['ADMIN', 'CLIENT']),
+  name: z.string().trim().min(1).max(120).optional(),
+  email: z.string().trim().email().optional(),
+}).strict();
+
+const updateUserSchema = z.object({
+  id: z.string().min(1),
+  action: z.enum(['approve', 'reject']),
+}).strict();
+
+const userListQuerySchema = z.object({
+  status: z.enum(['PENDING', 'ACTIVE', 'REJECTED']).optional(),
+});
 
 // POST — Admin provisions a new user (generates userId, accessKey, accessToken)
 export async function POST(request: Request) {
@@ -40,11 +52,11 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const body = (await request.json()) as Partial<CreateUserPayload>;
-
-  if (!body.role) {
-    return NextResponse.json({ error: 'Role is required' }, { status: 400 });
+  const parsedBody = await parseJsonBody(request, createUserSchema);
+  if (!parsedBody.success) {
+    return parsedBody.response;
   }
+  const body = parsedBody.data;
 
   const userId = generateShortId();
   const accessKey = generateAccessKey();
@@ -95,25 +107,42 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const { searchParams } = new URL(request.url);
-  const status = searchParams.get('status');
+  const parsedQuery = parseQuery(request, userListQuerySchema);
+  if (!parsedQuery.success) {
+    return parsedQuery.response;
+  }
 
-  const users = await prisma.user.findMany({
-    where: status ? { status: status as 'PENDING' | 'ACTIVE' | 'REJECTED' } : undefined,
-    select: {
-      id: true,
-      userId: true,
-      name: true,
-      organization: true,
-      role: true,
-      status: true,
-      tokenUsed: true,
-      createdAt: true,
-    },
-    orderBy: { createdAt: 'desc' },
+  const pagination = parsePagination(request, { defaultLimit: 50, maxLimit: 200 });
+  const where = parsedQuery.data.status ? { status: parsedQuery.data.status } : undefined;
+
+  const [users, total] = await prisma.$transaction([
+    prisma.user.findMany({
+      where,
+      select: {
+        id: true,
+        userId: true,
+        name: true,
+        organization: true,
+        role: true,
+        status: true,
+        tokenUsed: true,
+        createdAt: true,
+      },
+      orderBy: { createdAt: 'desc' },
+      skip: pagination.skip,
+      take: pagination.take,
+    }),
+    prisma.user.count({ where }),
+  ]);
+
+  return NextResponse.json({
+    users,
+    pagination: buildPaginationMeta({
+      page: pagination.page,
+      limit: pagination.limit,
+      total,
+    }),
   });
-
-  return NextResponse.json({ users });
 }
 
 // PATCH — Admin approves or rejects a user
@@ -125,11 +154,11 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const body = (await request.json()) as { id: string; action: 'approve' | 'reject' };
-
-  if (!body.id || !body.action) {
-    return NextResponse.json({ error: 'Missing id or action' }, { status: 400 });
+  const parsedBody = await parseJsonBody(request, updateUserSchema);
+  if (!parsedBody.success) {
+    return parsedBody.response;
   }
+  const body = parsedBody.data;
 
   const newStatus = body.action === 'approve' ? 'ACTIVE' : 'REJECTED';
 

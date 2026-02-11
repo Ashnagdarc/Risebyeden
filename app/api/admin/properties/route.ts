@@ -1,9 +1,12 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
+import { z } from 'zod';
 import prisma from '@/lib/prisma';
 import { authOptions } from '@/lib/auth';
 import { CACHE_KEYS } from '@/lib/cache/keys';
 import { deleteCacheKeys } from '@/lib/cache/valkey';
+import { buildPaginationMeta, parsePagination } from '@/lib/api/pagination';
+import { parseJsonBody, parseQuery } from '@/lib/api/validation';
 
 function slugify(value: string): string {
   return value
@@ -16,38 +19,106 @@ function slugify(value: string): string {
 async function requireAdmin() {
   const session = await getServerSession(authOptions);
   const role = (session?.user as { role?: string } | undefined)?.role;
-  if (!session || role !== 'admin') {
+  if (!session || (role || '').toLowerCase() !== 'admin') {
     return null;
   }
   return session;
 }
 
-export async function GET() {
+const propertyStatusSchema = z.enum(['AVAILABLE', 'RESERVED', 'SOLD']);
+
+const propertyListQuerySchema = z.object({
+  status: propertyStatusSchema.optional(),
+});
+
+const createPropertySchema = z.object({
+  name: z.string().trim().min(1).max(160),
+  slug: z.string().trim().min(1).max(180).optional(),
+  location: z.string().trim().min(1).max(200).optional(),
+  description: z.string().trim().min(1).max(3000).optional(),
+  status: propertyStatusSchema.optional(),
+  basePrice: z.union([z.number(), z.string(), z.null()]).optional(),
+  imageUrls: z.array(z.string().trim().min(1).max(2048)).optional(),
+}).strict();
+
+const updatePropertySchema = z.object({
+  id: z.string().min(1),
+  name: z.string().trim().min(1).max(160).optional(),
+  slug: z.string().trim().min(1).max(180).optional(),
+  location: z.string().trim().min(1).max(200).nullable().optional(),
+  description: z.string().trim().min(1).max(3000).nullable().optional(),
+  status: propertyStatusSchema.optional(),
+  basePrice: z.union([z.number(), z.string(), z.null()]).optional(),
+  imageUrls: z.array(z.string().trim().min(1).max(2048)).optional(),
+}).strict();
+
+const deletePropertySchema = z.object({
+  id: z.string().min(1),
+}).strict();
+
+function normalizePriceInput(
+  value: number | string | null | undefined,
+  allowUndefined: boolean
+): number | null | undefined {
+  if (value === undefined) {
+    return allowUndefined ? undefined : null;
+  }
+  if (value === null) {
+    return null;
+  }
+  const normalized = typeof value === 'number' ? value : Number(value);
+  if (!Number.isFinite(normalized) || normalized < 0) {
+    return undefined;
+  }
+  return normalized;
+}
+
+export async function GET(request: Request) {
   const session = await requireAdmin();
   if (!session) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const properties = await prisma.property.findMany({
-    select: {
-      id: true,
-      name: true,
-      slug: true,
-      location: true,
-      status: true,
-      basePrice: true,
-      description: true,
-      documents: {
-        where: { type: 'OTHER' },
-        select: { id: true, url: true },
-        orderBy: { createdAt: 'asc' },
-      },
-      createdAt: true,
-    },
-    orderBy: { createdAt: 'desc' },
-  });
+  const parsedQuery = parseQuery(request, propertyListQuerySchema);
+  if (!parsedQuery.success) {
+    return parsedQuery.response;
+  }
+  const pagination = parsePagination(request, { defaultLimit: 50, maxLimit: 200 });
+  const where = parsedQuery.data.status ? { status: parsedQuery.data.status } : undefined;
 
-  return NextResponse.json({ properties });
+  const [properties, total] = await prisma.$transaction([
+    prisma.property.findMany({
+      where,
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        location: true,
+        status: true,
+        basePrice: true,
+        description: true,
+        documents: {
+          where: { type: 'OTHER' },
+          select: { id: true, url: true },
+          orderBy: { createdAt: 'asc' },
+        },
+        createdAt: true,
+      },
+      orderBy: { createdAt: 'desc' },
+      skip: pagination.skip,
+      take: pagination.take,
+    }),
+    prisma.property.count({ where }),
+  ]);
+
+  return NextResponse.json({
+    properties,
+    pagination: buildPaginationMeta({
+      page: pagination.page,
+      limit: pagination.limit,
+      total,
+    }),
+  });
 }
 
 export async function POST(request: Request) {
@@ -56,26 +127,16 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const body = (await request.json()) as {
-    name?: string;
-    slug?: string;
-    location?: string;
-    description?: string;
-    status?: 'AVAILABLE' | 'RESERVED' | 'SOLD';
-    basePrice?: string | number | null;
-    imageUrls?: string[];
-  };
-
-  if (!body.name) {
-    return NextResponse.json({ error: 'Name is required' }, { status: 400 });
+  const parsedBody = await parseJsonBody(request, createPropertySchema);
+  if (!parsedBody.success) {
+    return parsedBody.response;
   }
+  const body = parsedBody.data;
 
-  const basePriceRaw = body.basePrice ?? null;
-  const basePrice = basePriceRaw === null
-    ? null
-    : Number.isFinite(Number(basePriceRaw))
-      ? Number(basePriceRaw)
-      : null;
+  const basePrice = normalizePriceInput(body.basePrice, false);
+  if (basePrice === undefined) {
+    return NextResponse.json({ error: 'Invalid base price' }, { status: 400 });
+  }
 
   const imageUrls = Array.isArray(body.imageUrls)
     ? body.imageUrls.map((url) => url.trim()).filter(Boolean)
@@ -123,27 +184,16 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const body = (await request.json()) as {
-    id?: string;
-    name?: string;
-    slug?: string;
-    location?: string;
-    description?: string;
-    status?: 'AVAILABLE' | 'RESERVED' | 'SOLD';
-    basePrice?: string | number | null;
-    imageUrls?: string[];
-  };
-
-  if (!body.id) {
-    return NextResponse.json({ error: 'Property id is required' }, { status: 400 });
+  const parsedBody = await parseJsonBody(request, updatePropertySchema);
+  if (!parsedBody.success) {
+    return parsedBody.response;
   }
+  const body = parsedBody.data;
 
-  const basePriceRaw = body.basePrice ?? null;
-  const basePrice = basePriceRaw === null
-    ? null
-    : Number.isFinite(Number(basePriceRaw))
-      ? Number(basePriceRaw)
-      : null;
+  const basePrice = normalizePriceInput(body.basePrice, true);
+  if (body.basePrice !== undefined && basePrice === undefined) {
+    return NextResponse.json({ error: 'Invalid base price' }, { status: 400 });
+  }
 
   const imageUrls = Array.isArray(body.imageUrls)
     ? body.imageUrls.map((url) => url.trim()).filter(Boolean)
@@ -160,10 +210,10 @@ export async function PATCH(request: Request) {
     data: {
       name: body.name?.trim() || undefined,
       slug: body.slug ? slugify(body.slug) : undefined,
-      location: body.location?.trim() || null,
-      description: body.description?.trim() || null,
+      location: body.location === undefined ? undefined : body.location?.trim() || null,
+      description: body.description === undefined ? undefined : body.description?.trim() || null,
       status: body.status || undefined,
-      basePrice,
+      basePrice: basePrice === undefined ? undefined : basePrice,
       documents: imageUrls && imageUrls.length
         ? {
             create: imageUrls.map((url, index) => ({
@@ -186,7 +236,7 @@ export async function PATCH(request: Request) {
   await deleteCacheKeys([
     CACHE_KEYS.clientPropertiesAvailable,
     CACHE_KEYS.adminOverview,
-    CACHE_KEYS.clientPropertyById(body.id),
+    CACHE_KEYS.clientPropertyById(property.id),
   ]);
 
   return NextResponse.json({ property });
@@ -198,11 +248,11 @@ export async function DELETE(request: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const body = (await request.json()) as { id?: string };
-
-  if (!body.id) {
-    return NextResponse.json({ error: 'Property id is required' }, { status: 400 });
+  const parsedBody = await parseJsonBody(request, deletePropertySchema);
+  if (!parsedBody.success) {
+    return parsedBody.response;
   }
+  const body = parsedBody.data;
 
   await prisma.document.deleteMany({ where: { propertyId: body.id } });
   await prisma.clientProperty.deleteMany({ where: { propertyId: body.id } });

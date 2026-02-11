@@ -1,9 +1,12 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
+import { z } from 'zod';
 import prisma from '@/lib/prisma';
 import { authOptions } from '@/lib/auth';
 import { CACHE_KEYS } from '@/lib/cache/keys';
 import { deleteCacheKeys } from '@/lib/cache/valkey';
+import { buildPaginationMeta, parsePagination } from '@/lib/api/pagination';
+import { parseJsonBody, parseQuery } from '@/lib/api/validation';
 
 async function requireAdmin() {
   const session = await getServerSession(authOptions);
@@ -14,32 +17,65 @@ async function requireAdmin() {
   return session;
 }
 
-type AdvisorPayload = {
-  id?: string;
-  name?: string;
-  title?: string;
-  specialty?: string | null;
-  status?: 'AVAILABLE' | 'BUSY' | 'INACTIVE';
-};
+const advisorStatusSchema = z.enum(['AVAILABLE', 'BUSY', 'INACTIVE']);
 
-export async function GET() {
+const advisorListQuerySchema = z.object({
+  status: advisorStatusSchema.optional(),
+});
+
+const advisorCreateSchema = z.object({
+  name: z.string().trim().min(1).max(120),
+  title: z.string().trim().min(1).max(120),
+  specialty: z.string().trim().min(1).max(200).nullable().optional(),
+  status: advisorStatusSchema.optional(),
+}).strict();
+
+const advisorPatchSchema = z.object({
+  id: z.string().min(1),
+  name: z.string().trim().min(1).max(120).optional(),
+  title: z.string().trim().min(1).max(120).optional(),
+  specialty: z.string().trim().min(1).max(200).nullable().optional(),
+  status: advisorStatusSchema.optional(),
+}).strict();
+
+export async function GET(request: Request) {
   const session = await requireAdmin();
   if (!session) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const advisors = await prisma.advisor.findMany({
-    orderBy: { createdAt: 'asc' },
-    select: {
-      id: true,
-      name: true,
-      title: true,
-      specialty: true,
-      status: true,
-    },
-  });
+  const parsedQuery = parseQuery(request, advisorListQuerySchema);
+  if (!parsedQuery.success) {
+    return parsedQuery.response;
+  }
+  const pagination = parsePagination(request, { defaultLimit: 50, maxLimit: 200 });
+  const where = parsedQuery.data.status ? { status: parsedQuery.data.status } : undefined;
 
-  return NextResponse.json({ advisors });
+  const [advisors, total] = await prisma.$transaction([
+    prisma.advisor.findMany({
+      where,
+      orderBy: { createdAt: 'asc' },
+      skip: pagination.skip,
+      take: pagination.take,
+      select: {
+        id: true,
+        name: true,
+        title: true,
+        specialty: true,
+        status: true,
+      },
+    }),
+    prisma.advisor.count({ where }),
+  ]);
+
+  return NextResponse.json({
+    advisors,
+    pagination: buildPaginationMeta({
+      page: pagination.page,
+      limit: pagination.limit,
+      total,
+    }),
+  });
 }
 
 export async function POST(request: Request) {
@@ -48,10 +84,11 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const body = (await request.json()) as AdvisorPayload;
-  if (!body.name || !body.title) {
-    return NextResponse.json({ error: 'Name and title are required' }, { status: 400 });
+  const parsedBody = await parseJsonBody(request, advisorCreateSchema);
+  if (!parsedBody.success) {
+    return parsedBody.response;
   }
+  const body = parsedBody.data;
 
   try {
     const advisor = await prisma.advisor.create({
@@ -84,10 +121,11 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const body = (await request.json()) as AdvisorPayload;
-  if (!body.id) {
-    return NextResponse.json({ error: 'Advisor id is required' }, { status: 400 });
+  const parsedBody = await parseJsonBody(request, advisorPatchSchema);
+  if (!parsedBody.success) {
+    return parsedBody.response;
   }
+  const body = parsedBody.data;
 
   try {
     const advisor = await prisma.advisor.update({

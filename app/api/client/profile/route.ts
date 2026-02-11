@@ -1,18 +1,19 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
+import { z } from 'zod';
 import prisma from '@/lib/prisma';
 import { authOptions } from '@/lib/auth';
+import { parseJsonBody } from '@/lib/api/validation';
 
-
-type ProfilePatchPayload = {
-  name?: string | null;
-  email?: string | null;
-  phone?: string | null;
-  location?: string | null;
-  bio?: string | null;
-  visibility?: 'private' | 'partners' | 'public' | null;
-  riskProfile?: string | null;
-};
+const profilePatchSchema = z.object({
+  name: z.string().trim().min(1).max(120).nullable().optional(),
+  email: z.string().trim().email().nullable().optional(),
+  phone: z.string().trim().max(40).nullable().optional(),
+  location: z.string().trim().max(200).nullable().optional(),
+  bio: z.string().trim().max(2000).nullable().optional(),
+  visibility: z.enum(['private', 'partners', 'public']).nullable().optional(),
+  riskProfile: z.string().trim().max(120).nullable().optional(),
+}).strict();
 
 async function requireUser() {
   const session = await getServerSession(authOptions);
@@ -193,7 +194,11 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ error: 'User not found' }, { status: 404 });
   }
 
-  const body = (await request.json()) as ProfilePatchPayload;
+  const parsedBody = await parseJsonBody(request, profilePatchSchema);
+  if (!parsedBody.success) {
+    return parsedBody.response;
+  }
+  const body = parsedBody.data;
   const nextName = body.name === undefined ? undefined : body.name?.trim() || null;
   const nextEmail = body.email === undefined ? undefined : body.email?.trim().toLowerCase() || null;
   const nextPhone = body.phone === undefined ? undefined : body.phone?.trim() || null;

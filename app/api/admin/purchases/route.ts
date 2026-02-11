@@ -1,7 +1,11 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
+import { z } from 'zod';
 import prisma from '@/lib/prisma';
 import { authOptions } from '@/lib/auth';
+import { CACHE_KEYS } from '@/lib/cache/keys';
+import { deleteCacheKeys } from '@/lib/cache/valkey';
+import { parseJsonBody } from '@/lib/api/validation';
 
 async function requireAdmin() {
   const session = await getServerSession(authOptions);
@@ -12,23 +16,25 @@ async function requireAdmin() {
   return session;
 }
 
+const createPurchaseSchema = z.object({
+  userId: z.string().min(1),
+  propertyId: z.string().min(1),
+  quantity: z.number().int().positive().max(1000).optional(),
+  purchasePrice: z.union([z.number(), z.string().trim().min(1), z.null()]).optional(),
+  notes: z.string().trim().max(2000).optional(),
+}).strict();
+
 export async function POST(request: Request) {
   const session = await requireAdmin();
   if (!session) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const body = (await request.json()) as {
-    userId?: string;
-    propertyId?: string;
-    quantity?: number;
-    purchasePrice?: string | number | null;
-    notes?: string;
-  };
-
-  if (!body.userId || !body.propertyId) {
-    return NextResponse.json({ error: 'Client and property are required' }, { status: 400 });
+  const parsedBody = await parseJsonBody(request, createPurchaseSchema);
+  if (!parsedBody.success) {
+    return parsedBody.response;
   }
+  const body = parsedBody.data;
 
   const quantity = body.quantity && body.quantity > 0 ? Math.floor(body.quantity) : 1;
   const priceRaw = body.purchasePrice ?? null;
@@ -36,7 +42,11 @@ export async function POST(request: Request) {
     ? null
     : Number.isFinite(Number(priceRaw))
       ? Number(priceRaw)
-      : null;
+      : undefined;
+
+  if (priceRaw !== null && purchasePrice === undefined) {
+    return NextResponse.json({ error: 'Invalid purchase price' }, { status: 400 });
+  }
 
   const client = await prisma.user.findUnique({
     where: { id: body.userId },
@@ -71,6 +81,10 @@ export async function POST(request: Request) {
       purchasedAt: true,
     },
   });
+
+  await deleteCacheKeys([
+    CACHE_KEYS.adminOverview,
+  ]);
 
   return NextResponse.json({ purchase });
 }

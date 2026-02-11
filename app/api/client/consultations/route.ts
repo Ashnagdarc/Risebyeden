@@ -1,16 +1,18 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
+import { z } from 'zod';
 import prisma from '@/lib/prisma';
 import { authOptions } from '@/lib/auth';
 import { sendConsultationEmail } from '@/lib/email';
+import { parseJsonBody } from '@/lib/api/validation';
 
-type ConsultationPayload = {
-  type?: 'portfolio' | 'acquisition' | 'market';
-  preferredDate?: string;
-  preferredTime?: string;
-  notes?: string;
-  advisorId?: string | null;
-};
+const consultationPayloadSchema = z.object({
+  type: z.enum(['portfolio', 'acquisition', 'market']),
+  preferredDate: z.string().trim().min(1),
+  preferredTime: z.string().trim().min(1).max(50).optional(),
+  notes: z.string().trim().max(2000).optional(),
+  advisorId: z.string().min(1).nullable().optional(),
+}).strict();
 
 async function requireUser() {
   const session = await getServerSession(authOptions);
@@ -20,17 +22,15 @@ async function requireUser() {
   return session;
 }
 
-function mapType(rawType: string | undefined) {
-  if (rawType === 'portfolio') {
-    return 'PORTFOLIO' as const;
+function mapType(rawType: 'portfolio' | 'acquisition' | 'market') {
+  switch (rawType) {
+    case 'portfolio':
+      return 'PORTFOLIO' as const;
+    case 'acquisition':
+      return 'ACQUISITION' as const;
+    case 'market':
+      return 'MARKET' as const;
   }
-  if (rawType === 'acquisition') {
-    return 'ACQUISITION' as const;
-  }
-  if (rawType === 'market') {
-    return 'MARKET' as const;
-  }
-  return null;
 }
 
 function escapeHtml(value: string | null | undefined): string {
@@ -84,11 +84,12 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'User not found' }, { status: 404 });
   }
 
-  const body = (await request.json()) as ConsultationPayload;
-  const type = mapType(body.type);
-  if (!type || !body.preferredDate) {
-    return NextResponse.json({ error: 'Missing consultation type or date' }, { status: 400 });
+  const parsedBody = await parseJsonBody(request, consultationPayloadSchema);
+  if (!parsedBody.success) {
+    return parsedBody.response;
   }
+  const body = parsedBody.data;
+  const type = mapType(body.type);
 
   const preferredDate = new Date(body.preferredDate);
   if (Number.isNaN(preferredDate.getTime())) {

@@ -1,23 +1,27 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
+import { z } from 'zod';
 import prisma from '@/lib/prisma';
 import { authOptions } from '@/lib/auth';
+import { parseJsonBody } from '@/lib/api/validation';
 
-type SettingsPayload = {
-  name?: string | null;
-  email?: string | null;
-  settings?: {
-    twoFactorEnabled?: boolean;
-    deviceApproval?: boolean;
-    weeklySecurityReports?: boolean;
-    portfolioAlerts?: boolean;
-    acquisitionOpportunities?: boolean;
-    marketReports?: boolean;
-    portfolioStrategy?: string | null;
-    defaultRegion?: string | null;
-    dataSharing?: string | null;
-  };
-};
+const settingsSchema = z.object({
+  twoFactorEnabled: z.boolean().optional(),
+  deviceApproval: z.boolean().optional(),
+  weeklySecurityReports: z.boolean().optional(),
+  portfolioAlerts: z.boolean().optional(),
+  acquisitionOpportunities: z.boolean().optional(),
+  marketReports: z.boolean().optional(),
+  portfolioStrategy: z.string().trim().max(120).nullable().optional(),
+  defaultRegion: z.string().trim().max(120).nullable().optional(),
+  dataSharing: z.string().trim().max(120).nullable().optional(),
+}).strict();
+
+const settingsPayloadSchema = z.object({
+  name: z.string().trim().min(1).max(120).nullable().optional(),
+  email: z.string().trim().email().nullable().optional(),
+  settings: settingsSchema.optional(),
+}).strict();
 
 async function requireUser() {
   const session = await getServerSession(authOptions);
@@ -102,7 +106,11 @@ export async function PUT(request: Request) {
     return NextResponse.json({ error: 'User not found' }, { status: 404 });
   }
 
-  const body = (await request.json()) as SettingsPayload;
+  const parsedBody = await parseJsonBody(request, settingsPayloadSchema);
+  if (!parsedBody.success) {
+    return parsedBody.response;
+  }
+  const body = parsedBody.data;
   const nextName = body.name === undefined ? undefined : body.name?.trim() || null;
   const nextEmail = body.email === undefined ? undefined : body.email?.trim().toLowerCase() || null;
 
@@ -163,7 +171,11 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ error: 'User not found' }, { status: 404 });
   }
 
-  const body = (await request.json()) as SettingsPayload;
+  const parsedBody = await parseJsonBody(request, settingsPayloadSchema);
+  if (!parsedBody.success) {
+    return parsedBody.response;
+  }
+  const body = parsedBody.data;
   const nextName = body.name === undefined ? undefined : body.name?.trim() || null;
   const nextEmail = body.email === undefined ? undefined : body.email?.trim().toLowerCase() || null;
   const hasUserUpdate = nextName !== undefined || nextEmail !== undefined;

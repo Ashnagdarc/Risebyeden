@@ -1,15 +1,16 @@
 import { NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
+import { z } from 'zod';
 import prisma from '@/lib/prisma';
 import { consumeRateLimit, resetRateLimit } from '@/lib/security/rate-limit';
 import { verifyStoredToken } from '@/lib/security/token';
 
-type EnlistPayload = {
-  userId: string;
-  accessKey: string;
-  accessToken: string;
-  organization: string;
-};
+const enlistPayloadSchema = z.object({
+  userId: z.string().trim().min(1),
+  accessKey: z.string().min(1),
+  accessToken: z.string().min(1),
+  organization: z.string().trim().min(1).max(160),
+}).strict();
 
 const ENLIST_RATE_LIMIT = {
   windowMs: 5 * 60 * 1000,
@@ -27,8 +28,15 @@ function resolveClientIp(request: Request): string {
 
 // POST — Client uses userId + accessKey + accessToken to request access
 export async function POST(request: Request) {
-  const body = (await request.json()) as Partial<EnlistPayload>;
-  const normalizedUserId = String(body.userId || '').trim().toUpperCase();
+  let rawBody: unknown;
+  try {
+    rawBody = await request.json();
+  } catch {
+    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+  }
+
+  const preParsed = z.object({ userId: z.string().optional() }).passthrough().safeParse(rawBody);
+  const normalizedUserId = String(preParsed.success ? preParsed.data.userId || '' : '').trim().toUpperCase();
   const clientIp = resolveClientIp(request);
   const rateLimitKey = `enlist:${normalizedUserId || 'unknown'}:${clientIp}`;
 
@@ -40,9 +48,11 @@ export async function POST(request: Request) {
     );
   }
 
-  if (!normalizedUserId || !body.accessKey || !body.accessToken || !body.organization) {
+  const parsedBody = enlistPayloadSchema.safeParse(rawBody);
+  if (!parsedBody.success) {
     return NextResponse.json({ error: 'All fields are required' }, { status: 400 });
   }
+  const body = parsedBody.data;
 
   const user = await prisma.user.findUnique({
     where: { userId: normalizedUserId },

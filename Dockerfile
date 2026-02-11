@@ -1,26 +1,30 @@
-# Use official Node.js LTS image
-FROM node:18-alpine
-
-# Set working directory
+FROM node:20.18.3-alpine3.20 AS base
 WORKDIR /app
+ENV NEXT_TELEMETRY_DISABLED=1
 
-# Copy package.json and package-lock.json (if available)
-
-# Copy package files and prisma schema
+FROM base AS deps
 COPY package*.json ./
-COPY prisma ./prisma
+RUN npm ci
 
-# Install dependencies
-RUN npm install
-
-# Copy the rest of the application code
+FROM base AS builder
+COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-
-# Build the Next.js app
 RUN npm run build
+RUN npm prune --omit=dev
 
-# Expose the port Next.js runs on
+FROM node:20.18.3-alpine3.20 AS runner
+WORKDIR /app
+ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
+
+RUN addgroup -S nodejs && adduser -S nextjs -G nodejs
+
+COPY --from=builder /app/package*.json ./
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/.next ./.next
+COPY --from=builder /app/prisma ./prisma
+
+USER nextjs
+
 EXPOSE 3000
-
-# Start the Next.js app
 CMD ["npm", "start"]

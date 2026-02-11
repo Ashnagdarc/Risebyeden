@@ -1,9 +1,12 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
+import { z } from 'zod';
 import prisma from '@/lib/prisma';
 import { authOptions } from '@/lib/auth';
 import { CACHE_KEYS } from '@/lib/cache/keys';
 import { deleteCacheKeys } from '@/lib/cache/valkey';
+import { buildPaginationMeta, parsePagination } from '@/lib/api/pagination';
+import { parseJsonBody, parseQuery } from '@/lib/api/validation';
 
 async function requireAdmin() {
   const session = await getServerSession(authOptions);
@@ -14,24 +17,55 @@ async function requireAdmin() {
   return session;
 }
 
-export async function GET() {
+const interestStatusSchema = z.enum(['PENDING', 'SCHEDULED', 'APPROVED', 'REJECTED']);
+
+const interestListQuerySchema = z.object({
+  status: interestStatusSchema.optional(),
+});
+
+const interestPatchSchema = z.object({
+  id: z.string().min(1),
+  status: interestStatusSchema,
+}).strict();
+
+export async function GET(request: Request) {
   const session = await requireAdmin();
   if (!session) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const requests = await prisma.interestRequest.findMany({
-    orderBy: { createdAt: 'desc' },
-    select: {
-      id: true,
-      status: true,
-      createdAt: true,
-      user: { select: { userId: true, name: true } },
-      property: { select: { name: true } },
-    },
-  });
+  const parsedQuery = parseQuery(request, interestListQuerySchema);
+  if (!parsedQuery.success) {
+    return parsedQuery.response;
+  }
+  const pagination = parsePagination(request, { defaultLimit: 50, maxLimit: 200 });
+  const where = parsedQuery.data.status ? { status: parsedQuery.data.status } : undefined;
 
-  return NextResponse.json({ requests });
+  const [requests, total] = await prisma.$transaction([
+    prisma.interestRequest.findMany({
+      where,
+      orderBy: { createdAt: 'desc' },
+      skip: pagination.skip,
+      take: pagination.take,
+      select: {
+        id: true,
+        status: true,
+        createdAt: true,
+        user: { select: { userId: true, name: true } },
+        property: { select: { name: true } },
+      },
+    }),
+    prisma.interestRequest.count({ where }),
+  ]);
+
+  return NextResponse.json({
+    requests,
+    pagination: buildPaginationMeta({
+      page: pagination.page,
+      limit: pagination.limit,
+      total,
+    }),
+  });
 }
 
 export async function PATCH(request: Request) {
@@ -40,18 +74,13 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const body = (await request.json()) as { id?: string; status?: string };
-
-  if (!body.id || !body.status) {
-    return NextResponse.json({ error: 'Missing id or status' }, { status: 400 });
+  const parsedBody = await parseJsonBody(request, interestPatchSchema);
+  if (!parsedBody.success) {
+    return parsedBody.response;
   }
+  const body = parsedBody.data;
 
-  const normalizedStatus = body.status.toUpperCase();
-  const allowedStatuses = ['PENDING', 'SCHEDULED', 'APPROVED', 'REJECTED'];
-
-  if (!allowedStatuses.includes(normalizedStatus)) {
-    return NextResponse.json({ error: 'Invalid status' }, { status: 400 });
-  }
+  const normalizedStatus = body.status;
 
   const current = await prisma.interestRequest.findUnique({
     where: { id: body.id },

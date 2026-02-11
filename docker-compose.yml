@@ -1,6 +1,6 @@
 services:
   db:
-    image: postgres:latest
+    image: postgres:16.6-alpine
     container_name: risebyeden-pos
     restart: unless-stopped
     environment:
@@ -10,7 +10,12 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - pgdata:/var/lib/postgresql
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d risebyeden"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   valkey:
     image: valkey/valkey:9.0.2
@@ -20,6 +25,11 @@ services:
       - "6379:6379"
     volumes:
       - valkeydata:/data
+    healthcheck:
+      test: ["CMD", "valkey-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
 volumes:
   pgdata:
