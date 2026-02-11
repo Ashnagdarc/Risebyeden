@@ -66,7 +66,7 @@ export async function GET() {
       notes: true,
       status: true,
       advisor: {
-        select: { id: true, name: true, title: true },
+        select: { id: true, userId: true, name: true, email: true, advisorTitle: true, advisorStatus: true },
       },
       createdAt: true,
     },
@@ -99,6 +99,24 @@ export async function POST(request: Request) {
   }
 
   try {
+    if (body.advisorId) {
+      const advisor = await prisma.user.findFirst({
+        where: {
+          id: body.advisorId,
+          role: 'AGENT',
+          status: 'ACTIVE',
+        },
+        select: { id: true, advisorStatus: true },
+      });
+
+      if (!advisor) {
+        return NextResponse.json({ error: 'Advisor not found' }, { status: 404 });
+      }
+      if (advisor.advisorStatus === 'INACTIVE') {
+        return NextResponse.json({ error: 'Advisor is inactive' }, { status: 409 });
+      }
+    }
+
     const user = await prisma.user.findUnique({
       where: { id: userId },
       select: { id: true, userId: true, name: true, email: true },
@@ -119,7 +137,7 @@ export async function POST(request: Request) {
         preferredDate: true,
         preferredTime: true,
         notes: true,
-        advisor: { select: { name: true, title: true } },
+        advisor: { select: { id: true, userId: true, name: true, advisorTitle: true } },
       },
     });
 
@@ -135,8 +153,8 @@ export async function POST(request: Request) {
       const consultationType = escapeHtml(requestRecord.type);
       const preferredDateLabel = escapeHtml(requestRecord.preferredDate.toDateString());
       const preferredTimeLabel = escapeHtml(requestRecord.preferredTime || 'Not specified');
-      const advisorName = escapeHtml(requestRecord.advisor?.name || 'No preference');
-      const advisorTitle = requestRecord.advisor?.title ? ` (${escapeHtml(requestRecord.advisor.title)})` : '';
+      const advisorName = escapeHtml(requestRecord.advisor?.name || requestRecord.advisor?.userId || 'No preference');
+      const advisorTitle = requestRecord.advisor?.advisorTitle ? ` (${escapeHtml(requestRecord.advisor.advisorTitle)})` : '';
       const notes = escapeHtml(requestRecord.notes || '—');
       const html = `
         <div style="font-family: Arial, sans-serif; color: #111;">

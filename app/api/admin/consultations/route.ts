@@ -64,7 +64,7 @@ export async function GET(request: Request) {
           },
         },
         advisor: {
-          select: { id: true, name: true, title: true },
+          select: { id: true, userId: true, name: true, email: true, advisorTitle: true, advisorStatus: true },
         },
       },
     }),
@@ -94,6 +94,24 @@ export async function PATCH(request: Request) {
   const body = parsedBody.data;
 
   try {
+    if (body.advisorId) {
+      const advisor = await prisma.user.findFirst({
+        where: {
+          id: body.advisorId,
+          role: 'AGENT',
+          status: 'ACTIVE',
+        },
+        select: { id: true, advisorStatus: true },
+      });
+
+      if (!advisor) {
+        return NextResponse.json({ error: 'Advisor not found' }, { status: 404 });
+      }
+      if (advisor.advisorStatus === 'INACTIVE') {
+        return NextResponse.json({ error: 'Advisor is inactive' }, { status: 409 });
+      }
+    }
+
     const consultation = await prisma.consultationRequest.update({
       where: { id: body.id },
       data: {
@@ -103,7 +121,7 @@ export async function PATCH(request: Request) {
       select: {
         id: true,
         status: true,
-        advisor: { select: { id: true, name: true, title: true } },
+        advisor: { select: { id: true, userId: true, name: true, email: true, advisorTitle: true, advisorStatus: true } },
       },
     });
 

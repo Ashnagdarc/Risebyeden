@@ -100,6 +100,9 @@ model User {
   organization   String?
   email          String?    @unique
   role           UserRole   @default(CLIENT)
+  advisorTitle   String?
+  advisorSpecialty String?
+  advisorStatus  AdvisorStatus @default(AVAILABLE)
   status         UserStatus @default(PENDING)
   hashedPassword String                         // Access Key (hashed)
   accessToken    String?    @unique             // One-time enlist token hash
@@ -115,7 +118,8 @@ model User {
   organizationMembers OrganizationMember[]
   interestRequests InterestRequest[] @relation("InterestRequester")
   assignedInterestRequests InterestRequest[] @relation("InterestAssignedAgent")
-  consultationRequests ConsultationRequest[]
+  consultationRequests ConsultationRequest[] @relation("ConsultationRequester")
+  advisorConsultations ConsultationRequest[] @relation("ConsultationAdvisor")
   notifications   Notification[]
 
   @@index([role, status, createdAt])
@@ -194,8 +198,6 @@ model Advisor {
   createdAt DateTime      @default(now())
   updatedAt DateTime      @updatedAt
 
-  consultations ConsultationRequest[]
-
   @@index([status, createdAt])
 }
 
@@ -211,8 +213,8 @@ model ConsultationRequest {
   createdAt     DateTime            @default(now())
   updatedAt     DateTime            @updatedAt
 
-  user    User    @relation(fields: [userId], references: [id])
-  advisor Advisor? @relation(fields: [advisorId], references: [id])
+  user    User    @relation("ConsultationRequester", fields: [userId], references: [id])
+  advisor User?   @relation("ConsultationAdvisor", fields: [advisorId], references: [id])
 
   @@index([userId, createdAt])
   @@index([status, createdAt])

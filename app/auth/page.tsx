@@ -8,6 +8,18 @@ import styles from './page.module.css';
 
 type AuthMode = 'login' | 'enlist';
 
+type RuntimeTelemetry = {
+  latencyLabel: string;
+  encryptionLabel: string;
+  nodeLabel: string;
+};
+
+const defaultTelemetry: RuntimeTelemetry = {
+  latencyLabel: 'Measuring...',
+  encryptionLabel: 'Detecting...',
+  nodeLabel: 'Detecting...',
+};
+
 export default function AuthPage() {
   const [mode, setMode] = useState<AuthMode>('login');
   const [identifier, setIdentifier] = useState('');
@@ -18,6 +30,7 @@ export default function AuthPage() {
   const [enlistSuccess, setEnlistSuccess] = useState(false);
   const [enlistStatus, setEnlistStatus] = useState<'PENDING' | 'ACTIVE' | 'REJECTED' | 'UNKNOWN'>('PENDING');
   const [authError, setAuthError] = useState('');
+  const [telemetry, setTelemetry] = useState<RuntimeTelemetry>(defaultTelemetry);
   const router = useRouter();
 
   const handleLogin = async (event: React.FormEvent) => {
@@ -68,6 +81,53 @@ export default function AuthPage() {
       setAuthError('Connection failed. Try again.');
     }
   };
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const fetchTelemetry = async () => {
+      const start = performance.now();
+
+      try {
+        const response = await fetch('/api/system/runtime', { cache: 'no-store' });
+        if (!response.ok) {
+          throw new Error('Failed to fetch runtime telemetry');
+        }
+        const payload = await response.json() as {
+          nodeName?: string;
+          protocol?: string;
+        };
+
+        const latencyMs = Math.max(1, Math.round(performance.now() - start));
+        const protocol = (payload.protocol || '').toLowerCase();
+        const encryptionLabel = protocol === 'https'
+          ? 'TLS active (HTTPS)'
+          : 'Unencrypted (HTTP)';
+
+        if (!cancelled) {
+          setTelemetry({
+            latencyLabel: `${latencyMs}ms`,
+            encryptionLabel,
+            nodeLabel: payload.nodeName || 'Unknown node',
+          });
+        }
+      } catch {
+        if (!cancelled) {
+          setTelemetry({
+            latencyLabel: 'Unavailable',
+            encryptionLabel: 'Unavailable',
+            nodeLabel: 'Unavailable',
+          });
+        }
+      }
+    };
+
+    fetchTelemetry();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     if (!enlistSuccess) {
@@ -185,9 +245,9 @@ export default function AuthPage() {
               Secure portal for premium property investors. All sessions are encrypted and monitored.
             </p>
             <div className={styles.heroMeta}>
-              <span>Latency: 14ms</span>
-              <span>Encryption: AES-256</span>
-              <span>Node: Basalt-04</span>
+              <span>Latency: {telemetry.latencyLabel}</span>
+              <span>Encryption: {telemetry.encryptionLabel}</span>
+              <span>Node: {telemetry.nodeLabel}</span>
             </div>
           </div>
         </section>

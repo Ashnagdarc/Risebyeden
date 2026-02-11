@@ -25,20 +25,36 @@ export async function GET() {
     return NextResponse.json(cached);
   }
 
-  const advisors = await prisma.advisor.findMany({
-    where: { status: { not: 'INACTIVE' } },
+  const advisors = await prisma.user.findMany({
+    where: {
+      role: 'AGENT',
+      status: 'ACTIVE',
+      advisorStatus: { not: 'INACTIVE' },
+    },
     orderBy: { createdAt: 'asc' },
     take: QUERY_LIMITS.clientAdvisors,
     select: {
       id: true,
+      userId: true,
       name: true,
-      title: true,
-      specialty: true,
-      status: true,
+      email: true,
+      advisorTitle: true,
+      advisorSpecialty: true,
+      advisorStatus: true,
     },
   });
 
-  const payload = { advisors };
+  const payload = {
+    advisors: advisors.map((advisor) => ({
+      id: advisor.id,
+      userId: advisor.userId,
+      name: advisor.name || advisor.userId,
+      email: advisor.email,
+      title: advisor.advisorTitle || 'Investment Advisor',
+      specialty: advisor.advisorSpecialty,
+      status: advisor.advisorStatus,
+    })),
+  };
   await setCachedJson(CACHE_KEYS.clientAdvisorsActive, payload, 180);
 
   return NextResponse.json(payload);

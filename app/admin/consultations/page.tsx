@@ -7,7 +7,9 @@ import styles from '../admin.module.css';
 
 type Advisor = {
   id: string;
+  userId: string;
   name: string;
+  email: string | null;
   title: string;
   specialty: string | null;
   status: 'AVAILABLE' | 'BUSY' | 'INACTIVE';
@@ -28,9 +30,18 @@ type Consultation = {
   };
   advisor: {
     id: string;
-    name: string;
-    title: string;
+    userId: string;
+    name: string | null;
+    email: string | null;
+    advisorTitle: string | null;
+    advisorStatus: 'AVAILABLE' | 'BUSY' | 'INACTIVE';
   } | null;
+};
+
+type AdvisorEdit = {
+  title: string;
+  specialty: string;
+  status: Advisor['status'];
 };
 
 const statusOptions: Consultation['status'][] = [
@@ -45,14 +56,10 @@ export default function ConsultationAdminPage() {
   const [consultations, setConsultations] = useState<Consultation[]>([]);
   const [advisors, setAdvisors] = useState<Advisor[]>([]);
   const [statusMessage, setStatusMessage] = useState('');
+  const [advisorMessage, setAdvisorMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [advisorSelections, setAdvisorSelections] = useState<Record<string, string>>({});
-
-  const [newAdvisorName, setNewAdvisorName] = useState('');
-  const [newAdvisorTitle, setNewAdvisorTitle] = useState('');
-  const [newAdvisorSpecialty, setNewAdvisorSpecialty] = useState('');
-  const [newAdvisorStatus, setNewAdvisorStatus] = useState<Advisor['status']>('AVAILABLE');
-  const [advisorMessage, setAdvisorMessage] = useState('');
+  const [advisorEdits, setAdvisorEdits] = useState<Record<string, AdvisorEdit>>({});
 
   const fetchConsultations = useCallback(async () => {
     const res = await fetch('/api/admin/consultations');
@@ -87,6 +94,18 @@ export default function ConsultationAdminPage() {
     setAdvisorSelections(nextSelections);
   }, [consultations]);
 
+  useEffect(() => {
+    const nextEdits: Record<string, AdvisorEdit> = {};
+    advisors.forEach((advisor) => {
+      nextEdits[advisor.id] = {
+        title: advisor.title || '',
+        specialty: advisor.specialty || '',
+        status: advisor.status,
+      };
+    });
+    setAdvisorEdits(nextEdits);
+  }, [advisors]);
+
   const advisorOptions = useMemo(
     () => advisors.filter((advisor) => advisor.status !== 'INACTIVE'),
     [advisors]
@@ -108,62 +127,41 @@ export default function ConsultationAdminPage() {
 
     if (res.ok) {
       setStatusMessage('Consultation updated.');
-      fetchConsultations();
+      await fetchConsultations();
     } else {
-      setStatusMessage('Unable to update consultation.');
+      const payload = await res.json().catch(() => ({}));
+      setStatusMessage(payload.error || 'Unable to update consultation.');
     }
 
     setIsSubmitting(false);
   };
 
-  const handleAdvisorCreate = async (event: React.FormEvent) => {
-    event.preventDefault();
-    setAdvisorMessage('');
-
-    if (!newAdvisorName || !newAdvisorTitle) {
-      setAdvisorMessage('Advisor name and title are required.');
+  const saveAdvisorProfile = async (advisorId: string) => {
+    const edit = advisorEdits[advisorId];
+    if (!edit) {
       return;
     }
 
-    setIsSubmitting(true);
-
-    const res = await fetch('/api/admin/advisors', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        name: newAdvisorName,
-        title: newAdvisorTitle,
-        specialty: newAdvisorSpecialty,
-        status: newAdvisorStatus,
-      }),
-    });
-
-    if (res.ok) {
-      setAdvisorMessage('Advisor created.');
-      setNewAdvisorName('');
-      setNewAdvisorTitle('');
-      setNewAdvisorSpecialty('');
-      setNewAdvisorStatus('AVAILABLE');
-      fetchAdvisors();
-    } else {
-      setAdvisorMessage('Unable to create advisor.');
-    }
-
-    setIsSubmitting(false);
-  };
-
-  const handleAdvisorStatusUpdate = async (advisorId: string, status: Advisor['status']) => {
     setIsSubmitting(true);
     setAdvisorMessage('');
 
     const res = await fetch('/api/admin/advisors', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id: advisorId, status }),
+      body: JSON.stringify({
+        id: advisorId,
+        title: edit.title,
+        specialty: edit.specialty,
+        status: edit.status,
+      }),
     });
 
     if (res.ok) {
-      fetchAdvisors();
+      setAdvisorMessage('Advisor profile updated.');
+      await fetchAdvisors();
+    } else {
+      const payload = await res.json().catch(() => ({}));
+      setAdvisorMessage(payload.error || 'Unable to update advisor profile.');
     }
 
     setIsSubmitting(false);
@@ -178,7 +176,7 @@ export default function ConsultationAdminPage() {
           <div>
             <p className={styles.kicker}>Admin</p>
             <h1 className={styles.pageTitle}>Consultations</h1>
-            <p className={styles.subtitle}>Review consultation requests and manage advisor availability.</p>
+            <p className={styles.subtitle}>Review consultation requests and manage agent advisor availability.</p>
           </div>
         </header>
 
@@ -236,7 +234,7 @@ export default function ConsultationAdminPage() {
                         ))}
                       </select>
                       {request.advisor && (
-                        <div className={styles.statMeta}>{request.advisor.title}</div>
+                        <div className={styles.statMeta}>{request.advisor.advisorTitle || 'Investment Advisor'}</div>
                       )}
                     </div>
                     <div>
@@ -287,83 +285,76 @@ export default function ConsultationAdminPage() {
           </div>
 
           <div className={styles.section}>
-            <h2 className={styles.sectionTitle}>Advisors</h2>
-            <form onSubmit={handleAdvisorCreate}>
-              <div className={styles.formGrid}>
-                <div className={styles.field}>
-                  <label className={styles.label} htmlFor="advisorName">Name</label>
-                  <input
-                    className={styles.input}
-                    id="advisorName"
-                    value={newAdvisorName}
-                    onChange={(event) => setNewAdvisorName(event.target.value)}
-                  />
-                </div>
-                <div className={styles.field}>
-                  <label className={styles.label} htmlFor="advisorTitle">Title</label>
-                  <input
-                    className={styles.input}
-                    id="advisorTitle"
-                    value={newAdvisorTitle}
-                    onChange={(event) => setNewAdvisorTitle(event.target.value)}
-                  />
-                </div>
-              </div>
-              <div className={styles.field}>
-                <label className={styles.label} htmlFor="advisorSpecialty">Specialty</label>
-                <input
-                  className={styles.input}
-                  id="advisorSpecialty"
-                  value={newAdvisorSpecialty}
-                  onChange={(event) => setNewAdvisorSpecialty(event.target.value)}
-                />
-              </div>
-              <div className={styles.field}>
-                <label className={styles.label} htmlFor="advisorStatus">Status</label>
-                <select
-                  className={styles.select}
-                  id="advisorStatus"
-                  value={newAdvisorStatus}
-                  onChange={(event) => setNewAdvisorStatus(event.target.value as Advisor['status'])}
-                >
-                  <option value="AVAILABLE">AVAILABLE</option>
-                  <option value="BUSY">BUSY</option>
-                  <option value="INACTIVE">INACTIVE</option>
-                </select>
-              </div>
-              <div className={styles.inlineActions}>
-                <button className={styles.primaryButton} type="submit" disabled={isSubmitting}>
-                  {isSubmitting ? 'Saving...' : 'Add Advisor'}
-                </button>
-              </div>
-              {advisorMessage && <p className={styles.emptyText}>{advisorMessage}</p>}
-            </form>
+            <h2 className={styles.sectionTitle}>Advisor Profiles (Agents)</h2>
+            <p className={styles.emptyText}>Provision AGENT users in Access, then manage their consultation profile here.</p>
+            {advisorMessage && <p className={styles.emptyText}>{advisorMessage}</p>}
 
             <div className={styles.table}>
-              <div className={`${styles.tableHeader} ${styles.tableHeaderActions}`}>
+              <div className={`${styles.tableHeader} ${styles.tableHeaderActionsWide}`}>
                 <div>Advisor</div>
+                <div>Title</div>
                 <div>Specialty</div>
                 <div>Status</div>
+                <div>Contact</div>
                 <div>Actions</div>
               </div>
               {advisors.length === 0 ? (
                 <div className={styles.tableRow}>
-                  <div className={styles.tableEmpty}>No advisors yet.</div>
+                  <div className={styles.tableEmpty}>No active agents available yet.</div>
                 </div>
               ) : (
                 advisors.map((advisor) => (
-                  <div key={advisor.id} className={`${styles.tableRow} ${styles.tableRowActions}`}>
+                  <div key={advisor.id} className={`${styles.tableRow} ${styles.tableRowActionsWide}`}>
                     <div>
                       {advisor.name}
-                      <div className={styles.statMeta}>{advisor.title}</div>
+                      <div className={styles.statMeta}>{advisor.userId}</div>
                     </div>
-                    <div>{advisor.specialty || '—'}</div>
+                    <div>
+                      <input
+                        className={styles.input}
+                        value={advisorEdits[advisor.id]?.title || ''}
+                        onChange={(event) =>
+                          setAdvisorEdits((prev) => ({
+                            ...prev,
+                            [advisor.id]: {
+                              ...(prev[advisor.id] || { title: '', specialty: '', status: advisor.status }),
+                              title: event.target.value,
+                            },
+                          }))
+                        }
+                        aria-label={`Advisor title for ${advisor.name}`}
+                      />
+                    </div>
+                    <div>
+                      <input
+                        className={styles.input}
+                        value={advisorEdits[advisor.id]?.specialty || ''}
+                        onChange={(event) =>
+                          setAdvisorEdits((prev) => ({
+                            ...prev,
+                            [advisor.id]: {
+                              ...(prev[advisor.id] || { title: advisor.title, specialty: '', status: advisor.status }),
+                              specialty: event.target.value,
+                            },
+                          }))
+                        }
+                        aria-label={`Advisor specialty for ${advisor.name}`}
+                      />
+                    </div>
                     <div>
                       <select
                         className={styles.select}
                         aria-label={`Advisor status for ${advisor.name}`}
-                        value={advisor.status}
-                        onChange={(event) => handleAdvisorStatusUpdate(advisor.id, event.target.value as Advisor['status'])}
+                        value={advisorEdits[advisor.id]?.status || advisor.status}
+                        onChange={(event) =>
+                          setAdvisorEdits((prev) => ({
+                            ...prev,
+                            [advisor.id]: {
+                              ...(prev[advisor.id] || { title: advisor.title, specialty: advisor.specialty || '', status: advisor.status }),
+                              status: event.target.value as Advisor['status'],
+                            },
+                          }))
+                        }
                         disabled={isSubmitting}
                       >
                         <option value="AVAILABLE">AVAILABLE</option>
@@ -371,8 +362,15 @@ export default function ConsultationAdminPage() {
                         <option value="INACTIVE">INACTIVE</option>
                       </select>
                     </div>
+                    <div>{advisor.email || 'No email'}</div>
                     <div className={styles.tableActions}>
-                      <span className={`${styles.badge} ${styles.badgeMuted}`}>Manage</span>
+                      <button
+                        className={`${styles.secondaryButton} ${styles.actionButtonSmall}`}
+                        onClick={() => saveAdvisorProfile(advisor.id)}
+                        disabled={isSubmitting}
+                      >
+                        Save
+                      </button>
                     </div>
                   </div>
                 ))

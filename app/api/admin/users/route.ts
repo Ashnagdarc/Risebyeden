@@ -86,6 +86,12 @@ export async function POST(request: Request) {
       },
     });
 
+    const keysToDelete = [CACHE_KEYS.adminOverview];
+    if (user.role === 'AGENT') {
+      keysToDelete.push(CACHE_KEYS.clientAdvisorsActive);
+    }
+    await deleteCacheKeys(keysToDelete);
+
     // Return plain-text credentials (only shown once)
     return NextResponse.json({
       user,
@@ -176,11 +182,16 @@ export async function PATCH(request: Request) {
         id: true,
         userId: true,
         name: true,
+        role: true,
         status: true,
       },
     });
 
-    await deleteCacheKeys([CACHE_KEYS.adminOverview]);
+    const keysToDelete = [CACHE_KEYS.adminOverview];
+    if (user.role === 'AGENT') {
+      keysToDelete.push(CACHE_KEYS.clientAdvisorsActive);
+    }
+    await deleteCacheKeys(keysToDelete);
 
     return NextResponse.json({ user });
   } catch (error) {
