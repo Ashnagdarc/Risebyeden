@@ -1,11 +1,10 @@
 import { NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth/next';
 import { z } from 'zod';
 import prisma from '@/lib/prisma';
-import { authOptions } from '@/lib/auth';
 import { sendConsultationEmail } from '@/lib/email';
 import { parseJsonBody } from '@/lib/api/validation';
 import { QUERY_LIMITS } from '@/lib/db/query-limits';
+import { requireSessionPolicy } from '@/lib/security/policy';
 
 const consultationPayloadSchema = z.object({
   type: z.enum(['portfolio', 'acquisition', 'market']),
@@ -14,14 +13,6 @@ const consultationPayloadSchema = z.object({
   notes: z.string().trim().max(2000).optional(),
   advisorId: z.string().min(1).nullable().optional(),
 }).strict();
-
-async function requireUser() {
-  const session = await getServerSession(authOptions);
-  if (!session) {
-    return null;
-  }
-  return session;
-}
 
 function mapType(rawType: 'portfolio' | 'acquisition' | 'market') {
   switch (rawType) {
@@ -44,12 +35,12 @@ function escapeHtml(value: string | null | undefined): string {
 }
 
 export async function GET() {
-  const session = await requireUser();
-  if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const auth = await requireSessionPolicy({ requireUserId: true });
+  if (!auth.ok) {
+    return auth.response;
   }
 
-  const userId = (session.user as { id?: string } | undefined)?.id;
+  const userId = auth.userId;
   if (!userId) {
     return NextResponse.json({ error: 'User not found' }, { status: 404 });
   }
@@ -76,12 +67,12 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const session = await requireUser();
-  if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const auth = await requireSessionPolicy({ requireUserId: true });
+  if (!auth.ok) {
+    return auth.response;
   }
 
-  const userId = (session.user as { id?: string } | undefined)?.id;
+  const userId = auth.userId;
   if (!userId) {
     return NextResponse.json({ error: 'User not found' }, { status: 404 });
   }

@@ -1,16 +1,15 @@
 import { NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth/next';
 import { Prisma } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import { z } from 'zod';
 import prisma from '@/lib/prisma';
-import { authOptions } from '@/lib/auth';
 import { hashToken } from '@/lib/security/token';
 import { CACHE_KEYS } from '@/lib/cache/keys';
 import { deleteCacheKeys } from '@/lib/cache/valkey';
 import { buildPaginationMeta, parsePagination } from '@/lib/api/pagination';
 import { parseJsonBody, parseQuery } from '@/lib/api/validation';
+import { requireSessionPolicy } from '@/lib/security/policy';
 
 function generateShortId(): string {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -47,11 +46,9 @@ const userListQuerySchema = z.object({
 
 // POST — Admin provisions a new user (generates userId, accessKey, accessToken)
 export async function POST(request: Request) {
-  const session = await getServerSession(authOptions);
-  const role = (session?.user as { role?: string } | undefined)?.role;
-
-  if (!session || (role || '').toLowerCase() !== 'admin') {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const auth = await requireSessionPolicy({ allowedRoles: ['admin'] });
+  if (!auth.ok) {
+    return auth.response;
   }
 
   const parsedBody = await parseJsonBody(request, createUserSchema);
@@ -108,11 +105,9 @@ export async function POST(request: Request) {
 
 // GET — Admin fetches all users
 export async function GET(request: Request) {
-  const session = await getServerSession(authOptions);
-  const role = (session?.user as { role?: string } | undefined)?.role;
-
-  if (!session || (role || '').toLowerCase() !== 'admin') {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const auth = await requireSessionPolicy({ allowedRoles: ['admin'] });
+  if (!auth.ok) {
+    return auth.response;
   }
 
   const parsedQuery = parseQuery(request, userListQuerySchema);
@@ -159,11 +154,9 @@ export async function GET(request: Request) {
 
 // PATCH — Admin approves or rejects a user
 export async function PATCH(request: Request) {
-  const session = await getServerSession(authOptions);
-  const role = (session?.user as { role?: string } | undefined)?.role;
-
-  if (!session || (role || '').toLowerCase() !== 'admin') {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const auth = await requireSessionPolicy({ allowedRoles: ['admin'] });
+  if (!auth.ok) {
+    return auth.response;
   }
 
   const parsedBody = await parseJsonBody(request, updateUserSchema);

@@ -1,4 +1,5 @@
 import { withAuth } from 'next-auth/middleware';
+import { isAdminRole } from '@/lib/security/role';
 
 export default withAuth({
   callbacks: {
@@ -7,7 +8,7 @@ export default withAuth({
 
       // Admin routes require admin role
       if (path.startsWith('/admin')) {
-        return token?.role === 'admin';
+        return isAdminRole(typeof token?.role === 'string' ? token.role : undefined);
       }
 
       // All other matched routes require any valid session

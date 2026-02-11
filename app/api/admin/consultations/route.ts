@@ -1,20 +1,10 @@
 import { NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth/next';
 import { Prisma } from '@prisma/client';
 import { z } from 'zod';
 import prisma from '@/lib/prisma';
-import { authOptions } from '@/lib/auth';
 import { buildPaginationMeta, parsePagination } from '@/lib/api/pagination';
 import { parseJsonBody, parseQuery } from '@/lib/api/validation';
-
-async function requireAdmin() {
-  const session = await getServerSession(authOptions);
-  const role = (session?.user as { role?: string } | undefined)?.role;
-  if (!session || (role || '').toLowerCase() !== 'admin') {
-    return null;
-  }
-  return session;
-}
+import { requireSessionPolicy } from '@/lib/security/policy';
 
 const consultationStatusSchema = z.enum(['PENDING', 'APPROVED', 'SCHEDULED', 'DECLINED', 'COMPLETED']);
 
@@ -29,9 +19,9 @@ const consultationPatchSchema = z.object({
 }).strict();
 
 export async function GET(request: Request) {
-  const session = await requireAdmin();
-  if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const auth = await requireSessionPolicy({ allowedRoles: ['admin'] });
+  if (!auth.ok) {
+    return auth.response;
   }
 
   const parsedQuery = parseQuery(request, consultationListQuerySchema);
@@ -82,9 +72,9 @@ export async function GET(request: Request) {
 }
 
 export async function PATCH(request: Request) {
-  const session = await requireAdmin();
-  if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const auth = await requireSessionPolicy({ allowedRoles: ['admin'] });
+  if (!auth.ok) {
+    return auth.response;
   }
 
   const parsedBody = await parseJsonBody(request, consultationPatchSchema);

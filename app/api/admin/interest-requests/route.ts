@@ -1,23 +1,13 @@
 import { NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth/next';
 import { Prisma } from '@prisma/client';
 import { z } from 'zod';
 import prisma from '@/lib/prisma';
-import { authOptions } from '@/lib/auth';
 import { CACHE_KEYS } from '@/lib/cache/keys';
 import { deleteCacheKeys } from '@/lib/cache/valkey';
 import { buildPaginationMeta, parsePagination } from '@/lib/api/pagination';
 import { parseJsonBody, parseQuery } from '@/lib/api/validation';
 import { sendInterestAssignmentEmail } from '@/lib/email';
-
-async function requireAdmin() {
-  const session = await getServerSession(authOptions);
-  const role = (session?.user as { role?: string } | undefined)?.role;
-  if (!session || (role || '').toLowerCase() !== 'admin') {
-    return null;
-  }
-  return session;
-}
+import { requireSessionPolicy } from '@/lib/security/policy';
 
 const interestStatusSchema = z.enum(['PENDING', 'SCHEDULED', 'APPROVED', 'REJECTED']);
 
@@ -38,9 +28,9 @@ const interestPatchSchema = z.union([
 ]);
 
 export async function GET(request: Request) {
-  const session = await requireAdmin();
-  if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const auth = await requireSessionPolicy({ allowedRoles: ['admin'] });
+  if (!auth.ok) {
+    return auth.response;
   }
 
   const parsedQuery = parseQuery(request, interestListQuerySchema);
@@ -80,9 +70,9 @@ export async function GET(request: Request) {
 }
 
 export async function PATCH(request: Request) {
-  const session = await requireAdmin();
-  if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const auth = await requireSessionPolicy({ allowedRoles: ['admin'] });
+  if (!auth.ok) {
+    return auth.response;
   }
 
   const parsedBody = await parseJsonBody(request, interestPatchSchema);
