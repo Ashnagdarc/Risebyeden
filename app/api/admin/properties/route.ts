@@ -193,6 +193,7 @@ export async function DELETE(request: Request) {
   await prisma.document.deleteMany({ where: { propertyId: body.id } });
   await prisma.clientProperty.deleteMany({ where: { propertyId: body.id } });
   await prisma.transaction.deleteMany({ where: { propertyId: body.id } });
+  await prisma.priceUpdate.deleteMany({ where: { propertyId: body.id } });
 
   await prisma.property.delete({ where: { id: body.id } });
 

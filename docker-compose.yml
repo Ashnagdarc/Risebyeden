@@ -1,4 +1,3 @@
-version: '3.8'
 services:
   db:
     image: postgres:latest
@@ -11,19 +10,8 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - pgdata:/var/lib/postgresql
 
-  app:
-    build: .
-    container_name: risebyeden-app
-    restart: unless-stopped
-    environment:
-      DATABASE_URL: postgres://postgres:postgres@db:5432/risebyeden
-    ports:
-      - "3000:3000"
-    depends_on:
-      - db
-    command: npm run dev
 
 volumes:
   pgdata:

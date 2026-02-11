@@ -55,17 +55,17 @@ export default function NotFound() {
       <div
         className={styles.shard}
         style={{ width: 300, height: 400, top: "-10%", right: "10%", rotate: "15deg" }}
-        ref={el => (shardsRef.current[0] = el)}
+        ref={el => { shardsRef.current[0] = el; }}
       ></div>
       <div
         className={styles.shard}
         style={{ width: 200, height: 200, bottom: "5%", left: "5%", rotate: "-25deg" }}
-        ref={el => (shardsRef.current[1] = el)}
+        ref={el => { shardsRef.current[1] = el; }}
       ></div>
       <div
         className={styles.shard}
         style={{ width: 150, height: 300, bottom: "20%", right: "-5%", rotate: "45deg" }}
-        ref={el => (shardsRef.current[2] = el)}
+        ref={el => { shardsRef.current[2] = el; }}
       ></div>
 
       <div className={styles.tickerWrap}>
