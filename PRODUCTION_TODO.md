@@ -75,5 +75,6 @@ This checklist tracks production-hardening work identified during the deep audit
 - [x] Add machine-readable health endpoint for DB/cache (`/api/system/health`).
 - [x] Add request correlation IDs across middleware/API/Sentry tags (`x-request-id`).
 - [x] Propagate correlation/request IDs through email/notification async actions.
+- [x] Add Prometheus metrics endpoint and local alerting stack baseline (`/api/system/metrics` + `docker-compose.monitoring.yml`).
 - [ ] Add external metrics dashboards + paging alerts in infra (outside app repo).
 - [ ] Propagate correlation/request IDs through future queue/worker pipelines.

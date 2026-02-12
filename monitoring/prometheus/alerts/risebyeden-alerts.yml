@@ -1,0 +1,39 @@
+groups:
+  - name: risebyeden-platform-alerts
+    rules:
+      - alert: RisebyedenMetricsEndpointDown
+        expr: up{job="risebyeden-app"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: Risebyeden metrics endpoint is unreachable
+          description: Prometheus cannot scrape /api/system/metrics for more than 2 minutes.
+
+      - alert: RisebyedenOverallHealthDegraded
+        expr: risebyeden_overall_health == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: Risebyeden overall health is degraded
+          description: System health reports degraded status for at least 2 minutes.
+
+      - alert: RisebyedenDatabaseDegraded
+        expr: risebyeden_service_health{service="database"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: Risebyeden database health is degraded
+          description: Database health probe failed for at least 1 minute.
+
+      - alert: RisebyedenCacheDegraded
+        expr: risebyeden_service_configured{service="cache"} == 1 and risebyeden_service_health{service="cache"} == 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: Risebyeden cache health is degraded
+          description: Configured cache service has been unhealthy for at least 5 minutes.
+

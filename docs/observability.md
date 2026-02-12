@@ -32,6 +32,25 @@ Current high-impact coverage includes:
   - `checkedAt`
   - `latencyMs`
 
+## 2.1) Prometheus metrics
+
+- Endpoint: `GET /api/system/metrics`
+- Format: Prometheus text exposition format.
+- Core metrics:
+  - `risebyeden_overall_health`
+  - `risebyeden_service_health{service="database|cache"}`
+  - `risebyeden_service_configured{service="database|cache"}`
+  - `risebyeden_health_check_latency_ms`
+  - `risebyeden_health_checked_at_unix`
+
+Local stack files:
+
+- `docker-compose.monitoring.yml`
+- `monitoring/prometheus/prometheus.yml`
+- `monitoring/prometheus/alerts/risebyeden-alerts.yml`
+- `monitoring/alertmanager/alertmanager.yml`
+- `monitoring/grafana/provisioning/datasources/prometheus.yml`
+
 ## 3) Request correlation
 
 - Correlation header: `x-request-id`

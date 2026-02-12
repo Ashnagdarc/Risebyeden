@@ -68,6 +68,19 @@ This starts:
 
 Both services include healthchecks.
 
+## Monitoring Stack (Prometheus + Grafana)
+
+```bash
+docker compose -f docker-compose.monitoring.yml up -d
+```
+
+This starts:
+- Prometheus on `9090`
+- Alertmanager on `9093`
+- Grafana on `3001`
+
+Details: `docs/prometheus-stack.md`
+
 ## Useful Commands
 
 ```bash
@@ -100,6 +113,7 @@ npx prisma migrate status
 
 - Health endpoint: `GET /api/system/health` (DB + cache status for alert probes).
 - Runtime endpoint: `GET /api/system/runtime` (node metadata for diagnostics).
+- Metrics endpoint: `GET /api/system/metrics` (Prometheus text format).
 - Structured JSON logging helper: `lib/observability/logger.ts`.
 - Request correlation: middleware + API routes propagate `x-request-id` and include it in logs/Sentry tags.
 - Async correlation: outbound SMTP emails include `X-Request-Id` / `X-Correlation-Id`.
