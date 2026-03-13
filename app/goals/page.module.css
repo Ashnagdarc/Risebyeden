@@ -210,13 +210,14 @@
 }
 
 .summaryGrid {
-  display: grid;
+  display: none;
   grid-template-columns: repeat(4, 1fr);
   gap: 16px;
   margin-bottom: 24px;
 }
 
 .rewardPanel {
+  display: none;
   border-radius: 12px;
   background: rgba(10, 10, 10, 0.82);
   border: 1px solid rgba(197, 163, 104, 0.12);
@@ -321,7 +322,7 @@
 .focusHeader,
 .panelHeader,
 .completedHeader {
-  display: flex;
+  display: none;
   justify-content: space-between;
   align-items: flex-start;
   gap: 16px;
@@ -364,14 +365,15 @@
   color: var(--text-secondary);
 }
 
-.focusGrid,
-.completedGrid {
+.focusGrid {
   display: grid;
   gap: 14px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
-.focusGrid {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+.completedGrid {
+  display: none;
+  gap: 14px;
 }
 
 .focusCard,
@@ -441,7 +443,7 @@
 
 .rewardPreview,
 .rewardPreviewRow {
-  display: flex;
+  display: none;
   align-items: center;
   gap: 12px;
   margin-top: 12px;
@@ -619,6 +621,7 @@
 }
 
 .sectionDivider {
+  display: none;
   height: 1px;
   background: linear-gradient(90deg, rgba(197, 163, 104, 0.18), rgba(255, 255, 255, 0.04));
   margin: 22px 0;

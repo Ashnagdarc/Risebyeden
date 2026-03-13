@@ -3,48 +3,48 @@ name: globalskills
 description: Core engineering principles and best practices for maintaining code quality, security, accessibility, and developer experience across all development tasks.
 ---
 
-# Global Skills & Engineering Guidelines
+# Engineering Excellence Guidelines
 
-A comprehensive set of principles to guide implementation decisions across feature development, debugging, refactoring, and code reviews. These guidelines prioritize clarity, safety, and maintainability.
+When building features, fixing bugs, or refactoring code, follow these principles to ensure the codebase remains maintainable, secure, and delightful to use.
 
-## Truthfulness and evidence
+## Truthfulness & Evidence
 
-- Do not invent APIs, file paths, or repository context. If unsure, state uncertainty and ask for clarification.
-- When making factual statements about standards or best practices, cite primary sources (official docs / standards / original papers).
-- Prefer minimal changes that are easy to review; explain tradeoffs when multiple options exist.
+- Never invent APIs, file paths, or context — if uncertain, say so and ask.
+- Back up standards claims with primary sources (official docs, specs, published research).
+- Make minimal, reviewable changes; always explain tradeoffs between options.
 
-## UI/UX behavior
+## UI/UX Design
 
-- Design for clarity, consistency, and predictable navigation; avoid surprise UI state changes.
-- Preserve user work: destructive actions require confirmation and should be undoable when feasible.
-- Provide clear loading, empty, and error states; never leave the UI ambiguous.
-- Always include keyboard support for interactive elements; do not trap focus.
+- Keep the UI predictable: no surprise state changes, consistent navigation, clear mental model.
+- Protect user work — require confirmation for destructive actions and make them undoable when possible.
+- Show explicit states: loading, empty, error — never leave users guessing.
+- Support keyboard navigation fully; never trap focus in modal or dropdown.
 
-## Accessibility (baseline)
+## Accessibility (A11y)
 
-- Use semantic HTML first; ARIA only when needed and only when correct.
-- Maintain visible keyboard focus, sufficient target sizes, and sufficient contrast.
-- Respect user preferences (reduced motion, increased contrast, dark mode) when the platform exposes them.
+- Start with semantic HTML; add ARIA only when semantics alone aren't enough.
+- Ensure visible focus indicators, clickable areas ≥44px, and WCAG AA color contrast.
+- Honor OS settings: reduced motion, high contrast, dark mode — don't override user intent.
 
-## Code readability and correctness
+## Code Quality
 
-- Prefer small, composable functions and descriptive names.
-- Avoid “clever” code; optimize for maintainability and debuggability.
-- Add tests when behavior is non-trivial or bug-prone; update tests when changing behavior.
+- Write small, single-purpose functions with clear names.
+- Skip "clever" code — optimize for someone reading it at 2am during an incident.
+- Test non-trivial or error-prone behavior; keep tests updated alongside code changes.
 
-## File organization and edit safety
+## File Organization & Safety
 
-- Follow existing repository conventions first; don’t introduce new patterns without a clear win.
-- Never commit secrets, credentials, or private keys.
-- Avoid large refactors unrelated to the task; do not churn formatting unless explicitly requested.
+- Follow repo conventions before introducing new patterns — consistency wins.
+- Never commit secrets, credentials, keys, or sensitive data — .gitignore and review before push.
+- Skip unrelated refactors and formatting changes unless explicitly asked.
 
-## Security and privacy
+## Security & Privacy
 
-- Collect/store the minimum data required; avoid logging sensitive data.
-- Default to secure-by-design patterns: input validation, least privilege, safe defaults.
-- Do not weaken security headers, authentication, or authorization without an explicit rationale and review plan.
+- Collect and store only what's necessary; never log passwords, tokens, or PII.
+- Design secure by default: validate all input, apply least privilege, choose safe defaults.
+- Never weaken auth, headers, or permissions — if you must, document it and get explicit review.
 
-## Automation and workflow
+## Automation & Developer Loop
 
-- Prefer automated checks (lint, typecheck, tests) runnable locally and in CI.
-- Propose enforcement via CI + pre-commit hooks; keep developer feedback fast (<1–3 minutes for pre-commit).
+- Use automated checks (lint, typecheck, tests) that run both locally and in CI.
+- Enforce via CI + pre-commit hooks; keep feedback loops fast (target <1–3 minutes).

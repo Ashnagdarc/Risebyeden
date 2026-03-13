@@ -564,7 +564,7 @@ export default function GoalsPage() {
             <div>
               <p className={styles.kicker}>Gamified Goals</p>
               <h1 className={styles.pageTitle}>Goal Tracker</h1>
-              <p className={styles.subtitle}>Set targets, track countdowns, maintain streak momentum, and keep goals tied to real portfolio growth.</p>
+            <div className={styles.subtitle}>Set targets, track progress, and maintain momentum. Simple tracking for clear goals.</div>
 
               <div className={styles.segmentedNav}>
                 <Link href="/" className={styles.segmentLink}>Overview</Link>

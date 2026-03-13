@@ -26,11 +26,12 @@
 }
 
 .edgeLabel {
-  font-family: var(--mono-font, var(--font-mono));
-  font-size: 9px;
-  letter-spacing: 0.12em;
+  font-family: var(--font-sans);
+  font-size: 10px;
+  letter-spacing: 0;
   text-transform: uppercase;
   fill: rgba(161, 161, 166, 0.78);
+  font-weight: 500;
 }
 
 /* ─── HTML tooltip (visx TooltipWithBounds) ─── */

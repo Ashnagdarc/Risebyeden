@@ -60,8 +60,18 @@ if (isProduction) {
 }
 
 const nextConfig: NextConfig = {
-  webpack: (config) => {
+  webpack: (config, { dev }) => {
     config.output.globalObject = 'globalThis';
+    
+    // Optimize webpack cache to use buffers instead of serializing large strings
+    if (config.cache) {
+      config.cache.maxAge = 1000 * 60 * 60 * 24 * 7; // 1 week
+      config.cache.profile = false;
+      config.cache.hashAlgorithm = 'md4';
+      config.cache.managedPaths = undefined;
+      config.cache.version = '';
+    }
+    
     return config;
   },
   async headers() {
