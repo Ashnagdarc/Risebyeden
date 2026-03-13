@@ -1,5 +1,5 @@
 import React from 'react';
-import Image from 'next/image';
+import Image, { type StaticImageData } from 'next/image';
 import Link from 'next/link';
 import { Card, CardHeader } from '@/components/ui/Card';
 import styles from './GrowthPersona.module.css';
@@ -8,7 +8,7 @@ interface Badge {
   id: string;
   title: string;
   description: string;
-  image: string | any;
+  image: string | StaticImageData;
 }
 
 interface GrowthPersonaWidgetProps {

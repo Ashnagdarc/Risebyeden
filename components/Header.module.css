@@ -174,11 +174,36 @@
   gap: 32px;
   border-right: 1px solid rgba(255, 255, 255, 0.04);
   background: radial-gradient(circle at top left, rgba(255, 255, 255, 0.015), transparent 70%);
+  position: relative;
+  overflow: hidden;
+}
+
+.slabMetricsBg {
+  position: absolute;
+  top: -60px;
+  left: -80px;
+  width: 400px;
+  height: 400px;
+  opacity: 0.35;
+  pointer-events: none;
+  z-index: 0;
+  mask-image: radial-gradient(circle at center, black 40%, transparent 70%);
+  -webkit-mask-image: radial-gradient(circle at center, black 40%, transparent 70%);
+  transform: scale(0.8);
 }
 
 .mainMetric {
   display: flex;
   flex-direction: column;
+  position: relative;
+  z-index: 1;
+}
+
+.subMetrics {
+  display: flex;
+  gap: 32px;
+  position: relative;
+  z-index: 1;
 }
 
 .summaryValueRow {
@@ -253,15 +278,15 @@
 
 .chartMeta strong {
   display: block;
-  font-family: var(--mono-font);
-  font-size: 15px;
+  font-family: var(--font-mono);
+  font-size: 16px;
   color: #fff;
 }
 
 .chartMeta span {
-  font-family: var(--mono-font);
-  font-size: 10px;
-  letter-spacing: 0.12em;
+  font-family: var(--font-sans);
+  font-size: 11px;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
   color: var(--text-secondary);
 }

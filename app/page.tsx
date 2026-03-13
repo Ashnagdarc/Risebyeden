@@ -1,4 +1,3 @@
-import Image from 'next/image';
 import Link from 'next/link';
 import { getServerSession } from 'next-auth/next';
 import { redirect } from 'next/navigation';
@@ -13,7 +12,6 @@ import GrowthPersonaWidget from '@/components/dashboard/GrowthPersonaWidget';
 import GoalsWidget from '@/components/dashboard/GoalsWidget';
 import RecentActivityWidget from '@/components/dashboard/RecentActivityWidget';
 import QuickActionsWidget from '@/components/dashboard/QuickActionsWidget';
-import HeroSplineWidget from '@/components/dashboard/HeroSplineWidget';
 
 import { authOptions } from '@/lib/auth';
 import { type BadgeGoalType, getClientBadges } from '@/lib/client-badges';
@@ -556,7 +554,7 @@ export default async function Home() {
 
           {/* RIGHT COLUMN: Momentum & Activity */}
           <div className={styles.rightColumn}>
-            <HeroSplineWidget />
+            <QuickActionsWidget />
             
             <GoalsWidget goals={activeDashboardGoals} />
             
@@ -574,8 +572,6 @@ export default async function Home() {
               topUnlockedBadges={topUnlockedBadges}
               nextBadge={nextBadge}
             />
-            
-            <QuickActionsWidget />
           </div>
         </section>
       </main>

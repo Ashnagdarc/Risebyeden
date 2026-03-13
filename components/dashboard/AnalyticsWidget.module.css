@@ -58,6 +58,18 @@
   padding: 6px 12px;
   border-radius: var(--radius-pill);
   border: 1px solid var(--border-subtle);
+  cursor: pointer;
+  transition: opacity 180ms ease, transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
+}
+
+.legendItemActive {
+  border-color: var(--border-strong);
+  transform: translateY(-1px);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.35);
+}
+
+.legendItemDimmed {
+  opacity: 0.5;
 }
 
 .legendSwatch {

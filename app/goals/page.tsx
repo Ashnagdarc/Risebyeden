@@ -214,7 +214,6 @@ export default function GoalsPage() {
   const activeGoals = useMemo(() => goals.filter((goal) => goal.status === 'ACTIVE'), [goals]);
   const completedGoals = useMemo(() => goals.filter((goal) => goal.status === 'COMPLETED'), [goals]);
   const badgeMetrics = useMemo(() => buildBadgeMetrics(goals, portfolioStats), [goals, portfolioStats]);
-  const badgeCatalog = useMemo(() => getClientBadges(badgeMetrics), [badgeMetrics]);
   const monthlyHistory = portfolioStats.monthlyHistory;
 
   const launchTierCelebration = useCallback((tier: CelebrationTier) => {

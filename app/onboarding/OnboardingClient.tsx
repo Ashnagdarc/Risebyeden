@@ -99,14 +99,6 @@ export default function OnboardingClient({ name }: { name: string }) {
   const progressPercent = step === 'profile' ? 33 : step === 'goals' ? 67 : 100;
   const remainingSelections = Math.max(0, 3 - selectedGoals.length);
 
-  function getDurationLabel(months: number | undefined) {
-    if (!months) {
-      return 'Timeline not set';
-    }
-
-    return `${months} month${months === 1 ? '' : 's'}`;
-  }
-
   function toggleGoal(goalId: string) {
     setSubmitError('');
     setSelectedGoals((prev) => {

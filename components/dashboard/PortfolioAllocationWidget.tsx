@@ -1,5 +1,6 @@
+'use client';
+
 import React from 'react';
-import Link from 'next/link';
 import PieChart from '@/components/PieChart';
 import { Card, CardHeader } from '@/components/ui/Card';
 import styles from './AnalyticsWidget.module.css';
@@ -17,6 +18,8 @@ interface PortfolioAllocationWidgetProps {
 }
 
 export default function PortfolioAllocationWidget({ data }: PortfolioAllocationWidgetProps) {
+  const [hoveredIndex, setHoveredIndex] = React.useState<number | null>(null);
+
   return (
     <Card className={styles.allocationPanel}>
       <CardHeader title="Portfolio Allocation" actionHref="/analytics" actionLabel="Open Analytics">
@@ -28,14 +31,25 @@ export default function PortfolioAllocationWidget({ data }: PortfolioAllocationW
           {data.length === 0 ? (
             <div className={styles.chartEmpty}>Acquire your first property to unlock portfolio distribution.</div>
           ) : (
-            <PieChart data={data.map(({ label, value, color }) => ({ label, value, color }))} />
+            <PieChart
+              data={data.map(({ label, value, color }) => ({ label, value, color }))}
+              hoveredIndex={hoveredIndex}
+              onHoverChange={setHoveredIndex}
+            />
           )}
         </div>
 
         <div className={styles.allocationLegend}>
           {data.length === 0 && <p className={styles.legendEmpty}>No allocation mix yet.</p>}
-          {data.map((item) => (
-            <div key={item.label} className={styles.legendItem}>
+          {data.map((item, index) => (
+            <div
+              key={item.label}
+              className={`${styles.legendItem} ${hoveredIndex === index ? styles.legendItemActive : ''} ${
+                hoveredIndex !== null && hoveredIndex !== index ? styles.legendItemDimmed : ''
+              }`}
+              onMouseEnter={() => setHoveredIndex(index)}
+              onMouseLeave={() => setHoveredIndex(null)}
+            >
               <span className={`${styles.legendSwatch} ${item.swatchClass}`}></span>
               <div className={styles.legendText}>
                 <span className={styles.legendLabel}>{item.label}</span>

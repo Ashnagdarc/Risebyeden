@@ -11,48 +11,44 @@
   overflow: visible;
 }
 
-.path {
-  fill: none;
-  stroke: var(--accent-gold);
-  stroke-width: 1.5;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  filter: drop-shadow(0px 4px 6px rgba(197, 163, 104, 0.3));
-}
-
-.dotActive {
-  fill: var(--bg-surface);
-  stroke: var(--accent-gold);
-  stroke-width: 2.5;
+.interactionOverlay {
+  pointer-events: none;
 }
 
 .hoverTarget {
-  outline: none;
   cursor: crosshair;
 }
 
-.tooltipCard {
-  fill: rgba(28, 28, 30, 0.85); /* Apple HIG blurred dark layer */
-  stroke: rgba(255, 255, 255, 0.1); /* Subtle Apple HIG border */
-  stroke-width: 1px;
-  rx: 10px; /* softer HIG radii */
-  backdrop-filter: blur(20px);
+.referenceBand {
+  stroke: rgba(255, 255, 255, 0.08);
+  stroke-width: 1;
+  stroke-dasharray: 3 7;
 }
 
-.tooltipLabel,
-.tooltipValue {
-  font-family: var(--font-sans); /* Apple HIG uses sans for generic ui text */
+.edgeLabel {
+  font-family: var(--mono-font, var(--font-mono));
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  fill: rgba(161, 161, 166, 0.78);
 }
 
-/* Fixed compressed look - removed extreme letter spacing and uppercase */
+/* ─── HTML tooltip (visx TooltipWithBounds) ─── */
+.tooltipContainer {
+  font-family: var(--font-sans);
+  z-index: 10;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.45);
+  transition: transform 0.16s ease;
+}
+
 .tooltipLabel {
   font-size: 11px;
   font-weight: 500;
-  fill: var(--text-secondary);
+  color: var(--text-secondary, #a1a1a6);
 }
 
 .tooltipValue {
   font-size: 14px;
   font-weight: 600;
-  fill: var(--text-primary);
+  color: var(--text-primary, #f5f5f7);
 }

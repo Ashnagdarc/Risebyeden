@@ -1,11 +1,10 @@
-import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
-import { withAuth } from 'next-auth/middleware';
+import { withAuth, type NextRequestWithAuth } from 'next-auth/middleware';
 import { isAdminRole } from '@/lib/security/role';
 import { REQUEST_ID_HEADER } from '@/lib/observability/request-context';
 
 export default withAuth(
-  function middleware(request: NextRequest) {
+  function middleware(request: NextRequestWithAuth) {
     const path = request.nextUrl.pathname;
     const token = request.nextauth.token as { role?: string; onboardingCompleted?: boolean } | null;
     const role = typeof token?.role === 'string' ? token.role : '';

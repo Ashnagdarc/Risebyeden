@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import SplineCanvas from '@/components/SplineCanvas';
 import TrendSparkline from '@/components/TrendSparkline';
 import styles from './Header.module.css';
 
@@ -37,9 +38,6 @@ const formatCompactCurrency = (value: number) => {
 
 export default function Header({ totalValue, deltaPercent, userName, totalUnits, activeGoals, trendPoints }: HeaderProps) {
   const deltaLabel = `${deltaPercent >= 0 ? '+' : ''}${deltaPercent.toFixed(1)}%`;
-  const trendStartLabel = trendPoints[0]?.label || 'Start';
-  const trendEndLabel = trendPoints[trendPoints.length - 1]?.label || 'Now';
-  const trendStartValue = trendPoints[0]?.value || 0;
   const trendEndValue = trendPoints[trendPoints.length - 1]?.value || 0;
 
   return (
@@ -72,6 +70,9 @@ export default function Header({ totalValue, deltaPercent, userName, totalUnits,
       <div className={styles.heroBody}>
         <article className={styles.unifiedSlab}>
           <div className={styles.slabMetrics}>
+            <div className={styles.slabMetricsBg}>
+              <SplineCanvas scene="/3d/RadiantShift.spline" />
+            </div>
             <div className={styles.mainMetric}>
               <span className={styles.summaryLabel}>Total Managed Assets</span>
               <div className={styles.summaryValueRow}>

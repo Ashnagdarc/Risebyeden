@@ -310,7 +310,13 @@ export async function POST(request: Request) {
         targetValue: payload.targetValue ?? null,
         targetCount: payload.targetCount ?? null,
         targetPercent: payload.targetPercent ?? null,
-        referencePropertyId: payload.referencePropertyId || null,
+        ...(payload.referencePropertyId
+          ? {
+              referenceProperty: {
+                connect: { id: payload.referencePropertyId },
+              },
+            }
+          : {}),
         referenceLabel: payload.referenceLabel || null,
         currentValue: payload.type === GoalType.CUSTOM ? payload.currentValue || 0 : 0,
       },
