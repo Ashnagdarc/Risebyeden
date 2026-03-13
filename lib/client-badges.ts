@@ -81,6 +81,15 @@ const badgeRules: BadgeRule[] = [
     isUnlocked: (metrics) => metrics.completedGoalCount >= 1,
   },
   {
+    id: 'custom-vision',
+    title: 'Custom Vision',
+    description: 'Complete your first custom goal.',
+    tier: 'silver',
+    source: 'goal',
+    image: tierImages.silver,
+    isUnlocked: (metrics) => metrics.completedGoalTypes.includes('CUSTOM'),
+  },
+  {
     id: 'portfolio-builder',
     title: 'Portfolio Builder',
     description: 'Grow to 3 property units.',
@@ -97,6 +106,18 @@ const badgeRules: BadgeRule[] = [
     source: 'goal',
     image: tierImages.gold,
     isUnlocked: (metrics) => metrics.completedGoalCount >= 3 || metrics.bestStreak >= 7,
+  },
+  {
+    id: 'master-architect',
+    title: 'Master Architect',
+    description: 'Complete 5 custom goals and shape your own path.',
+    tier: 'gold',
+    source: 'goal',
+    image: tierImages.gold,
+    isUnlocked: (metrics) => {
+      const customGoalsCount = metrics.completedGoalTypes.filter((type) => type === 'CUSTOM').length;
+      return customGoalsCount >= 5;
+    },
   },
   {
     id: 'yield-elite',
