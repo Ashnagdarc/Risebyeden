@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import Sidebar from '@/components/Sidebar';
 import PieChart from '@/components/PieChart';
+import TrendSparkline from '@/components/TrendSparkline';
 import styles from './page.module.css';
 
 type Asset = {
@@ -24,7 +25,10 @@ type PortfolioStats = {
   avgOccupancy: number;
   avgCapRate: number;
   avgAppreciation: number;
+  monthlyHistory: Array<{ label: string; value: number }>;
 };
+
+type HistoryRange = '3m' | '6m' | '12m' | 'all';
 
 export default function Analytics() {
   const [assets, setAssets] = useState<Asset[]>([]);
@@ -33,7 +37,10 @@ export default function Analytics() {
     avgOccupancy: 0,
     avgCapRate: 0,
     avgAppreciation: 0,
+    monthlyHistory: [],
   });
+  const [historyRange, setHistoryRange] = useState<HistoryRange>('6m');
+  const [historySeries, setHistorySeries] = useState<Array<{ label: string; value: number }>>([]);
 
   useEffect(() => {
     let isMounted = true;
@@ -56,6 +63,7 @@ export default function Analytics() {
           avgOccupancy: data.stats?.avgOccupancy || 0,
           avgCapRate: data.stats?.avgCapRate || 0,
           avgAppreciation: data.stats?.avgAppreciation || 0,
+          monthlyHistory: data.stats?.monthlyHistory || [],
         });
       })
       .catch(() => {
@@ -68,6 +76,33 @@ export default function Analytics() {
       isMounted = false;
     };
   }, []);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    fetch(`/api/client/portfolio/history?range=${historyRange}`)
+      .then(async (res) => {
+        if (!res.ok) {
+          throw new Error('Failed to fetch history');
+        }
+
+        return res.json();
+      })
+      .then((payload) => {
+        if (isMounted) {
+          setHistorySeries(payload.history || []);
+        }
+      })
+      .catch(() => {
+        if (isMounted) {
+          setHistorySeries([]);
+        }
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [historyRange]);
 
   const totalValue = stats.totalValue || 0;
 
@@ -160,18 +195,91 @@ export default function Analytics() {
     ];
   }, [stats.avgAppreciation, stats.avgOccupancy, typeTotals]);
 
+  const trendData = useMemo(() => {
+    if (historySeries.length > 0) {
+      return historySeries;
+    }
+
+    if (stats.monthlyHistory.length > 0) {
+      return stats.monthlyHistory;
+    }
+
+    return ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'].map((label) => ({ label, value: 0 }));
+  }, [historySeries, stats.monthlyHistory]);
+
   return (
     <div className={styles.container}>
       <Sidebar />
       
       <main className={styles.main}>
-        <header className={styles.header}>
-          <div>
-            <Link href="/" className={styles.backLink}>
-              ← Back to Dashboard
-            </Link>
-            <h1 className={styles.pageTitle}>Portfolio Analytics</h1>
-            <p className={styles.subtitle}>Comprehensive analysis of your investment performance</p>
+        <header className={styles.headerBand}>
+          <div className={styles.headerTop}>
+            <div>
+              <Link href="/" className={styles.backLink}>
+                ← Back to Dashboard
+              </Link>
+              <h1 className={styles.pageTitle}>Portfolio Analytics</h1>
+              <p className={styles.subtitle}>A bento view of allocation, performance, and operating signals across your holdings.</p>
+
+              <div className={styles.segmentedNav}>
+                <Link href="/" className={styles.segmentLink}>Overview</Link>
+                <Link href="/analytics" className={`${styles.segmentLink} ${styles.segmentLinkActive}`}>Analytics</Link>
+                <Link href="/assets" className={styles.segmentLink}>Assets</Link>
+              </div>
+            </div>
+
+            <div className={styles.headerActions}>
+              <Link href="/goals" className={styles.secondaryButton}>Open Goals</Link>
+              <Link href="/assets" className={styles.primaryButton}>View Portfolio</Link>
+            </div>
+          </div>
+
+          <div className={styles.headerBottom}>
+            <div className={styles.headerSummary}>
+              <article className={styles.heroStatCard}>
+                <span className={styles.heroStatLabel}>Portfolio Value</span>
+                <strong className={styles.heroStatValue}>
+                  ${totalValue >= 1000000 ? `${(totalValue / 1000000).toFixed(1)}M` : totalValue.toLocaleString()}
+                </strong>
+              </article>
+              <article className={styles.heroStatCard}>
+                <span className={styles.heroStatLabel}>Tracked Assets</span>
+                <strong className={styles.heroStatValue}>{assets.length}</strong>
+              </article>
+              <article className={styles.heroStatCard}>
+                <span className={styles.heroStatLabel}>Avg Occupancy</span>
+                <strong className={styles.heroStatValue}>{stats.avgOccupancy.toFixed(1)}%</strong>
+              </article>
+            </div>
+
+            <div className={styles.trendPanel}>
+              <div className={styles.trendPanelHeader}>
+                <div>
+                  <span className={styles.heroStatLabel}>Trend View</span>
+                  <p className={styles.trendPanelTitle}>Portfolio value curve</p>
+                </div>
+                <div className={styles.rangeSelector}>
+                  {(['3m', '6m', '12m', 'all'] as const).map((range) => (
+                    <button
+                      key={range}
+                      type="button"
+                      className={`${styles.rangeButton} ${historyRange === range ? styles.rangeButtonActive : ''}`}
+                      onClick={() => setHistoryRange(range)}
+                    >
+                      {range}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className={styles.trendChartShell}>
+                <TrendSparkline
+                  data={trendData}
+                  ariaLabel="Portfolio analytics trend chart"
+                  valueFormat="compactUsd"
+                />
+              </div>
+            </div>
           </div>
         </header>
 

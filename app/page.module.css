@@ -1,3 +1,4 @@
+/* ─── Layout ─────────────────────────────────── */
 .container {
   display: flex;
   height: 100vh;
@@ -5,88 +6,903 @@
 
 .main {
   flex: 1;
-  padding: 60px 80px;
+  padding: 40px 52px;
   overflow-y: auto;
-  perspective: 1000px;
 }
 
-.gridLayout {
+/* ─── Grid ─────────────────────────────────── */
+
+/* ─── Overview Row ──────────────────────────── */
+.overviewRow {
+  grid-column: span 12;
   display: grid;
-  grid-template-columns: repeat(12, 1fr);
-  gap: 24px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  animation: fadeSlideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
-.chartLine {
-  height: 40px;
-  border-bottom: 2px solid var(--accent-gold);
-  opacity: 0.3;
-}
-
-.barChart {
-  height: 40px;
+.overviewCard {
+  border-radius: 16px;
+  border: 1px solid rgba(197, 163, 104, 0.12);
+  background: linear-gradient(145deg, rgba(197, 163, 104, 0.06) 0%, rgba(10, 10, 10, 0.9) 100%);
+  padding: 22px 24px;
+  min-height: 110px;
   display: flex;
-  gap: 4px;
-  align-items: flex-end;
+  flex-direction: column;
+  justify-content: space-between;
+  position: relative;
+  overflow: hidden;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease;
 }
 
-.barSegment {
-  flex: 1;
-  border-radius: 2px;
-  background: #333;
+.overviewCard::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at top left, rgba(197, 163, 104, 0.09), transparent 65%);
+  pointer-events: none;
 }
 
-.barLow {
-  height: 40%;
+.overviewCard::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(197, 163, 104, 0.35), transparent);
+  opacity: 0;
+  transition: opacity 0.3s ease;
 }
 
-.barMid {
-  height: 60%;
+.overviewCard:hover {
+  border-color: rgba(197, 163, 104, 0.28);
+  box-shadow:
+    0 0 0 1px rgba(197, 163, 104, 0.06),
+    0 8px 24px rgba(0, 0, 0, 0.45);
+  transform: translateY(-2px);
 }
 
-.barMidHigh {
-  height: 55%;
+.overviewCard:hover::after {
+  opacity: 1;
 }
 
-.barPeak {
-  height: 90%;
-  background: var(--text-primary);
+.overviewLabel {
+  font-family: var(--mono-font);
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
 }
 
-.operational {
-  font-size: var(--type-section-size);
+.overviewValue {
+  font-size: clamp(1.7rem, 2.6vw, 2.2rem);
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.04em;
+  color: #fff;
+  margin-top: 10px;
+}
+
+.overviewUnit {
+  font-size: 0.55em;
+  font-weight: 400;
+  letter-spacing: 0;
+  color: var(--text-secondary);
+  margin-left: 1px;
+}
+
+.overviewValuePositive {
   color: #4ade80;
 }
 
-.pulse {
-  width: 8px;
+.overviewValueNegative {
+  color: #f87171;
+}
+
+.overviewTrend {
+  font-size: 11px;
+  color: var(--text-secondary);
+  line-height: 1.4;
+  margin-top: 6px;
+}
+
+/* ─── Grid Layout ───────────────────────────── */
+.gridLayout {
+  display: grid;
+  grid-template-columns: 8fr 4fr; /* Apple style 66% / 33% split */
+  gap: var(--space-xl);
+  max-width: 1400px;
+  width: 100%;
+}
+
+.leftColumn {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xl);
+  min-width: 0;
+}
+
+.rightColumn {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xl);
+  min-width: 0;
+}
+
+/* ─── Analytics Band ────────────────────────── */
+.analyticsBand {
+  display: flex;
+  gap: var(--space-md);
+  animation: fadeSlideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.1s both;
+}
+
+/* ─── Panels (shared) ───────────────────────── */
+
+.allocationPanel::before,
+.signalPanel::before,
+.identityPanel::before,
+.goalsPanel::before,
+.quickActionsPanel::before,
+.activityPanel::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.08), transparent);
+  pointer-events: none;
+}
+
+.allocationPanel,
+.signalPanel {
+  min-height: 340px;
+}
+
+.sectionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.panelSubtitle {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+  max-width: 54ch;
+  margin-top: 4px;
+}
+
+.allocationContent {
+  display: grid;
+  grid-template-columns: minmax(220px, 280px) minmax(0, 1fr);
+  gap: 18px;
+  align-items: center;
+  flex: 1;
+}
+
+.allocationChartWrap {
+  min-height: 260px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: radial-gradient(circle at top, rgba(197, 163, 104, 0.08), transparent 58%), rgba(255, 255, 255, 0.02);
+}
+
+.chartEmpty,
+.legendEmpty {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+  padding: 12px;
+  text-align: center;
+}
+
+.allocationLegend {
+  display: grid;
+  gap: 10px;
+  align-content: start;
+}
+
+.legendItem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.legendItem:hover {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.09);
+}
+
+.legendSwatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  flex-shrink: 0;
+}
+
+.swatchGold { background: #c5a368; box-shadow: 0 0 8px rgba(197, 163, 104, 0.5); }
+.swatchBlue { background: #60a5fa; box-shadow: 0 0 8px rgba(96, 165, 250, 0.4); }
+.swatchGreen { background: #4ade80; box-shadow: 0 0 8px rgba(74, 222, 128, 0.4); }
+.swatchRed { background: #f87171; box-shadow: 0 0 8px rgba(248, 113, 113, 0.4); }
+.swatchLilac { background: #9f7aea; box-shadow: 0 0 8px rgba(159, 122, 234, 0.4); }
+
+.legendText {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+}
+
+.legendLabel,
+.legendValue {
+  font-family: var(--mono-font);
+  font-size: 11px;
+}
+
+.legendLabel {
+  color: var(--text-primary);
+}
+
+.legendValue {
+  color: var(--text-secondary);
+}
+
+/* ─── Signal Grid ───────────────────────────── */
+.signalGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.signalCard {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  min-height: 110px;
+  padding: 16px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+}
+
+.signalCard:hover {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(197, 163, 104, 0.18);
+  transform: translateY(-1px);
+}
+
+.signalIcon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(197, 163, 104, 0.12);
+  flex-shrink: 0;
+  border: 1px solid rgba(197, 163, 104, 0.15);
+}
+
+.signalIcon svg {
+  width: 18px;
+  height: 18px;
+  stroke: var(--accent-gold);
+}
+
+.signalCardBody {
+  min-width: 0;
+}
+
+.signalLabel {
+  font-family: var(--mono-font);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+
+.signalValue {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+  line-height: 1.3;
+  margin-bottom: 5px;
+}
+
+.signalDetail {
+  font-size: 11px;
+  line-height: 1.45;
+  color: var(--text-secondary);
+}
+
+/* ─── Performance Bars ────────────────────────── */
+.performanceBars {
+  display: grid;
+  gap: 14px;
+  margin-top: auto;
+  padding-top: 6px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.performanceBarRow {
+  display: grid;
+  gap: 8px;
+}
+
+.performanceBarMeta {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  font-family: var(--mono-font);
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.performanceBarTrack {
   height: 8px;
-  background: #4ade80;
-  border-radius: 50%;
-  display: inline-block;
-  box-shadow: 0 0 10px #4ade80;
-  margin-right: 8px;
-  animation: glow 2s infinite;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.07);
+  overflow: hidden;
 }
 
-.propertyListSlab {
-  grid-column: span 12;
-  margin-top: 16px;
+.performanceProgress {
+  width: 100%;
+  height: 6px;
+  border-radius: 999px;
+  border: 0;
+  background: rgba(255, 255, 255, 0.07);
+  -webkit-appearance: none;
+  appearance: none;
 }
 
+.performanceProgress::-webkit-progress-bar {
+  background: rgba(255, 255, 255, 0.07);
+  border-radius: 999px;
+}
+
+.performanceProgress::-webkit-progress-value {
+  background: linear-gradient(90deg, rgba(197, 163, 104, 0.35), rgba(197, 163, 104, 0.95));
+  border-radius: 999px;
+}
+
+.performanceProgress::-moz-progress-bar {
+  background: linear-gradient(90deg, rgba(197, 163, 104, 0.35), rgba(197, 163, 104, 0.95));
+  border-radius: 999px;
+}
+
+/* ─── Identity / Goals Row Positioning ─────── */
+.identityPanel,
+.quickActionsPanel {
+  grid-column: 1 / span 6;
+}
+
+.goalsPanel,
+.activityPanel {
+  grid-column: 7 / span 6;
+}
+
+.identityPanel {
+  animation: fadeSlideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.2s both;
+}
+
+.goalsPanel {
+  animation: fadeSlideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.25s both;
+}
+
+.quickActionsPanel {
+  animation: fadeSlideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.3s both;
+}
+
+.activityPanel {
+  animation: fadeSlideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.35s both;
+}
+
+/* ─── Panel Titles ──────────────────────────── */
+.panelTitle {
+  font-size: 11px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--accent-gold);
+  font-family: var(--mono-font);
+  margin-bottom: 14px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.panelTitle::before {
+  content: '';
+  display: block;
+  width: 3px;
+  height: 12px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(197, 163, 104, 0.9), rgba(197, 163, 104, 0.3));
+  flex-shrink: 0;
+}
+
+.personaHeader,
+.goalsHeader,
+.badgeStripHeader,
 .propertyHeader {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 24px;
+  gap: 10px;
 }
 
-.propertyHeader h2 {
-  font-size: var(--type-section-size);
+.personaHeader,
+.goalsHeader,
+.badgeStripHeader {
+  margin-bottom: 14px;
+  flex-shrink: 0;
+}
+
+.personaXp,
+.badgesMeta,
+.goalCountdown,
+.activityTime {
+  font-family: var(--mono-font);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: var(--text-secondary);
+  flex-shrink: 0;
+}
+
+.personaMeta {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 14px;
+  flex-shrink: 0;
+}
+
+.personaMetaCard {
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.personaLabel {
+  font-family: var(--mono-font);
+  font-size: 10px;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
-  letter-spacing: var(--type-section-track);
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+}
+
+.personaValue {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+  line-height: 1.3;
+}
+
+/* ─── Level Track ──────────────────────────── */
+.levelTrack {
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  background: rgba(255, 255, 255, 0.025);
+  padding: 16px;
+  margin-bottom: 16px;
+  flex-shrink: 0;
+  position: relative;
+  overflow: hidden;
+}
+
+.levelTrack::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(197, 163, 104, 0.2), transparent);
+}
+
+.levelTrackTop {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 11px;
+  margin-bottom: 12px;
+}
+
+.levelNow,
+.levelNext,
+.levelHint {
+  font-family: var(--mono-font);
   color: var(--text-secondary);
 }
 
+.levelProgress,
+.goalTrack {
+  width: 100%;
+  height: 6px;
+  border-radius: 999px;
+  border: 0;
+  background: rgba(255, 255, 255, 0.07);
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.levelProgress::-webkit-progress-bar,
+.goalTrack::-webkit-progress-bar {
+  background: rgba(255, 255, 255, 0.07);
+  border-radius: 999px;
+}
+
+.levelProgress::-webkit-progress-value,
+.goalTrack::-webkit-progress-value {
+  background: linear-gradient(90deg, rgba(197, 163, 104, 0.55), #c5a368);
+  border-radius: 999px;
+}
+
+.levelProgress::-moz-progress-bar,
+.goalTrack::-moz-progress-bar {
+  background: linear-gradient(90deg, rgba(197, 163, 104, 0.55), #c5a368);
+  border-radius: 999px;
+}
+
+.levelQuest {
+  margin-top: 10px;
+  font-size: 13px;
+  color: var(--text-primary);
+  line-height: 1.45;
+}
+
+.levelHint,
+.nextQuestLine {
+  margin-top: 6px;
+  font-size: 11px;
+  color: var(--text-secondary);
+  line-height: 1.45;
+}
+
+/* ─── Badges ───────────────────────────────── */
+.badgeStrip {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.badgeHeaderActions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.badgeViewAll {
+  font-family: var(--mono-font);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent-gold);
+  text-decoration: none;
+  transition: opacity 0.2s ease;
+}
+
+.badgeViewAll:hover {
+  opacity: 0.75;
+}
+
+.unlockedEmpty {
+  grid-column: 1 / -1;
+  font-size: 12px;
+  color: var(--text-secondary);
+  padding: 10px 0;
+}
+
+.badgeCard {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  background: rgba(255, 255, 255, 0.025);
+  transition: border-color 0.2s ease, background 0.2s ease, transform 0.2s ease;
+}
+
+.badgeCard:hover {
+  background: rgba(255, 255, 255, 0.04);
+  transform: translateY(-1px);
+}
+
+.badgeCardUnlocked {
+  border-color: rgba(197, 163, 104, 0.3);
+  background: rgba(197, 163, 104, 0.07);
+}
+
+.badgeCardUnlocked:hover {
+  background: rgba(197, 163, 104, 0.12);
+  border-color: rgba(197, 163, 104, 0.45);
+}
+
+.badgeCardLocked {
+  opacity: 0.5;
+}
+
+.badgeImage {
+  width: 38px;
+  height: 38px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.badgeName {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin-bottom: 2px;
+}
+
+.badgeDescription {
+  font-size: 10px;
+  color: var(--text-secondary);
+  line-height: 1.35;
+}
+
+.nextBadgeCard {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  flex-shrink: 0;
+}
+
+/* ─── Goals Panel ──────────────────────────── */
+.goalsList {
+  display: grid;
+  gap: 10px;
+  flex: 1;
+  align-content: start;
+}
+
+.goalsEmpty {
+  color: var(--text-secondary);
+  font-size: 13px;
+  padding: 14px 0;
+  line-height: 1.5;
+}
+
+.goalItem {
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-left: 3px solid rgba(197, 163, 104, 0.5);
+  background: rgba(255, 255, 255, 0.02);
+  padding: 14px 16px;
+  transition: background 0.2s ease, border-left-color 0.2s ease, transform 0.2s ease;
+}
+
+.goalItem:hover {
+  background: rgba(255, 255, 255, 0.035);
+  border-left-color: #c5a368;
+  transform: translateX(2px);
+}
+
+.goalItemTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.goalItemTop h4 {
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.4;
+  color: var(--text-primary);
+  flex: 1;
+}
+
+.goalStats {
+  margin-top: 8px;
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 11px;
+  font-family: var(--mono-font);
+  color: var(--text-secondary);
+}
+
+/* ─── Workspace Row ────────────────────────── */
+.workspaceRow {
+  grid-column: span 12;
+  display: contents;
+}
+
+/* ─── Quick Actions ────────────────────────── */
+.actionsList {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  flex: 1;
+  align-content: start;
+}
+
+.actionItem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 500;
+  text-decoration: none;
+  transition: background 0.22s ease, border-color 0.22s ease, transform 0.22s ease;
+  outline: none;
+}
+
+.actionItem:hover {
+  background: rgba(197, 163, 104, 0.09);
+  border-color: rgba(197, 163, 104, 0.3);
+  transform: translateX(3px);
+}
+
+.actionItem:focus-visible,
+.viewAll:focus-visible {
+  outline: 2px solid rgba(197, 163, 104, 0.9);
+  outline-offset: 2px;
+}
+
+.actionIcon {
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background: rgba(197, 163, 104, 0.1);
+  border-radius: 10px;
+  border: 1px solid rgba(197, 163, 104, 0.14);
+  transition: background 0.22s ease, border-color 0.22s ease;
+}
+
+.actionItem:hover .actionIcon {
+  background: rgba(197, 163, 104, 0.18);
+  border-color: rgba(197, 163, 104, 0.28);
+}
+
+.actionIcon svg {
+  width: 15px;
+  height: 15px;
+  stroke: var(--accent-gold);
+}
+
+/* ─── Activity Panel ───────────────────────── */
+.activityList {
+  display: grid;
+  gap: 4px;
+  flex: 1;
+  align-content: start;
+}
+
+.activityItemLink {
+  display: block;
+  text-decoration: none;
+  border-radius: 10px;
+  padding: 10px 12px;
+  border: 1px solid transparent;
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.activityItemLink:hover {
+  border-color: rgba(197, 163, 104, 0.18);
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.activityItemLink:focus-visible {
+  outline: 2px solid rgba(197, 163, 104, 0.9);
+  outline-offset: 2px;
+}
+
+.activityItem {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.activityDot {
+  width: 8px;
+  height: 8px;
+  margin-top: 5px;
+  border-radius: 50%;
+  background: var(--accent-gold);
+  flex-shrink: 0;
+  box-shadow: 0 0 8px rgba(197, 163, 104, 0.45);
+}
+
+.activityContent {
+  flex: 1;
+  min-width: 0;
+}
+
+.activityText {
+  font-size: 13px;
+  color: var(--text-primary);
+  margin-bottom: 3px;
+  line-height: 1.4;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ─── Property List ────────────────────────── */
+.propertyListSlab {
+  grid-column: span 12;
+  margin-top: 0;
+  padding: 24px;
+  border-radius: 18px;
+  background: linear-gradient(160deg, rgba(14, 14, 14, 0.98) 0%, rgba(8, 8, 8, 1) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  box-shadow:
+    0 4px 32px rgba(0, 0, 0, 0.55),
+    0 1px 0 rgba(255, 255, 255, 0.04) inset;
+  animation: fadeSlideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.4s both;
+  position: relative;
+  overflow: hidden;
+}
+
+.propertyListSlab::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.08), transparent);
+  pointer-events: none;
+}
+
+.propertyHeader {
+  margin-bottom: 18px;
+}
+
+.propertyHeader h2 {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.22em;
+  font-family: var(--mono-font);
+  color: var(--text-secondary);
+}
+
+.viewAll {
+  font-family: var(--mono-font);
+  font-size: var(--type-button-size);
+  color: var(--accent-gold);
+  text-decoration: none;
+  letter-spacing: var(--type-button-track);
+  transition: opacity 0.2s ease;
+}
+
+.viewAll:hover {
+  opacity: 0.75;
+}
+
+/* ─── Property Gradients ───────────────────── */
 .propGradientObsidian {
   background: linear-gradient(45deg, #1a1a1a, #333);
 }
@@ -99,185 +915,83 @@
   background: linear-gradient(45deg, #1a1610, #3d3528);
 }
 
-.viewAll {
-  font-family: var(--mono-font);
-  font-size: var(--type-button-size);
-  color: var(--accent-gold);
-  cursor: pointer;
-  text-decoration: none;
-  letter-spacing: var(--type-button-track);
-  transition: opacity 0.2s ease, transform 0.2s ease;
-  outline: none;
+/* ─── Animations ──────────────────────────── */
+@keyframes fadeSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
-.viewAll:hover {
-  opacity: 0.85;
-  transform: translateX(2px);
-}
-
-.viewAll:focus-visible {
-  outline: 2px solid rgba(197, 163, 104, 0.9);
-  outline-offset: 2px;
-  border-radius: 6px;
-}
-
-/* Quick Actions Panel */
-.quickActionsPanel {
-  grid-column: span 6;
-  padding: 24px;
-  border-radius: 12px;
-  background: rgba(10, 10, 10, 0.8);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  box-shadow: var(--relief-shadow);
-  backdrop-filter: blur(6px);
-}
-
-.panelTitle {
-  font-size: var(--type-section-size);
-  letter-spacing: var(--type-section-track);
-  text-transform: uppercase;
-  color: var(--accent-gold);
-  font-family: var(--mono-font);
-  margin-bottom: 20px;
-}
-
-.actionsList {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 12px;
-}
-
-.actionItem {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 14px 16px;
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.04);
-  color: var(--text-primary);
-  font-size: 13px;
-  line-height: 1.35;
-  text-decoration: none;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  outline: none;
-}
-
-.actionItem:hover {
-  background: rgba(197, 163, 104, 0.1);
-  border-color: rgba(197, 163, 104, 0.3);
-  transform: translateY(-2px);
-}
-
-.actionItem:focus-visible {
-  border-color: rgba(197, 163, 104, 0.6);
-  box-shadow: 0 0 0 2px rgba(197, 163, 104, 0.25);
-}
-
-.actionIcon {
-  width: 20px;
-  height: 20px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.actionIcon svg {
-  width: 16px;
-  height: 16px;
-  stroke: var(--accent-gold);
-}
-
-/* Recent Activity Panel */
-.activityPanel {
-  grid-column: span 6;
-  padding: 24px;
-  border-radius: 12px;
-  background: rgba(10, 10, 10, 0.8);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  box-shadow: var(--relief-shadow);
-  backdrop-filter: blur(6px);
-}
-
-.activityList {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.activityItem {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-}
-
-.activityDot {
-  width: 8px;
-  height: 8px;
-  background: var(--accent-gold);
-  border-radius: 50%;
-  margin-top: 6px;
-  flex-shrink: 0;
-}
-
-.activityContent {
-  flex: 1;
-}
-
-.activityText {
-  font-size: 13px;
-  color: var(--text-primary);
-  margin-bottom: 4px;
-  line-height: 1.45;
-}
-
-.activityTime {
-  font-size: 11px;
-  color: var(--text-secondary);
-  font-family: var(--mono-font);
-}
-
+/* ─── Responsive ──────────────────────────── */
 @media (max-width: 1200px) {
+  .analyticsBand {
+    grid-template-columns: 1fr;
+  }
+
+  .overviewRow {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .identityPanel,
+  .goalsPanel,
   .quickActionsPanel,
   .activityPanel {
     grid-column: span 12;
   }
 }
 
+@media (max-width: 900px) {
+  .overviewRow {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .allocationContent,
+  .signalGrid,
+  .personaMeta,
+  .actionsList,
+  .badgeStrip {
+    grid-template-columns: 1fr;
+  }
+
+  .allocationChartWrap {
+    min-height: 220px;
+  }
+}
+
 @media (max-width: 768px) {
   .main {
-    padding: 32px 16px;
+    padding: 28px 16px;
   }
 
   .gridLayout {
     grid-template-columns: 1fr;
-    gap: 14px;
+    gap: 12px;
+  }
+
+  .overviewRow {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .identityPanel,
+  .goalsPanel,
+  .quickActionsPanel,
+  .activityPanel,
+  .overviewRow,
+  .propertyListSlab {
+    grid-column: span 1;
   }
 
   .propertyHeader {
     flex-direction: column;
     align-items: flex-start;
-    gap: 10px;
-  }
-
-  .quickActionsPanel,
-  .activityPanel,
-  .propertyListSlab {
-    grid-column: span 1;
-  }
-
-  .viewAll {
-    font-size: 11px;
   }
 
   .actionsList {
     grid-template-columns: 1fr;
-  }
-
-  .quickActionsPanel,
-  .activityPanel {
-    padding: 20px;
   }
 }

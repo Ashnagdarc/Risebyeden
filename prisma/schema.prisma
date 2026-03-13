@@ -93,6 +93,21 @@ enum NotificationType {
   INTEREST_ASSIGNED
 }
 
+enum GoalType {
+  ASSET_VALUE
+  PROPERTY_COUNT
+  PROPERTY_APPRECIATION
+  PROJECT_PLOT_COUNT
+  CUSTOM
+}
+
+enum GoalStatus {
+  ACTIVE
+  COMPLETED
+  EXPIRED
+  ARCHIVED
+}
+
 model User {
   id             String     @id @default(cuid())
   userId         String     @unique            // Short unique ID like RBE-4X9K
@@ -107,6 +122,8 @@ model User {
   hashedPassword String                         // Access Key (hashed)
   accessToken    String?    @unique             // One-time enlist token hash
   tokenUsed      Boolean    @default(false)
+  onboardingCompleted Boolean @default(false)
+  onboardingCompletedAt DateTime?
   createdAt      DateTime   @default(now())
   updatedAt      DateTime   @updatedAt
   clientProperties ClientProperty[]
@@ -121,6 +138,7 @@ model User {
   consultationRequests ConsultationRequest[] @relation("ConsultationRequester")
   advisorConsultations ConsultationRequest[] @relation("ConsultationAdvisor")
   notifications   Notification[]
+  goals           Goal[]
 
   @@index([role, status, createdAt])
   @@index([status, createdAt])
@@ -247,6 +265,7 @@ model Property {
   transactions Transaction[]
   priceUpdates PriceUpdate[]
   interestRequests InterestRequest[]
+  goals Goal[] @relation("GoalReferenceProperty")
 
   @@index([status, createdAt])
 }
@@ -412,4 +431,58 @@ model Document {
   @@index([propertyId])
   @@index([organizationId])
   @@index([propertyId, type])
+}
+
+model Goal {
+  id                String      @id @default(cuid())
+  userId            String
+  title             String
+  description       String?
+  type              GoalType
+  status            GoalStatus  @default(ACTIVE)
+  targetDate        DateTime?
+  targetValue       Decimal?    @db.Decimal(18, 2)
+  targetCount       Int?
+  targetPercent     Float?
+  referencePropertyId String?
+  referenceLabel    String?
+  currentValue      Decimal?    @db.Decimal(18, 2)
+  progressPercent   Float       @default(0)
+  streakCount       Int         @default(0)
+  longestStreak     Int         @default(0)
+  lastCheckInAt     DateTime?
+  completedAt       DateTime?
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+
+  user              User        @relation(fields: [userId], references: [id])
+  referenceProperty Property?   @relation("GoalReferenceProperty", fields: [referencePropertyId], references: [id], onDelete: SetNull)
+  checkIns          GoalCheckIn[]
+  snapshots         GoalProgressSnapshot[]
+
+  @@index([userId, status, targetDate])
+  @@index([referencePropertyId])
+}
+
+model GoalCheckIn {
+  id        String   @id @default(cuid())
+  goalId    String
+  note      String?
+  createdAt DateTime @default(now())
+
+  goal Goal @relation(fields: [goalId], references: [id], onDelete: Cascade)
+
+  @@index([goalId, createdAt])
+}
+
+model GoalProgressSnapshot {
+  id              String   @id @default(cuid())
+  goalId          String
+  progressPercent Float
+  currentValue    Decimal? @db.Decimal(18, 2)
+  createdAt       DateTime @default(now())
+
+  goal Goal @relation(fields: [goalId], references: [id], onDelete: Cascade)
+
+  @@index([goalId, createdAt])
 }

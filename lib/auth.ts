@@ -3,6 +3,7 @@ import Credentials from 'next-auth/providers/credentials';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import prisma from '@/lib/prisma';
+import { getUserOnboardingState } from '@/lib/onboarding-state';
 import { consumeRateLimit, resetRateLimit } from '@/lib/security/rate-limit';
 import { logWarn } from '@/lib/observability/logger';
 
@@ -106,8 +107,13 @@ export const authOptions: NextAuthOptions = {
           return null;
         }
 
-        const user = await prisma.user.findUnique({
-          where: { userId: identifier },
+        const user = await prisma.user.findFirst({
+          where: {
+            userId: {
+              equals: identifier,
+              mode: 'insensitive',
+            },
+          },
         });
 
         if (!user) {
@@ -142,6 +148,8 @@ export const authOptions: NextAuthOptions = {
           return null;
         }
 
+        const onboardingState = await getUserOnboardingState(user.id);
+
         await Promise.all([
           resetRateLimit(identifierKey),
           resetRateLimit(pairKey),
@@ -151,6 +159,7 @@ export const authOptions: NextAuthOptions = {
           id: user.id,
           name: user.name || user.userId,
           email: user.email || user.userId,
+          onboardingCompleted: onboardingState?.onboardingCompleted ?? false,
           role: user.role === 'ADMIN'
             ? 'admin'
             : user.role === 'AGENT'
@@ -161,10 +170,22 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger, session }) {
       if (user) {
         token.id = (user as { id?: string }).id;
         token.role = (user as { role?: string }).role || 'client';
+        token.onboardingCompleted = (user as { onboardingCompleted?: boolean }).onboardingCompleted ?? false;
+      }
+
+      if (trigger === 'update') {
+        const nextOnboarding = (session as { onboardingCompleted?: boolean } | undefined)?.onboardingCompleted;
+        if (typeof nextOnboarding === 'boolean') {
+          token.onboardingCompleted = nextOnboarding;
+        }
+      }
+
+      if ((token as { onboardingCompleted?: boolean }).onboardingCompleted == null) {
+        token.onboardingCompleted = false;
       }
       return token;
     },
@@ -172,6 +193,8 @@ export const authOptions: NextAuthOptions = {
       if (session.user) {
         (session.user as { id?: string }).id = token.id as string | undefined;
         (session.user as { role?: string }).role = token.role as string;
+        (session.user as { onboardingCompleted?: boolean }).onboardingCompleted =
+          (token as { onboardingCompleted?: boolean }).onboardingCompleted ?? false;
       }
       return session;
     },

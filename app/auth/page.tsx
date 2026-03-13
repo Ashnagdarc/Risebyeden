@@ -14,6 +14,12 @@ type RuntimeTelemetry = {
   nodeLabel: string;
 };
 
+type SystemHealthResponse = {
+  services?: {
+    database?: string;
+  };
+};
+
 const defaultTelemetry: RuntimeTelemetry = {
   latencyLabel: 'Measuring...',
   encryptionLabel: 'Detecting...',
@@ -29,13 +35,21 @@ export default function AuthPage() {
   const [accessToken, setAccessToken] = useState('');
   const [enlistSuccess, setEnlistSuccess] = useState(false);
   const [enlistStatus, setEnlistStatus] = useState<'PENDING' | 'ACTIVE' | 'REJECTED' | 'UNKNOWN'>('PENDING');
+  const [autoLoginInFlight, setAutoLoginInFlight] = useState(false);
   const [authError, setAuthError] = useState('');
+  const [serviceWarning, setServiceWarning] = useState('');
+  const [databaseAvailable, setDatabaseAvailable] = useState<boolean | null>(null);
   const [telemetry, setTelemetry] = useState<RuntimeTelemetry>(defaultTelemetry);
   const router = useRouter();
 
   const handleLogin = async (event: React.FormEvent) => {
     event.preventDefault();
     setAuthError('');
+
+    if (databaseAvailable === false) {
+      setAuthError('Login service unavailable: database is offline. Start Postgres and retry.');
+      return;
+    }
 
     const result = await signIn('credentials', {
       identifier,
@@ -55,6 +69,11 @@ export default function AuthPage() {
   const handleEnlist = async (event: React.FormEvent) => {
     event.preventDefault();
     setAuthError('');
+
+    if (databaseAvailable === false) {
+      setAuthError('Enlistment unavailable: database is offline. Start Postgres and retry.');
+      return;
+    }
 
     try {
       const res = await fetch('/api/auth/enlist', {
@@ -130,6 +149,34 @@ export default function AuthPage() {
   }, []);
 
   useEffect(() => {
+    let cancelled = false;
+
+    const fetchHealth = async () => {
+      try {
+        const response = await fetch('/api/system/health', { cache: 'no-store' });
+        const payload = await response.json() as SystemHealthResponse;
+        const databaseHealthy = payload.services?.database === 'ok';
+
+        if (!cancelled) {
+          setDatabaseAvailable(databaseHealthy);
+          setServiceWarning(databaseHealthy ? '' : 'Database is offline. Start your DB service to enable login.');
+        }
+      } catch {
+        if (!cancelled) {
+          setDatabaseAvailable(null);
+          setServiceWarning('Unable to verify system health. Login may fail if database is offline.');
+        }
+      }
+    };
+
+    fetchHealth();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
     if (!enlistSuccess) {
       return;
     }
@@ -158,8 +205,29 @@ export default function AuthPage() {
       if (!cancelled) {
         const nextStatus = data.status || 'UNKNOWN';
         setEnlistStatus(nextStatus);
-        if (nextStatus === 'ACTIVE') {
-          router.replace('/');
+
+        if (nextStatus === 'ACTIVE' && !autoLoginInFlight) {
+          setAutoLoginInFlight(true);
+
+          const result = await signIn('credentials', {
+            identifier,
+            accessKey,
+            adminOnly: 'false',
+            redirect: false,
+            callbackUrl: '/onboarding',
+          });
+
+          if (cancelled) {
+            return;
+          }
+
+          if (result?.ok) {
+            router.replace('/onboarding');
+            return;
+          }
+
+          setAutoLoginInFlight(false);
+          setAuthError('Handshake secured, but automatic login failed. Use Login tab to continue.');
         }
       }
     };
@@ -171,7 +239,7 @@ export default function AuthPage() {
       cancelled = true;
       clearInterval(interval);
     };
-  }, [accessKey, enlistSuccess, identifier, router]);
+  }, [accessKey, autoLoginInFlight, enlistSuccess, identifier, router]);
 
   const handleSubmit = mode === 'login' ? handleLogin : handleEnlist;
 
@@ -192,7 +260,9 @@ export default function AuthPage() {
               </h2>
               <p className={styles.welcomeSubtitle}>
                 {enlistStatus === 'ACTIVE'
-                  ? 'Authorization confirmed. You can return to login and establish your secure session.'
+                  ? autoLoginInFlight
+                    ? 'Authorization confirmed. Establishing your secure session and preparing onboarding.'
+                    : 'Authorization confirmed. Establishing your secure session and preparing onboarding.'
                   : enlistStatus === 'REJECTED'
                     ? 'Your access request was not approved. Contact an administrator for assistance.'
                     : 'Your access request is queued. We are waiting for neural handshake confirmation from an admin.'}
@@ -218,6 +288,7 @@ export default function AuthPage() {
                 <button
                   type="button"
                   className={styles.welcomeAction}
+                  disabled={autoLoginInFlight}
                   onClick={() => {
                     setEnlistSuccess(false);
                     setMode('login');
@@ -227,9 +298,14 @@ export default function AuthPage() {
                     setEmail('');
                     setAccessToken('');
                     setEnlistStatus('PENDING');
+                    setAutoLoginInFlight(false);
                   }}
                 >
-                  {enlistStatus === 'ACTIVE' ? 'Return to Login' : 'Back to Login'}
+                  {enlistStatus === 'ACTIVE'
+                    ? autoLoginInFlight
+                      ? 'Signing In...'
+                      : 'Return to Login'
+                    : 'Back to Login'}
                 </button>
               </div>
             </div>
@@ -275,6 +351,7 @@ export default function AuthPage() {
               </button>
             </div>
             <div className={styles.slabHint}>SECURE_HANDSHAKE_REQUIRED</div>
+            {serviceWarning && <p className={styles.serviceWarning}>{serviceWarning}</p>}
           </header>
 
           <div className={styles.slabContent}>

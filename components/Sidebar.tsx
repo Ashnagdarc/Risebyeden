@@ -86,6 +86,13 @@ const AnalyticsIcon = () => (
   </svg>
 );
 
+const GoalsIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="9"></circle>
+    <path d="M12 7v5l3 3"></path>
+  </svg>
+);
+
 const ProfileIcon = () => (
   <svg viewBox="0 0 24 24" fill="none" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
     <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
@@ -137,6 +144,7 @@ const adminNavItems: NavItem[] = [
 const clientNavItems: NavItem[] = [
   { href: '/', label: 'Overview', mobileLabel: 'Overview', icon: DashboardIcon },
   { href: '/analytics', label: 'Analytics', mobileLabel: 'Analytics', icon: AnalyticsIcon },
+  { href: '/goals', label: 'Goals', mobileLabel: 'Goals', icon: GoalsIcon },
   { href: '/assets', label: 'Assets', mobileLabel: 'Assets', icon: PropertyIcon },
   { href: '/profile', label: 'Profile', mobileLabel: 'Profile', icon: ProfileIcon },
   { href: '/settings', label: 'Settings', mobileLabel: 'Settings', icon: SettingsIcon, desktopBottom: true },
@@ -160,11 +168,13 @@ export default function Sidebar() {
   const pathname = usePathname();
   const isAdminRoute = pathname.startsWith('/admin');
   const isAgentRoute = pathname.startsWith('/agent');
+  const isCompactSidebar = isAdminRoute || isAgentRoute;
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const navItems = isAdminRoute ? adminNavItems : isAgentRoute ? agentNavItems : clientNavItems;
   const mobileMenuLabel = isAdminRoute ? 'Admin menu' : isAgentRoute ? 'Agent menu' : 'Client menu';
   const logoHref = isAdminRoute ? '/admin' : isAgentRoute ? '/agent' : '/';
+  const sidebarSubtitle = isAdminRoute ? 'Admin Console' : isAgentRoute ? 'Agent Workspace' : 'Investor Desk';
   const activeNavItem = navItems.find((item) => isPathActive(pathname, item.href)) || navItems[0];
   const MobilePrimaryIcon = activeNavItem.icon;
 
@@ -189,8 +199,21 @@ export default function Sidebar() {
 
   return (
     <>
-      <aside className={styles.sidebar}>
-        <Link href={logoHref} className={styles.logo} aria-label="Go to dashboard" title="Dashboard"></Link>
+      <aside className={`${styles.sidebar} ${isCompactSidebar ? styles.sidebarCompact : styles.sidebarExpanded}`}>
+        <Link
+          href={logoHref}
+          className={`${styles.logo} ${isCompactSidebar ? styles.logoCompact : styles.logoExpanded}`}
+          aria-label="Go to dashboard"
+          title="Dashboard"
+        >
+          <span className={styles.logoMark}></span>
+          {!isCompactSidebar && (
+            <span className={styles.logoText}>
+              <strong>Risebyeden</strong>
+              <small>{sidebarSubtitle}</small>
+            </span>
+          )}
+        </Link>
 
         {navItems.map((item) => {
           const Icon = item.icon;
@@ -202,9 +225,12 @@ export default function Sidebar() {
               className={`${styles.navItem} ${isActive ? styles.active : ''} ${item.desktopBottom ? styles.settings : ''}`}
               aria-label={item.label}
               title={item.label}
-              data-tooltip={item.label}
+              data-tooltip={isCompactSidebar ? item.label : undefined}
             >
-              <Icon />
+              <span className={styles.navIcon}>
+                <Icon />
+              </span>
+              {!isCompactSidebar && <span className={styles.navLabel}>{item.label}</span>}
             </Link>
           );
         })}
@@ -214,9 +240,12 @@ export default function Sidebar() {
           className={`${styles.navItem} ${styles.logout}`}
           aria-label="Sign out"
           title="Sign out"
-          data-tooltip="Sign out"
+          data-tooltip={isCompactSidebar ? 'Sign out' : undefined}
         >
-          <LogoutIcon />
+          <span className={styles.navIcon}>
+            <LogoutIcon />
+          </span>
+          {!isCompactSidebar && <span className={styles.navLabel}>Sign out</span>}
         </button>
       </aside>
 
@@ -234,7 +263,6 @@ export default function Sidebar() {
           type="button"
           className={`${styles.mobileBarButton} ${isMobileMenuOpen ? styles.mobileBarButtonActive : ''}`}
           aria-label={mobileMenuLabel}
-          aria-expanded={isMobileMenuOpen}
           onClick={() => setIsMobileMenuOpen((prev) => !prev)}
         >
           <MenuIcon />

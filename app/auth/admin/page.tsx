@@ -1,30 +1,81 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { signIn } from 'next-auth/react';
 import styles from '../page.module.css';
 
+type SystemHealthResponse = {
+  services?: {
+    database?: string;
+  };
+};
+
 export default function AdminAuthPage() {
+  const router = useRouter();
   const [identifier, setIdentifier] = useState('');
   const [accessKey, setAccessKey] = useState('');
   const [authError, setAuthError] = useState('');
+  const [serviceWarning, setServiceWarning] = useState('');
+  const [databaseAvailable, setDatabaseAvailable] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const fetchHealth = async () => {
+      try {
+        const response = await fetch('/api/system/health', { cache: 'no-store' });
+        const payload = await response.json() as SystemHealthResponse;
+        const databaseHealthy = payload.services?.database === 'ok';
+
+        if (!cancelled) {
+          setDatabaseAvailable(databaseHealthy);
+          setServiceWarning(databaseHealthy ? '' : 'Database is offline. Start your DB service to enable admin login.');
+        }
+      } catch {
+        if (!cancelled) {
+          setDatabaseAvailable(null);
+          setServiceWarning('Unable to verify system health. Admin login may fail if database is offline.');
+        }
+      }
+    };
+
+    fetchHealth();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     setAuthError('');
 
+    if (databaseAvailable === false) {
+      setAuthError('Admin login unavailable: database is offline. Start Postgres and retry.');
+      return;
+    }
+
     const result = await signIn('credentials', {
       identifier,
       accessKey,
       adminOnly: 'true',
-      redirect: true,
+      redirect: false,
       callbackUrl: '/admin',
     });
 
-    if (result?.error) {
-      setAuthError('Admin access required.');
+    if (result?.ok) {
+      router.replace('/admin');
+      return;
     }
+
+    if (result?.error || result?.status === 401) {
+      setAuthError('Admin access required or temporarily rate-limited. Wait and retry.');
+      return;
+    }
+
+    setAuthError('Unable to establish admin session. Try again.');
   };
 
   return (
@@ -56,6 +107,7 @@ export default function AdminAuthPage() {
               </button>
             </div>
             <div className={styles.slabHint}>ADMIN_CLEARANCE_REQUIRED</div>
+            {serviceWarning && <p className={styles.serviceWarning}>{serviceWarning}</p>}
           </header>
 
           <div className={styles.slabContent}>

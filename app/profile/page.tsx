@@ -1,8 +1,10 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
+import TrendSparkline from '@/components/TrendSparkline';
 import styles from './page.module.css';
 
 type ProfilePayload = {
@@ -77,6 +79,7 @@ function formatLocation(profile: ProfilePayload['profile']) {
 export default function ProfilePage() {
   const router = useRouter();
   const [data, setData] = useState<ProfilePayload>(fallbackProfile);
+  const [history, setHistory] = useState<Array<{ label: string; value: number }>>([]);
   const [statusMessage, setStatusMessage] = useState('');
 
   useEffect(() => {
@@ -97,6 +100,32 @@ export default function ProfilePage() {
       .catch(() => {
         if (isMounted) {
           setStatusMessage('Unable to load profile data.');
+        }
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    fetch('/api/client/portfolio/history?range=6m')
+      .then(async (res) => {
+        if (!res.ok) {
+          throw new Error('Failed to load history');
+        }
+        return res.json();
+      })
+      .then((payload) => {
+        if (isMounted) {
+          setHistory(payload.history || []);
+        }
+      })
+      .catch(() => {
+        if (isMounted) {
+          setHistory([]);
         }
       });
 
@@ -129,19 +158,63 @@ export default function ProfilePage() {
       <Sidebar />
 
       <main className={styles.main}>
-        <header className={styles.header}>
-          <div>
-            <p className={styles.kicker}>User Profile</p>
-            <h1 className={styles.pageTitle}>Personal Identity</h1>
-            <p className={styles.subtitle}>Manage your profile, security, and portfolio visibility.</p>
+        <header className={styles.headerBand}>
+          <div className={styles.headerTop}>
+            <div>
+              <p className={styles.kicker}>User Profile</p>
+              <h1 className={styles.pageTitle}>Personal Identity</h1>
+              <p className={styles.subtitle}>Manage your profile, security posture, and portfolio presence from one workspace.</p>
+
+              <div className={styles.segmentedNav}>
+                <Link href="/" className={styles.segmentLink}>Overview</Link>
+                <Link href="/profile" className={`${styles.segmentLink} ${styles.segmentLinkActive}`}>Profile</Link>
+                <Link href="/settings" className={styles.segmentLink}>Settings</Link>
+              </div>
+            </div>
+            <div className={styles.headerActions}>
+              <button className={styles.secondaryButton} onClick={() => router.push('/profile/security')}>
+                Security
+              </button>
+              <button className={styles.primaryButton} onClick={() => router.push('/profile/edit')}>
+                Edit Profile
+              </button>
+            </div>
           </div>
-          <div className={styles.headerActions}>
-            <button className={styles.secondaryButton} onClick={() => router.push('/profile/security')}>
-              Security
-            </button>
-            <button className={styles.primaryButton} onClick={() => router.push('/profile/edit')}>
-              Edit Profile
-            </button>
+
+          <div className={styles.headerBottom}>
+            <div className={styles.heroSummary}>
+              <article className={styles.heroCard}>
+                <p className={styles.heroLabel}>Portfolio Value</p>
+                <p className={styles.heroValue}>{formatCurrency(data.stats.totalValue)}</p>
+                <p className={styles.heroMeta}>{data.stats.activeHoldings} active holdings</p>
+              </article>
+              <article className={styles.heroCard}>
+                <p className={styles.heroLabel}>Risk Profile</p>
+                <p className={styles.heroValue}>{riskLabel}</p>
+                <p className={styles.heroMeta}>{verification}</p>
+              </article>
+              <article className={styles.heroCard}>
+                <p className={styles.heroLabel}>Member Since</p>
+                <p className={styles.heroValue}>{memberSince}</p>
+                <p className={styles.heroMeta}>{data.activities.length} recent activity items</p>
+              </article>
+            </div>
+
+            <div className={styles.trendPanel}>
+              <div className={styles.trendHeader}>
+                <div>
+                  <p className={styles.heroLabel}>6-Month Value Curve</p>
+                  <p className={styles.trendTitle}>Investor profile context</p>
+                </div>
+              </div>
+              <div className={styles.trendChartShell}>
+                <TrendSparkline
+                  data={history}
+                  ariaLabel="Profile portfolio trend chart"
+                  valueFormat="compactUsd"
+                />
+              </div>
+            </div>
           </div>
         </header>
 

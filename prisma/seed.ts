@@ -10,7 +10,7 @@ function requireEnv(name: string): string {
 }
 
 async function main() {
-  const adminUserId = requireEnv('ADMIN_USER_ID');
+  const adminUserId = requireEnv('ADMIN_USER_ID').toUpperCase();
   const adminPass = requireEnv('ADMIN_PASSWORD');
   const adminName = requireEnv('ADMIN_NAME');
   const adminEmail = requireEnv('ADMIN_EMAIL');

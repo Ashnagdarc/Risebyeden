@@ -373,6 +373,42 @@
   color: var(--text-secondary);
 }
 
+.purchaseSummary {
+  margin-top: 12px;
+  font-family: var(--mono-font);
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--accent-gold);
+}
+
+.badgeNotice {
+  margin-top: 8px;
+  font-family: var(--mono-font);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #4ade80;
+}
+
+.toastSuccess {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 60;
+  max-width: min(420px, calc(100vw - 40px));
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid rgba(74, 222, 128, 0.4);
+  background: rgba(8, 20, 12, 0.95);
+  color: #c7f9da;
+  font-family: var(--mono-font);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.45);
+}
+
 .statusHintList {
   display: flex;
   flex-direction: column;

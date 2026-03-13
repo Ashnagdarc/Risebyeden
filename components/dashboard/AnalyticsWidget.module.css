@@ -1,0 +1,192 @@
+.allocationPanel {
+  flex: 1;
+}
+
+.signalPanel {
+  flex: 1.5;
+}
+
+.panelSubtitle {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  margin-top: 4px;
+}
+
+/* Allocation */
+.allocationContent {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xl);
+  align-items: center;
+  margin-top: var(--space-lg);
+}
+
+.allocationChartWrap {
+  width: 180px;
+  aspect-ratio: 1;
+  position: relative;
+}
+
+.chartEmpty {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  font-size: 11px;
+  color: var(--text-secondary);
+  padding: var(--space-sm);
+  border-radius: 50%;
+  border: 1px dashed var(--border-strong);
+}
+
+.allocationLegend {
+  width: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-md);
+  justify-content: center;
+}
+
+.legendItem {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  background: var(--bg-surface-elevated);
+  padding: 6px 12px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--border-subtle);
+}
+
+.legendSwatch {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.swatchGold { background: #c5a368; }
+.swatchBlue { background: #60a5fa; }
+.swatchGreen { background: #4ade80; }
+.swatchRed { background: #f87171; }
+.swatchLilac { background: #9f7aea; }
+
+.legendText {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.legendLabel {
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.legendValue {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+/* Signals */
+.signalGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: var(--space-md);
+  margin-top: var(--space-lg);
+  margin-bottom: var(--space-xl);
+}
+
+.signalCard {
+  display: flex;
+  gap: var(--space-md);
+  padding: var(--space-md);
+  border-radius: var(--radius-md);
+  background: var(--bg-surface-elevated);
+  border: 1px solid var(--border-subtle);
+}
+
+.signalIcon {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--accent-gold-dim);
+  flex-shrink: 0;
+  color: var(--accent-gold);
+}
+
+.signalIcon svg {
+  width: 16px;
+  height: 16px;
+}
+
+.signalCardBody {
+  min-width: 0;
+}
+
+.signalLabel {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+}
+
+.signalValue {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 2px;
+}
+
+.signalDetail {
+  font-size: 11px;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+/* Performance Bars */
+.performanceBars {
+  display: grid;
+  gap: var(--space-md);
+  margin-top: auto;
+  padding-top: var(--space-lg);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.performanceBarRow {
+  display: grid;
+  gap: 6px;
+}
+
+.performanceBarMeta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.performanceProgress {
+  width: 100%;
+  height: 6px;
+  border-radius: var(--radius-pill);
+  background: var(--bg-surface-elevated);
+  -webkit-appearance: none;
+  appearance: none;
+  border: 0;
+}
+
+.performanceProgress::-webkit-progress-bar {
+  background: var(--bg-surface-elevated);
+  border-radius: var(--radius-pill);
+}
+
+.performanceProgress::-webkit-progress-value {
+  background: linear-gradient(90deg, var(--accent-gold-dim), var(--accent-gold));
+  border-radius: var(--radius-pill);
+}

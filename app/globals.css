@@ -1,30 +1,50 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=SF+Mono:wght@400;500;600&display=swap');
+
 :root {
-  --obsidian-base: #050505;
-  --obsidian-surface: #0a0a0a;
-  --obsidian-elevated: #111111;
-  --glass-sheen: rgba(255, 255, 255, 0.03);
+  /* Apple HIG Typography System */
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+
+  /* Universal Dark Mode Colors (Apple HIG Inspired) */
+  --bg-base: #000000;
+  --bg-surface: #111111;
+  --bg-surface-elevated: #1a1a1a;
+  --bg-surface-glass: rgba(28, 28, 30, 0.7); /* iOS standard dark blur base */
+  
+  --text-primary: #ffffff;
+  --text-secondary: rgba(235, 235, 245, 0.6); /* iOS label secondary dark */
+  --text-tertiary: rgba(235, 235, 245, 0.3);
+
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --border-strong: rgba(255, 255, 255, 0.15);
+
   --accent-gold: #c5a368;
-  --text-primary: #e5e5e5;
-  --text-secondary: #707070;
-  --mono-font: 'JetBrains Mono', monospace;
-  --sans-font: 'Inter', sans-serif;
-  --type-kicker-size: 12px;
-  --type-kicker-track: 0.2em;
-  --type-display-size: 3rem;
-  --type-display-track: -0.04em;
-  --type-subtitle-size: 14px;
-  --type-button-size: 12px;
-  --type-button-track: 0.16em;
-  --type-section-size: 12px;
-  --type-section-track: 0.2em;
-  --relief-shadow: 12px 12px 24px #000, -4px -4px 12px rgba(255,255,255,0.01);
-  --inner-relief: inset 2px 2px 5px rgba(0,0,0,0.8), inset -1px -1px 2px rgba(255,255,255,0.05);
-   --obsidian: #050505;
-   --shard-edge: rgba(255, 255, 255, 0.15);
-   --ticker-red: #ff3e3e;
-   --ticker-green: #00ff88;
-   --accent: #ffffff;
-   --glint: rgba(255, 255, 255, 0.4);
+  --accent-gold-dim: rgba(197, 163, 104, 0.15);
+  
+  --system-green: #34c759;
+  --system-red: #ff3b30;
+  --system-blue: #0a84ff;
+
+  /* Universal Spacing (Base 4/8/16) */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+  --space-2xl: 48px;
+
+  /* Universal Components */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-pill: 9999px;
+
+  /* Shadows & Elevation */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.2);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.6);
+  --glass-blur: blur(20px);
 }
 
 * {
@@ -32,37 +52,45 @@
   padding: 0;
   box-sizing: border-box;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 body {
-  background-color: var(--obsidian-base);
+  background-color: var(--bg-base);
   color: var(--text-primary);
-  font-family: var(--sans-font);
+  font-family: var(--font-sans);
   overflow-y: auto;
   height: 100vh;
 }
 
-::-webkit-scrollbar {
-  width: 6px;
-}
-
-::-webkit-scrollbar-thumb {
-  background: rgba(255,255,255,0.05);
-  border-radius: 10px;
-}
-
-@keyframes slideUp {
-  from { opacity: 0; transform: translateY(40px); }
+/* Animations */
+@keyframes slideUpFade {
+  from { opacity: 0; transform: translateY(16px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
-@keyframes revealSlab {
-  from { opacity: 0; transform: translateY(30px) rotateX(-10deg); }
-  to { opacity: 1; transform: translateY(0) rotateX(0); }
+@keyframes pulseGlow {
+  0% { box-shadow: 0 0 0 0 var(--accent-gold-dim); }
+  70% { box-shadow: 0 0 0 8px transparent; }
+  100% { box-shadow: 0 0 0 0 transparent; }
 }
 
-@keyframes glow {
-  0% { opacity: 0.5; }
-  50% { opacity: 1; box-shadow: 0 0 15px #4ade80; }
-  100% { opacity: 0.5; }
+::selection {
+  background: var(--accent-gold);
+  color: var(--bg-base);
+}
+
+/* Standard Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: var(--radius-pill);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-secondary);
 }

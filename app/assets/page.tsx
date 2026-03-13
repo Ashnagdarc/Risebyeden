@@ -1,9 +1,11 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Sidebar from '@/components/Sidebar';
+import TrendSparkline from '@/components/TrendSparkline';
 import styles from './page.module.css';
 
 interface Asset {
@@ -23,9 +25,11 @@ interface Asset {
 
 interface PortfolioStats {
   totalValue: number;
+  portfolioDeltaPercent: number;
   avgOccupancy: number;
   avgCapRate: number;
   avgAppreciation: number;
+  monthlyHistory: Array<{ label: string; value: number }>;
 }
 
 export default function AssetsPage() {
@@ -36,9 +40,11 @@ export default function AssetsPage() {
   const [assets, setAssets] = useState<Asset[]>([]);
   const [stats, setStats] = useState<PortfolioStats>({
     totalValue: 0,
+    portfolioDeltaPercent: 0,
     avgOccupancy: 0,
     avgCapRate: 0,
     avgAppreciation: 0,
+    monthlyHistory: [],
   });
 
   useEffect(() => {
@@ -65,9 +71,11 @@ export default function AssetsPage() {
         setAssets(nextAssets);
         setStats({
           totalValue: data.stats?.totalValue || 0,
+          portfolioDeltaPercent: data.stats?.portfolioDeltaPercent || 0,
           avgOccupancy: data.stats?.avgOccupancy || 0,
           avgCapRate: data.stats?.avgCapRate || 0,
           avgAppreciation: data.stats?.avgAppreciation || 0,
+          monthlyHistory: data.stats?.monthlyHistory || [],
         });
       })
       .catch(() => {
@@ -89,9 +97,11 @@ export default function AssetsPage() {
   };
 
   const totalValue = stats.totalValue;
+  const portfolioDeltaPercent = stats.portfolioDeltaPercent;
   const avgOccupancy = stats.avgOccupancy;
   const avgCapRate = stats.avgCapRate;
   const avgAppreciation = stats.avgAppreciation;
+  const monthlyHistory = stats.monthlyHistory;
 
   const typeDistribution = useMemo(() => {
     return assets.reduce((acc, asset) => {
@@ -109,6 +119,16 @@ export default function AssetsPage() {
     const options = new Set(assets.map((asset) => asset.city).filter(Boolean));
     return Array.from(options);
   }, [assets]);
+
+  const formatCompactCurrency = (value: number) => {
+    if (value >= 1000000) {
+      return `$${(value / 1000000).toFixed(1)}M`;
+    }
+    if (value >= 1000) {
+      return `$${(value / 1000).toFixed(0)}K`;
+    }
+    return `$${Math.round(value).toLocaleString()}`;
+  };
 
   const filteredAssets = assets
     .filter(asset => filter === 'all' || asset.type === filter)
@@ -171,15 +191,67 @@ export default function AssetsPage() {
       <Sidebar />
 
       <main className={styles.main}>
-        <header className={styles.header}>
-          <div>
-            <p className={styles.kicker}>Portfolio</p>
-            <h1 className={styles.pageTitle}>Asset Distribution</h1>
-            <p className={styles.subtitle}>Complete overview of your real estate holdings and performance metrics.</p>
+        <header className={styles.headerBand}>
+          <div className={styles.headerTop}>
+            <div>
+              <p className={styles.kicker}>Portfolio</p>
+              <h1 className={styles.pageTitle}>Asset Distribution</h1>
+              <p className={styles.subtitle}>Complete overview of your real estate holdings, capital deployment, and regional spread.</p>
+
+              <div className={styles.segmentedNav}>
+                <Link href="/" className={styles.segmentLink}>Overview</Link>
+                <Link href="/analytics" className={styles.segmentLink}>Analytics</Link>
+                <Link href="/assets" className={`${styles.segmentLink} ${styles.segmentLinkActive}`}>Assets</Link>
+              </div>
+            </div>
+
+            <div className={styles.headerActions}>
+              <Link href="/analytics" className={styles.secondaryButton}>Open Analytics</Link>
+              <button className={styles.primaryButton} onClick={() => router.push('/acquire')}>
+                + Acquire Property
+              </button>
+            </div>
           </div>
-          <button className={styles.primaryButton} onClick={() => router.push('/acquire')}>
-            + Acquire Property
-          </button>
+
+          <div className={styles.headerBottom}>
+            <div className={styles.heroSummary}>
+              <article className={styles.heroCard}>
+                <p className={styles.heroLabel}>Portfolio Value</p>
+                <p className={styles.heroValue}>{formatCurrency(totalValue)}</p>
+                <p className={styles.heroMeta}>{portfolioDeltaPercent >= 0 ? '+' : ''}{portfolioDeltaPercent.toFixed(1)}% vs cost basis</p>
+              </article>
+              <article className={styles.heroCard}>
+                <p className={styles.heroLabel}>Tracked Assets</p>
+                <p className={styles.heroValue}>{assets.length}</p>
+                <p className={styles.heroMeta}>Across {cityOptions.length} cities</p>
+              </article>
+              <article className={styles.heroCard}>
+                <p className={styles.heroLabel}>Average Yield</p>
+                <p className={styles.heroValue}>{avgCapRate.toFixed(1)}%</p>
+                <p className={styles.heroMeta}>{avgOccupancy.toFixed(1)}% occupancy</p>
+              </article>
+            </div>
+
+            <div className={styles.trendPanel}>
+              <div className={styles.trendHeader}>
+                <div>
+                  <p className={styles.heroLabel}>6-Month Value Curve</p>
+                  <p className={styles.trendTitle}>Market position over time</p>
+                </div>
+                <div className={styles.trendMetaBlock}>
+                  <strong>{formatCompactCurrency(monthlyHistory[monthlyHistory.length - 1]?.value || 0)}</strong>
+                  <span>Current value</span>
+                </div>
+              </div>
+              <div className={styles.trendChartShell}>
+                <TrendSparkline
+                  data={monthlyHistory}
+                  ariaLabel="Asset portfolio trend chart"
+                  valueFormat="compactUsd"
+                />
+              </div>
+            </div>
+          </div>
         </header>
 
         {/* Summary Stats */}
@@ -187,7 +259,7 @@ export default function AssetsPage() {
           <div className={styles.statCard}>
             <p className={styles.statLabel}>Total Portfolio Value</p>
             <p className={styles.statValue}>{formatCurrency(totalValue)}</p>
-            <p className={styles.statChange}>+14.2% YTD</p>
+            <p className={styles.statChange}>{portfolioDeltaPercent >= 0 ? '+' : ''}{portfolioDeltaPercent.toFixed(1)}% vs cost basis</p>
           </div>
           <div className={styles.statCard}>
             <p className={styles.statLabel}>Avg. Appreciation</p>

@@ -87,23 +87,36 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Invalid price or date' }, { status: 400 });
   }
 
-  const update = await prisma.priceUpdate.create({
-    data: {
-      propertyId: body.propertyId,
-      price,
-      effectiveDate,
-      source: body.source?.trim() || null,
-    },
-    select: {
-      id: true,
-      price: true,
-      effectiveDate: true,
-      source: true,
-      property: { select: { id: true, name: true } },
-    },
+  const shouldApplyNow = effectiveDate.getTime() <= Date.now();
+
+  const update = await prisma.$transaction(async (tx) => {
+    const created = await tx.priceUpdate.create({
+      data: {
+        propertyId: body.propertyId,
+        price,
+        effectiveDate,
+        source: body.source?.trim() || null,
+      },
+      select: {
+        id: true,
+        price: true,
+        effectiveDate: true,
+        source: true,
+        property: { select: { id: true, name: true } },
+      },
+    });
+
+    if (shouldApplyNow) {
+      await tx.property.update({
+        where: { id: body.propertyId },
+        data: { basePrice: price },
+      });
+    }
+
+    return created;
   });
 
   await deleteCacheKeys([CACHE_KEYS.adminOverview]);
 
-  return NextResponse.json({ update });
+  return NextResponse.json({ update, appliedToBasePrice: shouldApplyNow });
 }

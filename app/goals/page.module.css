@@ -1,0 +1,933 @@
+.container {
+  display: flex;
+  min-height: 100vh;
+}
+
+.main {
+  flex: 1;
+  padding: 40px 52px;
+  overflow-y: auto;
+}
+
+.headerBand {
+  display: grid;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.headerTop,
+.headerBottom {
+  display: grid;
+  grid-template-columns: 1.3fr 0.7fr;
+  gap: 16px;
+}
+
+.kicker {
+  font-family: var(--mono-font);
+  font-size: 10px;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--accent-gold);
+  margin-bottom: 10px;
+}
+
+.pageTitle {
+  font-size: clamp(2.15rem, 4vw, 3rem);
+  font-weight: 500;
+  letter-spacing: -0.05em;
+  margin-bottom: 8px;
+}
+
+.subtitle {
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  max-width: 58ch;
+}
+
+.segmentedNav {
+  margin-top: 18px;
+  display: inline-flex;
+  gap: 6px;
+  padding: 6px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.segmentLink {
+  padding: 8px 14px;
+  border-radius: 999px;
+  text-decoration: none;
+  font-family: var(--mono-font);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.segmentLinkActive {
+  background: rgba(197, 163, 104, 0.16);
+  color: var(--accent-gold);
+}
+
+.headerActions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.secondaryLink,
+.primaryLink {
+  padding: 12px 18px;
+  border-radius: 999px;
+  text-decoration: none;
+  font-family: var(--mono-font);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.secondaryLink {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text-primary);
+}
+
+.primaryLink {
+  border: 1px solid rgba(197, 163, 104, 0.3);
+  background: linear-gradient(135deg, rgba(197, 163, 104, 0.94), rgba(160, 125, 66, 0.94));
+  color: #0a0a0a;
+}
+
+.secondaryLink:hover,
+.primaryLink:hover {
+  transform: translateY(-1px);
+}
+
+.heroSummary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.heroCard,
+.trendPanel,
+.summaryCard,
+.rewardPanel,
+.focusPanel,
+.panel {
+  border-radius: 16px;
+  background: linear-gradient(160deg, rgba(14, 14, 14, 0.95) 0%, rgba(8, 8, 8, 1) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  box-shadow: 0 4px 32px rgba(0, 0, 0, 0.55), 0 1px 0 rgba(255, 255, 255, 0.04) inset;
+}
+
+.heroCard {
+  padding: 18px;
+}
+
+.heroLabel,
+.trendMetaBlock span {
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  font-family: var(--mono-font);
+}
+
+.heroValue {
+  margin-top: 10px;
+  font-size: clamp(1.7rem, 3vw, 2.3rem);
+  font-weight: 600;
+  letter-spacing: -0.04em;
+  color: #fff;
+}
+
+.heroMeta {
+  margin-top: 8px;
+  font-size: 11px;
+  color: var(--text-secondary);
+  font-family: var(--mono-font);
+}
+
+.trendPanel {
+  padding: 18px;
+  display: grid;
+  gap: 14px;
+}
+
+.trendHeader {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.trendTitle {
+  margin-top: 8px;
+  font-size: 15px;
+  color: var(--text-primary);
+}
+
+.trendMetaBlock {
+  text-align: right;
+}
+
+.trendMetaBlock strong {
+  display: block;
+  font-family: var(--mono-font);
+  font-size: 14px;
+  color: #fff;
+}
+
+.trendChartShell {
+  min-height: 132px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: radial-gradient(circle at top, rgba(197, 163, 104, 0.09), transparent 62%), rgba(255, 255, 255, 0.02);
+}
+
+.trendChart {
+  width: 100%;
+  height: 116px;
+}
+
+.trendPolyline {
+  fill: none;
+  stroke: #c5a368;
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.trendDot {
+  fill: #0a0a0a;
+  stroke: #c5a368;
+  stroke-width: 2;
+}
+
+.summaryGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.rewardPanel {
+  border-radius: 12px;
+  background: rgba(10, 10, 10, 0.82);
+  border: 1px solid rgba(197, 163, 104, 0.12);
+  box-shadow: var(--relief-shadow);
+  padding: 24px;
+  margin-bottom: 24px;
+}
+
+.rewardHeader,
+.rewardCardTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+.rewardHeader {
+  margin-bottom: 16px;
+}
+
+.rewardKicker,
+.rewardMeta,
+.rewardTier,
+.rewardDays,
+.rewardXp {
+  font-family: var(--mono-font);
+}
+
+.rewardKicker {
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--accent-gold);
+  margin-bottom: 10px;
+}
+
+.rewardTitle {
+  font-size: 22px;
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+}
+
+.rewardMeta {
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.rewardGrid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.rewardCard {
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.02);
+  padding: 14px;
+}
+
+.rewardCardUnlocked {
+  border-color: rgba(197, 163, 104, 0.36);
+  background: linear-gradient(145deg, rgba(197, 163, 104, 0.12), rgba(255, 255, 255, 0.02));
+}
+
+.rewardCardLocked {
+  opacity: 0.72;
+}
+
+.rewardTier,
+.rewardDays {
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.rewardName {
+  margin-top: 8px;
+  font-size: 14px;
+  line-height: 1.3;
+}
+
+.rewardXp {
+  margin-top: 8px;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  color: var(--accent-gold);
+}
+
+.focusPanel {
+  border-radius: 12px;
+  background: rgba(10, 10, 10, 0.82);
+  border: 1px solid rgba(197, 163, 104, 0.12);
+  box-shadow: var(--relief-shadow);
+  padding: 24px;
+  margin-bottom: 24px;
+}
+
+.focusHeader,
+.panelHeader,
+.completedHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.focusHeader {
+  margin-bottom: 18px;
+}
+
+.focusKicker {
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--accent-gold);
+  font-family: var(--mono-font);
+  margin-bottom: 10px;
+}
+
+.focusTitle {
+  font-size: 24px;
+  line-height: 1.05;
+  letter-spacing: -0.04em;
+  max-width: 18ch;
+}
+
+.focusMeta,
+.panelSubtitle,
+.focusCountdown,
+.focusMetrics,
+.completedMeta,
+.completedBadge,
+.completedType {
+  font-family: var(--mono-font);
+}
+
+.focusMeta {
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.focusGrid,
+.completedGrid {
+  display: grid;
+  gap: 14px;
+}
+
+.focusGrid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.focusCard,
+.completedCard {
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.02);
+  padding: 16px;
+}
+
+.focusCardTop,
+.completedCardTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.focusType,
+.completedType {
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--accent-gold);
+}
+
+.focusCountdown {
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.focusCardTitle,
+.completedTitle {
+  font-size: 18px;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  margin-bottom: 8px;
+}
+
+.focusDescription,
+.completedDescription,
+.panelSubtitle,
+.completedMeta {
+  color: var(--text-secondary);
+}
+
+.focusDescription,
+.completedDescription {
+  font-size: 13px;
+  line-height: 1.5;
+  margin-bottom: 12px;
+}
+
+.focusMetrics {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 10px;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.rewardPreview,
+.rewardPreviewRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(197, 163, 104, 0.06);
+  border: 1px solid rgba(197, 163, 104, 0.14);
+}
+
+.rewardPreviewImage {
+  width: 42px;
+  height: 42px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.rewardPreviewFallback {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  background: rgba(197, 163, 104, 0.18);
+  color: var(--accent-gold);
+  font-family: var(--mono-font);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  flex-shrink: 0;
+}
+
+.rewardPreviewLabel,
+.rewardPreviewText,
+.celebrationKicker,
+.celebrationBadgeMeta {
+  font-family: var(--mono-font);
+}
+
+.rewardPreviewLabel {
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--accent-gold);
+  margin-bottom: 4px;
+}
+
+.rewardPreviewText {
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  color: var(--text-secondary);
+}
+
+.summaryCard {
+  padding: 20px;
+  border-radius: 10px;
+  background: rgba(10, 10, 10, 0.85);
+  border: 1px solid rgba(197, 163, 104, 0.12);
+  box-shadow: var(--relief-shadow);
+}
+
+.summaryLabel {
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  font-family: var(--mono-font);
+  margin-bottom: 10px;
+}
+
+.summaryValue {
+  font-size: 30px;
+  letter-spacing: -0.03em;
+}
+
+.layoutGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 420px);
+  gap: 20px;
+  align-items: start;
+}
+
+.contentColumn {
+  display: grid;
+  gap: 20px;
+}
+
+.panel {
+  border-radius: 12px;
+  background: rgba(10, 10, 10, 0.82);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: var(--relief-shadow);
+  padding: 24px;
+}
+
+.panelTitle {
+  font-size: 12px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--accent-gold);
+  font-family: var(--mono-font);
+  margin-bottom: 10px;
+}
+
+.panelSubtitle {
+  font-size: 13px;
+  line-height: 1.5;
+  margin-bottom: 18px;
+}
+
+.form {
+  display: grid;
+  gap: 12px;
+}
+
+.label {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-family: var(--mono-font);
+  color: var(--text-secondary);
+}
+
+.input,
+.textarea {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.02);
+  color: var(--text-primary);
+  border-radius: 8px;
+  padding: 12px;
+  font-size: 14px;
+  font-family: var(--sans-font);
+}
+
+.input:focus,
+.textarea:focus {
+  outline: none;
+  border-color: rgba(197, 163, 104, 0.55);
+  box-shadow: 0 0 0 2px rgba(197, 163, 104, 0.2);
+}
+
+.textarea {
+  min-height: 84px;
+  resize: vertical;
+}
+
+.primaryButton {
+  margin-top: 4px;
+  padding: 13px 16px;
+  border-radius: 8px;
+  border: 1px solid var(--accent-gold);
+  background: var(--accent-gold);
+  color: #070707;
+  font-family: var(--mono-font);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.primaryButton:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.placeholder {
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.goalList {
+  display: grid;
+  gap: 14px;
+}
+
+.sectionDivider {
+  height: 1px;
+  background: linear-gradient(90deg, rgba(197, 163, 104, 0.18), rgba(255, 255, 255, 0.04));
+  margin: 22px 0;
+}
+
+.goalCard {
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.015);
+  padding: 16px;
+}
+
+.goalHead {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 10px;
+}
+
+.goalType {
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--accent-gold);
+  font-family: var(--mono-font);
+  margin-bottom: 4px;
+}
+
+.goalTitle {
+  font-size: 18px;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+}
+
+.goalMeta {
+  text-align: right;
+  font-size: 11px;
+  color: var(--text-secondary);
+  font-family: var(--mono-font);
+  display: grid;
+  gap: 6px;
+}
+
+.statusBadge {
+  border: 1px solid rgba(197, 163, 104, 0.4);
+  border-radius: 999px;
+  padding: 4px 8px;
+  color: var(--accent-gold);
+}
+
+.completedBadge {
+  border: 1px solid rgba(197, 163, 104, 0.4);
+  border-radius: 999px;
+  padding: 5px 8px;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent-gold);
+  background: rgba(197, 163, 104, 0.08);
+}
+
+.completedMeta {
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  line-height: 1.6;
+}
+
+.goalDescription {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.45;
+  margin-bottom: 12px;
+}
+
+.progressTrack {
+  width: 100%;
+  height: 8px;
+  border-radius: 999px;
+  overflow: hidden;
+  border: 0;
+  background: rgba(255, 255, 255, 0.08);
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.progressTrack::-webkit-progress-bar {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+}
+
+.progressTrack::-webkit-progress-value {
+  background: linear-gradient(90deg, rgba(197, 163, 104, 0.5), rgba(197, 163, 104, 1));
+  border-radius: 999px;
+}
+
+.progressTrack::-moz-progress-bar {
+  background: linear-gradient(90deg, rgba(197, 163, 104, 0.5), rgba(197, 163, 104, 1));
+  border-radius: 999px;
+}
+
+.goalStats {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 10px;
+  font-size: 13px;
+}
+
+.goalFooter {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 14px;
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-family: var(--mono-font);
+}
+
+.goalActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.secondaryButton,
+.ghostButton {
+  border-radius: 8px;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-family: var(--mono-font);
+  padding: 8px 10px;
+  cursor: pointer;
+}
+
+.secondaryButton {
+  border: 1px solid rgba(197, 163, 104, 0.45);
+  background: rgba(197, 163, 104, 0.1);
+  color: var(--accent-gold);
+}
+
+.secondaryButton:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.ghostButton {
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: transparent;
+  color: var(--text-secondary);
+}
+
+.statusMessage {
+  margin-top: 18px;
+  font-size: 12px;
+  color: var(--accent-gold);
+  font-family: var(--mono-font);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.celebrationOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(4, 4, 4, 0.72);
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  z-index: 40;
+}
+
+.celebrationModal {
+  width: min(560px, 100%);
+  border-radius: 18px;
+  border: 1px solid rgba(197, 163, 104, 0.24);
+  background: rgba(10, 10, 10, 0.96);
+  box-shadow: var(--relief-shadow);
+  padding: 28px;
+}
+
+.celebrationKicker {
+  font-size: 11px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--accent-gold);
+  margin-bottom: 10px;
+}
+
+.celebrationTitle {
+  font-size: 28px;
+  letter-spacing: -0.04em;
+  margin-bottom: 8px;
+}
+
+.celebrationText {
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.celebrationBadgeGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin: 20px 0 22px;
+}
+
+.celebrationBadgeCard {
+  border-radius: 14px;
+  border: 1px solid rgba(197, 163, 104, 0.16);
+  background: rgba(255, 255, 255, 0.02);
+  padding: 14px;
+  text-align: center;
+}
+
+.celebrationBadgeImage {
+  width: 72px;
+  height: 72px;
+  object-fit: contain;
+  margin: 0 auto 10px;
+}
+
+.celebrationBadgeTitle {
+  font-size: 14px;
+  color: var(--text-primary);
+  margin-bottom: 6px;
+}
+
+.celebrationBadgeMeta {
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--accent-gold);
+}
+
+@media (max-width: 1200px) {
+  .main {
+    padding: 44px 24px;
+  }
+
+  .headerTop,
+  .headerBottom {
+    grid-template-columns: 1fr;
+  }
+
+  .summaryGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .layoutGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .focusGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .rewardGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .summaryGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .main {
+    padding: 30px 16px;
+  }
+
+  .segmentedNav,
+  .headerActions,
+  .heroSummary {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .secondaryLink,
+  .primaryLink {
+    width: 100%;
+    text-align: center;
+  }
+
+  .goalHead {
+    flex-direction: column;
+  }
+
+  .focusGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .rewardGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .focusHeader,
+  .panelHeader,
+  .completedHeader {
+    flex-direction: column;
+  }
+
+  .goalMeta {
+    text-align: left;
+  }
+
+  .goalFooter {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+}

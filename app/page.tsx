@@ -1,13 +1,27 @@
+import Image from 'next/image';
 import Link from 'next/link';
 import { getServerSession } from 'next-auth/next';
 import { redirect } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
 import Header from '@/components/Header';
-import StatSlab from '@/components/StatSlab';
 import PropertyRow from '@/components/PropertyRow';
+
+import OverviewRow from '@/components/dashboard/OverviewRow';
+import PortfolioAllocationWidget from '@/components/dashboard/PortfolioAllocationWidget';
+import PortfolioSignalsWidget from '@/components/dashboard/PortfolioSignalsWidget';
+import GrowthPersonaWidget from '@/components/dashboard/GrowthPersonaWidget';
+import GoalsWidget from '@/components/dashboard/GoalsWidget';
+import RecentActivityWidget from '@/components/dashboard/RecentActivityWidget';
+import QuickActionsWidget from '@/components/dashboard/QuickActionsWidget';
+import HeroSplineWidget from '@/components/dashboard/HeroSplineWidget';
+
 import { authOptions } from '@/lib/auth';
+import { type BadgeGoalType, getClientBadges } from '@/lib/client-badges';
+import { getUserOnboardingState } from '@/lib/onboarding-state';
 import prisma from '@/lib/prisma';
 import { QUERY_LIMITS } from '@/lib/db/query-limits';
+import { buildGoalPortfolioSnapshot, calculateGoalProgress, getGoalCountdownLabel } from '@/lib/goals';
+import { buildPortfolioMonthlyHistory } from '@/lib/portfolio-history';
 import styles from './page.module.css';
 
 export default async function Home() {
@@ -29,6 +43,23 @@ export default async function Home() {
     redirect('/auth');
   }
 
+  const onboardingState = await getUserOnboardingState(userId);
+
+  if (!onboardingState?.onboardingCompleted) {
+    redirect('/onboarding');
+  }
+
+  const [clientProfile, userSettings] = await Promise.all([
+    prisma.clientProfile.findUnique({
+      where: { userId },
+      select: { riskProfile: true },
+    }),
+    prisma.userSettings.findUnique({
+      where: { userId },
+      select: { portfolioStrategy: true },
+    }),
+  ]);
+
   const clientProperties = await prisma.clientProperty.findMany({
     where: { userId },
     orderBy: { purchasedAt: 'desc' },
@@ -36,6 +67,7 @@ export default async function Home() {
     select: {
       quantity: true,
       purchasePrice: true,
+      purchasedAt: true,
       property: {
         select: {
           id: true,
@@ -48,6 +80,13 @@ export default async function Home() {
           capRate: true,
           basePrice: true,
           occupancy: true,
+          priceUpdates: {
+            orderBy: { effectiveDate: 'asc' },
+            select: {
+              price: true,
+              effectiveDate: true,
+            },
+          },
         },
       },
     },
@@ -81,9 +120,17 @@ export default async function Home() {
 
   const totalValue = clientProperties.reduce((sum, entry) => {
     const quantity = entry.quantity || 1;
-    const purchasePrice = entry.purchasePrice ? Number(entry.purchasePrice) : null;
     const basePrice = entry.property.basePrice ? Number(entry.property.basePrice) : 0;
-    return sum + quantity * (purchasePrice ?? basePrice);
+    return sum + quantity * basePrice;
+  }, 0);
+  const totalPropertyUnits = clientProperties.reduce((sum, entry) => sum + (entry.quantity || 1), 0);
+  const userName = (session?.user as { name?: string } | undefined)?.name?.split(' ')[0] || 'Investor';
+
+  const investedBasis = clientProperties.reduce((sum, entry) => {
+    const quantity = entry.quantity || 1;
+    const purchasePrice = entry.purchasePrice ? Number(entry.purchasePrice) : null;
+    const fallbackBasePrice = entry.property.basePrice ? Number(entry.property.basePrice) : 0;
+    return sum + quantity * (purchasePrice ?? fallbackBasePrice);
   }, 0);
 
   const avgOccupancy = properties.length
@@ -95,12 +142,150 @@ export default async function Home() {
   const avgAppreciation = properties.length
     ? properties.reduce((sum, property) => sum + property.appreciationValue, 0) / properties.length
     : 0;
+  const portfolioDeltaPercent =
+    investedBasis > 0
+      ? ((totalValue - investedBasis) / investedBasis) * 100
+      : avgAppreciation;
 
-  const updates = await prisma.announcement.findMany({
-    orderBy: { createdAt: 'desc' },
-    take: 3,
-    select: { id: true, title: true, createdAt: true },
-  });
+  const portfolioTrend = buildPortfolioMonthlyHistory(
+    clientProperties.map((entry) => ({
+      quantity: entry.quantity,
+      purchasePrice: entry.purchasePrice ? Number(entry.purchasePrice) : null,
+      purchasedAt: entry.purchasedAt,
+      property: {
+        basePrice: entry.property.basePrice ? Number(entry.property.basePrice) : null,
+        priceUpdates: entry.property.priceUpdates.map((update) => ({
+          price: Number(update.price),
+          effectiveDate: update.effectiveDate,
+        })),
+      },
+    }))
+  );
+
+  const typeTotals = clientProperties.reduce((acc, entry) => {
+    const propertyType = entry.property.propertyType || 'Residential';
+    const quantity = entry.quantity || 1;
+    const basePrice = entry.property.basePrice ? Number(entry.property.basePrice) : 0;
+    acc[propertyType] = (acc[propertyType] || 0) + quantity * basePrice;
+    return acc;
+  }, {} as Record<string, number>);
+
+  const allocationPalette = [
+    { color: '#c5a368', swatchClass: styles.swatchGold },
+    { color: '#60a5fa', swatchClass: styles.swatchBlue },
+    { color: '#4ade80', swatchClass: styles.swatchGreen },
+    { color: '#f87171', swatchClass: styles.swatchRed },
+    { color: '#9f7aea', swatchClass: styles.swatchLilac },
+  ];
+  const allocationData = Object.entries(typeTotals)
+    .sort((a, b) => b[1] - a[1])
+    .map(([label, value], index) => ({
+      label,
+      rawValue: value,
+      value: totalValue > 0 ? Number(((value / totalValue) * 100).toFixed(1)) : 0,
+      color: allocationPalette[index % allocationPalette.length].color,
+      swatchClass: allocationPalette[index % allocationPalette.length].swatchClass,
+    }));
+
+  const dominantAllocation = allocationData[0] || null;
+  const topPerformer = [...properties].sort((a, b) => b.appreciationValue - a.appreciationValue)[0] || null;
+  const performanceBars = [
+    {
+      label: 'Occupancy strength',
+      value: Math.max(0, Math.min(100, avgOccupancy)),
+      displayValue: `${avgOccupancy.toFixed(1)}%`,
+    },
+    {
+      label: 'Yield efficiency',
+      value: Math.max(0, Math.min(100, avgCapRate * 10)),
+      displayValue: `${avgCapRate.toFixed(1)}%`,
+    },
+    {
+      label: 'Appreciation momentum',
+      value: Math.max(0, Math.min(100, avgAppreciation * 10)),
+      displayValue: `${avgAppreciation >= 0 ? '+' : ''}${avgAppreciation.toFixed(1)}%`,
+    },
+  ];
+
+  const ownedPropertyIds = clientProperties.map((entry) => entry.property.id);
+
+  const [completedGoalTypes, recentPurchases, recentCompletedGoals, recentPriceUpdates] = await Promise.all([
+    prisma.goal.findMany({
+      where: { userId, status: 'COMPLETED' },
+      select: { type: true },
+    }),
+    prisma.clientProperty.findMany({
+      where: { userId },
+      orderBy: { purchasedAt: 'desc' },
+      take: 4,
+      select: {
+        id: true,
+        quantity: true,
+        purchasedAt: true,
+        property: {
+          select: {
+            name: true,
+          },
+        },
+      },
+    }),
+    prisma.goal.findMany({
+      where: {
+        userId,
+        status: 'COMPLETED',
+        completedAt: { not: null },
+      },
+      orderBy: { completedAt: 'desc' },
+      take: 4,
+      select: {
+        id: true,
+        title: true,
+        completedAt: true,
+      },
+    }),
+    ownedPropertyIds.length > 0
+      ? prisma.priceUpdate.findMany({
+          where: {
+            propertyId: { in: ownedPropertyIds },
+          },
+          orderBy: { effectiveDate: 'desc' },
+          take: 4,
+          select: {
+            id: true,
+            price: true,
+            effectiveDate: true,
+            property: {
+              select: {
+                name: true,
+              },
+            },
+          },
+        })
+      : Promise.resolve([]),
+  ]);
+
+  const recentActivity = [
+    ...recentPurchases.map((purchase) => ({
+      id: `purchase-${purchase.id}`,
+      title: `Acquired ${purchase.quantity || 1} x ${purchase.property.name}`,
+      createdAt: purchase.purchasedAt,
+      href: '/assets',
+    })),
+    ...recentCompletedGoals.map((goal) => ({
+      id: `goal-${goal.id}`,
+      title: `Completed goal: ${goal.title}`,
+      createdAt: goal.completedAt as Date,
+      href: '/goals',
+    })),
+    ...recentPriceUpdates.map((update) => ({
+      id: `price-${update.id}`,
+      title: `Price updated: ${update.property.name} to $${Math.round(Number(update.price)).toLocaleString()}`,
+      createdAt: update.effectiveDate,
+      href: '/assets',
+    })),
+  ]
+    .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+    .slice(0, 4);
 
   const formatRelativeTime = (value: Date) => {
     const now = new Date();
@@ -117,129 +302,284 @@ export default async function Home() {
     return `${diffDays} days ago`;
   };
 
+  const formatGoalMetric = (type: string, value: number) => {
+    if (type === 'ASSET_VALUE') {
+      return `₦${Math.round(value).toLocaleString()}`;
+    }
+
+    if (type === 'PROPERTY_APPRECIATION') {
+      return `${value.toFixed(1)}%`;
+    }
+
+    return `${Math.round(value).toLocaleString()}`;
+  };
+
+  const experienceLabelMap: Record<string, string> = {
+    new: 'First-time investor',
+    starter: 'Getting started',
+    growing: 'Building momentum',
+    established: 'Established investor',
+  };
+
+  const focusLabelMap: Record<string, string> = {
+    residential: 'Residential',
+    commercial: 'Commercial',
+    land: 'Land & Plots',
+    mixed: 'Mixed Portfolio',
+  };
+
+  const profileExperienceKey = (clientProfile?.riskProfile || 'new').toLowerCase();
+  const currentExperienceKey =
+    totalPropertyUnits >= 5
+      ? 'established'
+      : totalPropertyUnits >= 3
+      ? 'growing'
+      : totalPropertyUnits >= 1
+      ? 'starter'
+      : profileExperienceKey;
+  const currentExperienceLabel = experienceLabelMap[currentExperienceKey] || 'First-time investor';
+  const focusKeys = (userSettings?.portfolioStrategy || '')
+    .split(',')
+    .map((value) => value.trim().toLowerCase())
+    .filter(Boolean);
+  const focusLabels = focusKeys
+    .map((key) => focusLabelMap[key])
+    .filter(Boolean);
+  const signalCards = [
+    {
+      id: 'allocation',
+      title: 'Dominant allocation',
+      value: dominantAllocation ? `${dominantAllocation.value.toFixed(1)}%` : '0%',
+      detail: dominantAllocation ? dominantAllocation.label : 'No allocation yet',
+    },
+    {
+      id: 'top-asset',
+      title: 'Top performer',
+      value: topPerformer ? topPerformer.name : 'No assets yet',
+      detail: topPerformer ? `${topPerformer.appreciation} appreciation` : 'Start acquiring to unlock performance data',
+    },
+    {
+      id: 'focus',
+      title: 'Portfolio focus',
+      value: focusLabels.length ? focusLabels[0] : 'Unassigned',
+      detail: focusLabels.length > 1 ? focusLabels.slice(1).join(' • ') : 'Set a strategy in Settings to personalize recommendations',
+    },
+    {
+      id: 'delta',
+      title: 'Net portfolio delta',
+      value: `${portfolioDeltaPercent >= 0 ? '+' : ''}${portfolioDeltaPercent.toFixed(1)}%`,
+      detail: investedBasis > 0 ? 'Relative to invested cost basis' : 'Tracking live appreciation average',
+    },
+  ];
+
+  const goalSnapshot = buildGoalPortfolioSnapshot(
+    clientProperties.map((entry) => ({
+      quantity: entry.quantity,
+      purchasePrice: entry.purchasePrice ? Number(entry.purchasePrice) : null,
+      property: {
+        id: entry.property.id,
+        name: entry.property.name,
+        location: entry.property.location,
+        city: entry.property.city,
+        appreciation: entry.property.appreciation,
+        basePrice: entry.property.basePrice ? Number(entry.property.basePrice) : null,
+      },
+    }))
+  );
+
+  let dashboardGoals: Array<{
+    id: string;
+    title: string;
+    type: string;
+    status: string;
+    countdownLabel: string;
+    progressPercent: number;
+    currentMetric: string;
+    targetMetric: string;
+  }> = [];
+
+  try {
+    const goals = await prisma.goal.findMany({
+      where: {
+        userId,
+        status: {
+          in: ['ACTIVE', 'COMPLETED', 'EXPIRED'],
+        },
+      },
+      orderBy: [{ status: 'asc' }, { targetDate: 'asc' }, { createdAt: 'desc' }],
+      take: 3,
+    });
+
+    const now = new Date();
+    dashboardGoals = goals.map((goal) => {
+      const computed = calculateGoalProgress(
+        {
+          type: goal.type,
+          targetDate: goal.targetDate,
+          targetValue: goal.targetValue ? Number(goal.targetValue) : 0,
+          targetCount: goal.targetCount,
+          targetPercent: goal.targetPercent,
+          referencePropertyId: goal.referencePropertyId,
+          referenceLabel: goal.referenceLabel,
+          currentValue: goal.currentValue ? Number(goal.currentValue) : 0,
+        },
+        goalSnapshot,
+        now
+      );
+
+      const resolvedStatus =
+        goal.status === 'ACTIVE' && computed.isComplete
+          ? 'COMPLETED'
+          : goal.status === 'ACTIVE' && computed.isExpired
+          ? 'EXPIRED'
+          : goal.status;
+
+      return {
+        id: goal.id,
+        title: goal.title,
+        type: goal.type,
+        status: resolvedStatus,
+        countdownLabel: getGoalCountdownLabel(resolvedStatus, computed.daysLeft),
+        progressPercent: computed.progressPercent,
+        currentMetric: formatGoalMetric(goal.type, computed.currentValue),
+        targetMetric: formatGoalMetric(goal.type, computed.targetValue),
+      };
+    });
+  } catch (error) {
+    console.error('Failed to load goals preview', error);
+  }
+
+  const levelConfig: Record<string, { next: string | null; targetUnits: number; questTitle: string }> = {
+    new: {
+      next: 'starter',
+      targetUnits: 1,
+      questTitle: 'Acquire your first property to unlock Getting Started tier',
+    },
+    starter: {
+      next: 'growing',
+      targetUnits: 3,
+      questTitle: 'Scale to 3 properties to unlock Building Momentum tier',
+    },
+    growing: {
+      next: 'established',
+      targetUnits: 5,
+      questTitle: 'Grow to 5 properties to unlock Established Investor tier',
+    },
+    established: {
+      next: null,
+      targetUnits: 5,
+      questTitle: 'Maintain elite performance and keep compounding your portfolio',
+    },
+  };
+
+  const currentLevel = levelConfig[currentExperienceKey] || levelConfig.new;
+  const nextExperienceLabel = currentLevel.next ? experienceLabelMap[currentLevel.next] : 'Elite Growth Track';
+  const levelProgressPercent = Math.min(100, (totalPropertyUnits / currentLevel.targetUnits) * 100);
+  const xpPoints = Math.round(totalValue / 1000000) + dashboardGoals.filter((goal) => goal.status === 'COMPLETED').length * 50;
+  const primeGoal = dashboardGoals.find((goal) => goal.status === 'ACTIVE') || dashboardGoals[0] || null;
+
+  const badgeMetrics = {
+    totalPropertyUnits,
+    avgAppreciation,
+    completedGoalCount: completedGoalTypes.length,
+    completedGoalTypes: completedGoalTypes.map((goal) => goal.type as BadgeGoalType),
+    bestStreak: 0,
+    experienceKey: currentExperienceKey,
+  };
+
+  const badges = getClientBadges(badgeMetrics);
+  const unlockedBadges = badges.filter((badge) => badge.unlocked);
+  const topUnlockedBadges = unlockedBadges.slice(0, 3);
+  const nextBadge = badges.find((badge) => !badge.unlocked) || null;
+  const activeDashboardGoals = dashboardGoals.filter((goal) => goal.status === 'ACTIVE').slice(0, 3);
+
+  const unlockedBadgeCount = badges.filter((badge) => badge.unlocked).length;
+  const activeDashboardGoalCount = dashboardGoals.filter((goal) => goal.status === 'ACTIVE').length;
+
   return (
     <div className={styles.container}>
       <Sidebar />
       
       <main className={styles.main}>
-        <Header totalValue={totalValue} deltaPercent={avgAppreciation} />
+        <Header
+          totalValue={totalValue}
+          deltaPercent={portfolioDeltaPercent}
+          userName={userName}
+          totalUnits={totalPropertyUnits}
+          activeGoals={activeDashboardGoalCount}
+          trendPoints={portfolioTrend}
+        />
         
         <section className={styles.gridLayout}>
-          {/* Stat Slabs */}
-          <StatSlab label="Avg Cap Rate" value={`${avgCapRate.toFixed(2)}%`} delay={0}>
-            <div className={styles.chartLine}></div>
-          </StatSlab>
-          
-          <StatSlab label="Avg Appreciation" value={`+${avgAppreciation.toFixed(2)}%`} delay={0.1}>
-            <div className={styles.barChart}>
-              <div className={`${styles.barSegment} ${styles.barLow}`}></div>
-              <div className={`${styles.barSegment} ${styles.barMid}`}></div>
-              <div className={`${styles.barSegment} ${styles.barMidHigh}`}></div>
-              <div className={`${styles.barSegment} ${styles.barPeak}`}></div>
-            </div>
-          </StatSlab>
-          
-          <StatSlab label="Avg Occupancy" value={`${avgOccupancy.toFixed(1)}%`} delay={0.2}>
-            <div className={styles.operational}>
-              <span className={styles.pulse}></span>
-              All systems operational
-            </div>
-          </StatSlab>
+          {/* LEFT COLUMN: Strong Analytics & Assets */}
+          <div className={styles.leftColumn}>
+            <OverviewRow 
+              metrics={[
+                { label: 'Avg. Cap Rate', value: avgCapRate.toFixed(1), unit: '%', trendText: 'Yield efficiency across portfolio' },
+                { label: 'Avg. Occupancy', value: avgOccupancy.toFixed(1), unit: '%', trendText: 'Unit utilisation rate' },
+                { label: 'Avg. Appreciation', value: `${avgAppreciation >= 0 ? '+' : ''}${avgAppreciation.toFixed(1)}`, unit: '%', trendText: 'Capital growth trend', isPositive: avgAppreciation >= 0 },
+                { label: 'Total Invested', value: investedBasis >= 1000000 ? `$${(investedBasis / 1000000).toFixed(1)}M` : `$${investedBasis.toLocaleString()}`, unit: '', trendText: 'Cost basis deployed' },
+              ]}
+            />
 
-          {/* Quick Actions */}
-          <div className={styles.quickActionsPanel}>
-            <h3 className={styles.panelTitle}>Quick Actions</h3>
-            <div className={styles.actionsList}>
-              <Link href="/consultation" className={styles.actionItem}>
-                <span className={styles.actionIcon}>
-                  <svg viewBox="0 0 24 24" fill="none" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                    <line x1="16" y1="2" x2="16" y2="6"></line>
-                    <line x1="8" y1="2" x2="8" y2="6"></line>
-                    <line x1="3" y1="10" x2="21" y2="10"></line>
-                  </svg>
-                </span>
-                <span>Book Consultation</span>
-              </Link>
-              <Link href="/assets" className={styles.actionItem}>
-                <span className={styles.actionIcon}>
-                  <svg viewBox="0 0 24 24" fill="none" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
-                    <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
-                    <line x1="12" y1="22.08" x2="12" y2="12"></line>
-                  </svg>
-                </span>
-                <span>View Portfolio</span>
-              </Link>
-              <Link href="/updates" className={styles.actionItem}>
-                <span className={styles.actionIcon}>
-                  <svg viewBox="0 0 24 24" fill="none" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
-                    <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
-                  </svg>
-                </span>
-                <span>Core Updates</span>
-              </Link>
-              <Link href="/settings" className={styles.actionItem}>
-                <span className={styles.actionIcon}>
-                  <svg viewBox="0 0 24 24" fill="none" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                    <circle cx="12" cy="12" r="3"></circle>
-                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
-                  </svg>
-                </span>
-                <span>Settings</span>
-              </Link>
+            <div className={styles.analyticsBand}>
+              <PortfolioAllocationWidget data={allocationData} />
+              <PortfolioSignalsWidget signals={signalCards} performanceBars={performanceBars} />
             </div>
-          </div>
 
-          {/* Recent Activity */}
-          <div className={styles.activityPanel}>
-            <h3 className={styles.panelTitle}>Recent Activity</h3>
-            <div className={styles.activityList}>
-              {updates.length === 0 && (
-                <div className={styles.activityItem}>
-                  <span className={styles.activityDot}></span>
-                  <div className={styles.activityContent}>
-                    <p className={styles.activityText}>No updates yet.</p>
-                    <p className={styles.activityTime}>Check back soon</p>
-                  </div>
-                </div>
-              )}
-              {updates.map((update) => (
-                <div key={update.id} className={styles.activityItem}>
-                  <span className={styles.activityDot}></span>
-                  <div className={styles.activityContent}>
-                    <p className={styles.activityText}>{update.title}</p>
-                    <p className={styles.activityTime}>{formatRelativeTime(update.createdAt)}</p>
-                  </div>
-                </div>
+            <div className={styles.propertyListSlab}>
+              <div className={styles.sectionHeader}>
+                <h2>Asset Distribution</h2>
+                <Link href="/assets" className={styles.viewAll}>View All Assets →</Link>
+              </div>
+
+              {properties.map((property) => (
+                <PropertyRow
+                  key={property.id}
+                  id={property.id}
+                  name={property.name}
+                  location={property.location}
+                  type={property.type}
+                  appreciation={property.appreciation}
+                  capRate={property.capRate}
+                  valuation={property.valuation}
+                  gradientClass={property.gradientClass}
+                />
               ))}
             </div>
+            
+            <RecentActivityWidget activity={recentActivity.map(a => ({
+               ...a,
+               createdAt: formatRelativeTime(a.createdAt)
+            }))} />
           </div>
 
-          {/* Property List */}
-          <div className={styles.propertyListSlab}>
-            <div className={styles.propertyHeader}>
-              <h2>Asset Distribution</h2>
-              <Link href="/assets" className={styles.viewAll}>View All Assets →</Link>
-            </div>
-
-            {properties.map((property) => (
-              <PropertyRow
-                key={property.id}
-                id={property.id}
-                name={property.name}
-                location={property.location}
-                type={property.type}
-                appreciation={property.appreciation}
-                capRate={property.capRate}
-                valuation={property.valuation}
-                gradientClass={property.gradientClass}
-              />
-            ))}
+          {/* RIGHT COLUMN: Momentum & Activity */}
+          <div className={styles.rightColumn}>
+            <HeroSplineWidget />
+            
+            <GoalsWidget goals={activeDashboardGoals} />
+            
+            <GrowthPersonaWidget 
+              xpPoints={xpPoints}
+              currentExperienceLabel={currentExperienceLabel}
+              focusLabels={focusLabels}
+              currentLevel={currentLevel}
+              totalPropertyUnits={totalPropertyUnits}
+              nextExperienceLabel={nextExperienceLabel}
+              levelProgressPercent={levelProgressPercent}
+              primeGoal={primeGoal}
+              unlockedBadgeCount={unlockedBadgeCount}
+              totalBadgesCount={badges.length}
+              topUnlockedBadges={topUnlockedBadges}
+              nextBadge={nextBadge}
+            />
+            
+            <QuickActionsWidget />
           </div>
         </section>
       </main>
     </div>
   );
 }
+

@@ -1,5 +1,6 @@
 'use client';
 
+import confetti from 'canvas-confetti';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import Sidebar from '@/components/Sidebar';
 import AdminNav from '@/components/AdminNav';
@@ -28,15 +29,23 @@ type PropertyRecord = {
   basePrice: number | null;
 };
 
+type AssignmentCelebration = {
+  clientName: string;
+  propertyName: string;
+  totalPurchase: number;
+  unlockedBadges: string[];
+};
+
 export default function ClientPortfolios() {
   const [clients, setClients] = useState<ClientSummary[]>([]);
   const [properties, setProperties] = useState<PropertyRecord[]>([]);
   const [selectedClientId, setSelectedClientId] = useState('');
   const [selectedPropertyId, setSelectedPropertyId] = useState('');
   const [quantity, setQuantity] = useState('1');
-  const [purchasePrice, setPurchasePrice] = useState('');
   const [notes, setNotes] = useState('');
   const [statusMessage, setStatusMessage] = useState('');
+  const [toastMessage, setToastMessage] = useState('');
+  const [celebration, setCelebration] = useState<AssignmentCelebration | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isAssignOpen, setIsAssignOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
@@ -85,20 +94,52 @@ export default function ClientPortfolios() {
     fetchProperties();
   }, [fetchClients, fetchProperties]);
 
+  const selectedProperty = useMemo(
+    () => properties.find((property) => property.id === selectedPropertyId) || null,
+    [properties, selectedPropertyId]
+  );
+  const selectedClient = useMemo(
+    () => clients.find((client) => client.id === selectedClientId) || null,
+    [clients, selectedClientId]
+  );
+
+  const parsedQuantity = useMemo(() => {
+    const value = Number.parseInt(quantity, 10);
+    return Number.isFinite(value) && value > 0 ? value : 1;
+  }, [quantity]);
+
+  const unitPrice = selectedProperty?.basePrice ? Number(selectedProperty.basePrice) : 0;
+  const totalPurchaseEstimate = unitPrice * parsedQuantity;
+
+  const triggerToast = useCallback((message: string) => {
+    setToastMessage(message);
+  }, []);
+
+  useEffect(() => {
+    if (!toastMessage) {
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      setToastMessage('');
+    }, 4200);
+
+    return () => window.clearTimeout(timer);
+  }, [toastMessage]);
+
   const handleAssign = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setStatusMessage('');
 
     if (!selectedClientId || !selectedPropertyId) {
       setStatusMessage('Select a client and property first.');
+      triggerToast('Select a client and property first.');
       return;
     }
 
     setIsSubmitting(true);
 
-    const parsedQuantity = Number.parseInt(quantity, 10);
-    const normalizedPrice = purchasePrice.replace(/[^0-9.]/g, '');
-    const parsedPrice = normalizedPrice ? Number.parseFloat(normalizedPrice) : null;
+    const parsedPrice = unitPrice > 0 ? unitPrice : null;
 
     const res = await fetch('/api/admin/purchases', {
       method: 'POST',
@@ -106,20 +147,55 @@ export default function ClientPortfolios() {
       body: JSON.stringify({
         userId: selectedClientId,
         propertyId: selectedPropertyId,
-        quantity: Number.isFinite(parsedQuantity) ? parsedQuantity : 1,
+        quantity: parsedQuantity,
         purchasePrice: parsedPrice,
         notes,
       }),
     });
 
     if (res.ok) {
+      const beforeCount = selectedClient?.propertyCount || 0;
+      const afterCount = beforeCount + parsedQuantity;
+      const unlockedBadges: string[] = [];
+
+      if (beforeCount < 1 && afterCount >= 1) {
+        unlockedBadges.push('Deal Starter');
+      }
+      if (beforeCount < 3 && afterCount >= 3) {
+        unlockedBadges.push('Portfolio Builder');
+      }
+      if (beforeCount < 5 && afterCount >= 5) {
+        unlockedBadges.push('Empire Status');
+      }
+
       setStatusMessage('Property assigned to client.');
-      setPurchasePrice('');
+      triggerToast(
+        unlockedBadges.length > 0
+          ? `Purchase saved. Badge unlocked: ${unlockedBadges.join(', ')}`
+          : 'Purchase saved successfully.'
+      );
+      setCelebration({
+        clientName: selectedClient?.name || selectedClient?.organization || selectedClient?.userId || 'Client',
+        propertyName: selectedProperty?.name || 'Property',
+        totalPurchase: totalPurchaseEstimate,
+        unlockedBadges,
+      });
+
+      confetti({
+        particleCount: unlockedBadges.length > 0 ? 180 : 110,
+        spread: unlockedBadges.length > 0 ? 98 : 72,
+        startVelocity: 40,
+        origin: { y: 0.7 },
+        colors: ['#c5a368', '#f3e9d2', '#ffffff'],
+      });
+
       setNotes('');
       setQuantity('1');
+      setIsAssignOpen(false);
       fetchClients();
     } else {
       setStatusMessage('Failed to assign property.');
+      triggerToast('Failed to save purchase assignment.');
     }
 
     setIsSubmitting(false);
@@ -226,6 +302,8 @@ export default function ClientPortfolios() {
       <Sidebar />
 
       <main className={styles.main}>
+        {toastMessage && <div className={styles.toastSuccess}>{toastMessage}</div>}
+
         <header className={styles.header}>
           <div>
             <p className={styles.kicker}>Admin</p>
@@ -380,20 +458,27 @@ export default function ClientPortfolios() {
                     <input
                       className={styles.input}
                       id="quantity"
+                      type="number"
+                      min="1"
+                      step="1"
                       placeholder="1"
                       value={quantity}
                       onChange={(event) => setQuantity(event.target.value)}
                     />
                   </div>
                   <div className={styles.field}>
-                    <label className={styles.label} htmlFor="purchase">Purchase Price</label>
+                    <label className={styles.label} htmlFor="purchase">Purchase Price (Auto)</label>
                     <input
                       className={styles.input}
                       id="purchase"
-                      placeholder="$0.00"
-                      value={purchasePrice}
-                      onChange={(event) => setPurchasePrice(event.target.value)}
+                      value={currencyFormatter.format(totalPurchaseEstimate)}
+                      readOnly
                     />
+                    <p className={styles.emptyText}>
+                      {unitPrice > 0
+                        ? `${currencyFormatter.format(unitPrice)} per unit x ${parsedQuantity}`
+                        : 'No base price on this preset yet. Set preset price first.'}
+                    </p>
                   </div>
                 </div>
                 <div className={styles.field}>
@@ -413,7 +498,10 @@ export default function ClientPortfolios() {
                   <button
                     className={styles.secondaryButton}
                     type="button"
-                    onClick={() => setStatusMessage('Saved locally.')}
+                    onClick={() => {
+                      setStatusMessage('Saved locally.');
+                      triggerToast('Draft saved locally.');
+                    }}
                     disabled={isSubmitting}
                   >
                     Save Draft
@@ -427,6 +515,9 @@ export default function ClientPortfolios() {
                   </button>
                   {statusMessage && <span className={`${styles.badge} ${styles.badgeMuted}`}>{statusMessage}</span>}
                 </div>
+                <p className={styles.purchaseSummary}>
+                  Total Purchase: {currencyFormatter.format(totalPurchaseEstimate)}
+                </p>
               </form>
             </div>
           </div>
@@ -577,6 +668,34 @@ export default function ClientPortfolios() {
                 </button>
               </div>
               {deleteMessage && <p className={styles.emptyText}>{deleteMessage}</p>}
+            </div>
+          </div>
+        )}
+
+        {celebration && (
+          <div
+            className={styles.modalOverlay}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Assignment success"
+            onClick={() => setCelebration(null)}
+          >
+            <div className={styles.modalCard} onClick={(event) => event.stopPropagation()}>
+              <h2 className={styles.modalTitle}>Purchase Recorded</h2>
+              <p className={styles.modalBody}>
+                {celebration.clientName} has been assigned {celebration.propertyName}.
+              </p>
+              <p className={styles.purchaseSummary}>Total Purchase: {currencyFormatter.format(celebration.totalPurchase)}</p>
+              {celebration.unlockedBadges.length > 0 && (
+                <p className={styles.badgeNotice}>
+                  Badge Unlocked: {celebration.unlockedBadges.join(', ')}
+                </p>
+              )}
+              <div className={styles.modalActions}>
+                <button className={styles.primaryButton} onClick={() => setCelebration(null)}>
+                  Continue
+                </button>
+              </div>
             </div>
           </div>
         )}

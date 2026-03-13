@@ -6,6 +6,20 @@ import { REQUEST_ID_HEADER } from '@/lib/observability/request-context';
 
 export default withAuth(
   function middleware(request: NextRequest) {
+    const path = request.nextUrl.pathname;
+    const token = request.nextauth.token as { role?: string; onboardingCompleted?: boolean } | null;
+    const role = typeof token?.role === 'string' ? token.role : '';
+    const isClient = role === 'client';
+    const onboardingCompleted = token?.onboardingCompleted === true;
+
+    if (isClient && !onboardingCompleted && !path.startsWith('/onboarding')) {
+      return NextResponse.redirect(new URL('/onboarding', request.url));
+    }
+
+    if (isClient && onboardingCompleted && path.startsWith('/onboarding')) {
+      return NextResponse.redirect(new URL('/', request.url));
+    }
+
     const requestId = request.headers.get(REQUEST_ID_HEADER)?.trim() || crypto.randomUUID();
     const requestHeaders = new Headers(request.headers);
     requestHeaders.set(REQUEST_ID_HEADER, requestId);
@@ -48,6 +62,7 @@ export const config = {
     '/consultation/:path*',
     '/acquire/:path*',
     '/updates/:path*',
+    '/onboarding/:path*',
     '/agent/:path*',
     '/performance/:path*',
     '/admin/:path*',

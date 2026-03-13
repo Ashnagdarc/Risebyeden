@@ -302,6 +302,17 @@
   color: rgba(255, 255, 255, 0.4);
 }
 
+.serviceWarning {
+  margin-top: 12px;
+  margin-bottom: 0;
+  font-family: var(--mono-font);
+  font-size: 10px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: #fbbf24;
+  line-height: 1.5;
+}
+
 .slabContent {
   padding: 36px;
 }

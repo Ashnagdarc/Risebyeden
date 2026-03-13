@@ -1,90 +1,309 @@
 .header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-end;
-  margin-bottom: 64px;
-  animation: slideUp 1s cubic-bezier(0.16, 1, 0.3, 1);
+  display: grid;
+  gap: 24px;
+  margin-bottom: 36px;
+  animation: slideUp 0.9s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.portfolioTotal {
+.heroTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 18px;
+}
+
+.heroCopy {
+  max-width: 62ch;
+}
+
+.eyebrow,
+.summaryLabel {
   font-size: var(--type-kicker-size);
   text-transform: uppercase;
   letter-spacing: var(--type-kicker-track);
   color: var(--text-secondary);
-  margin-bottom: 8px;
   display: block;
 }
 
-.portfolioValue {
-  font-size: var(--type-display-size);
-  font-weight: 300;
-  letter-spacing: var(--type-display-track);
-  line-height: 1;
+.eyebrow {
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.eyebrow::before {
+  content: '';
+  display: inline-block;
+  width: 18px;
+  height: 1px;
+  background: var(--accent-gold);
+  opacity: 0.6;
+}
+
+.welcomeTitle {
+  font-size: clamp(2.25rem, 4vw, 3.1rem);
+  font-weight: 500;
+  line-height: 0.98;
+  letter-spacing: -0.05em;
+  color: #fff;
+}
+
+.heroSubtitle {
+  margin-top: 12px;
+  font-size: 14px;
+  line-height: 1.65;
+  color: var(--text-secondary);
+}
+
+.segmentedNav {
+  margin-top: 24px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.segmentLink {
+  padding: 8px 18px;
+  border-radius: 999px;
+  text-decoration: none;
+  font-family: var(--mono-font);
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.segmentLink:hover,
+.segmentLink:focus-visible {
+  color: var(--text-primary);
+}
+
+.segmentLinkActive {
+  background: rgba(197, 163, 104, 0.12);
+  color: var(--accent-gold);
+  border: 1px solid rgba(197, 163, 104, 0.15);
+}
+
+.actionCluster {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.secondaryButton,
+.primaryButton {
+  border-radius: 999px;
+  text-decoration: none;
+  letter-spacing: var(--type-button-track);
+  outline: none;
+  transition: background 0.25s ease, border-color 0.25s ease, transform 0.25s ease, color 0.25s ease;
+}
+
+.secondaryButton {
+  padding: 12px 20px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text-primary);
+  font-family: var(--mono-font);
+  font-size: 10px;
+  text-transform: uppercase;
+}
+
+.primaryButton {
+  background: linear-gradient(135deg, rgba(197, 163, 104, 0.9), rgba(160, 125, 66, 0.9));
+  border: 1px solid rgba(197, 163, 104, 0.4);
+  color: #111;
+  padding: 12px 20px;
+  font-family: var(--mono-font);
+  font-size: var(--type-button-size);
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 4px 16px rgba(197, 163, 104, 0.22);
+  text-transform: uppercase;
+}
+
+.secondaryButton:hover,
+.primaryButton:hover {
+  transform: translateY(-2px);
+}
+
+.primaryButton:hover {
+  box-shadow: 0 6px 24px rgba(197, 163, 104, 0.35);
+}
+
+.heroBody {
+  display: block;
+}
+
+/* ─── Unified Slab ──────────────────────────── */
+.unifiedSlab {
+  border-radius: 20px;
+  background: linear-gradient(160deg, rgba(12, 12, 12, 0.97) 0%, rgba(6, 6, 6, 1) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), 0 1px 0 rgba(255, 255, 255, 0.04) inset;
+  display: grid;
+  grid-template-columns: minmax(320px, 4fr) 8fr;
+  position: relative;
+  overflow: hidden;
+  align-items: stretch;
+}
+
+.unifiedSlab::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(197, 163, 104, 0.3), transparent);
+  pointer-events: none;
+}
+
+.slabMetrics {
+  padding: 32px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 32px;
+  border-right: 1px solid rgba(255, 255, 255, 0.04);
+  background: radial-gradient(circle at top left, rgba(255, 255, 255, 0.015), transparent 70%);
+}
+
+.mainMetric {
+  display: flex;
+  flex-direction: column;
+}
+
+.summaryValueRow {
   display: flex;
   align-items: baseline;
   gap: 12px;
+  margin-top: 12px;
+}
+
+.summaryValue {
+  font-size: clamp(2rem, 3vw, 2.6rem);
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -0.04em;
+  color: #fff;
 }
 
 .delta {
   font-family: var(--mono-font);
-  font-size: var(--type-subtitle-size);
+  font-size: 12px;
   color: #4ade80;
   background: rgba(74, 222, 128, 0.1);
-  padding: 4px 12px;
+  padding: 4px 10px;
   border-radius: 100px;
-  letter-spacing: var(--type-section-track);
+  letter-spacing: 0.08em;
+  border: 1px solid rgba(74, 222, 128, 0.15);
 }
 
-.glassButton {
-  background: var(--obsidian-elevated);
-  border: 1px solid rgba(255,255,255,0.1);
-  color: white;
-  padding: 12px 24px;
-  border-radius: 100px;
-  font-size: var(--type-button-size);
-  font-weight: 500;
-  cursor: pointer;
-  box-shadow: 4px 4px 10px rgba(0,0,0,0.5);
-  transition: all 0.3s ease;
+.subMetrics {
   display: flex;
-  align-items: center;
+  gap: 32px;
+}
+
+.subMetricItem {
+  display: flex;
+  flex-direction: column;
   gap: 8px;
-  text-decoration: none;
-  letter-spacing: var(--type-button-track);
-  outline: none;
 }
 
-.glassButton:hover {
-  background: var(--text-primary);
-  color: var(--obsidian-base);
-  transform: scale(1.05);
+.summaryValueCompact {
+  font-size: 1.8rem;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -0.04em;
+  color: #fff;
 }
 
-.glassButton:focus-visible {
-  outline: 2px solid rgba(197, 163, 104, 0.9);
-  outline-offset: 2px;
+.slabChart {
+  padding: 32px;
+  display: flex;
+  flex-direction: column;
+  background: radial-gradient(circle at top right, rgba(197, 163, 104, 0.03), transparent 60%);
+}
+
+.chartHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 24px;
+}
+
+.chartTitle {
+  font-size: 15px;
+  color: #fff;
+  margin-top: 6px;
+  font-weight: 500;
+}
+
+.chartMeta {
+  text-align: right;
+}
+
+.chartMeta strong {
+  display: block;
+  font-family: var(--mono-font);
+  font-size: 15px;
+  color: #fff;
+}
+
+.chartMeta span {
+  font-family: var(--mono-font);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.sparklineWrap {
+  flex: 1;
+  width: 100%;
+  position: relative;
+  min-height: 140px;
+  display: flex;
+  align-items: flex-end;
+}
+
+@media (max-width: 1024px) {
+  .unifiedSlab {
+    grid-template-columns: 1fr;
+  }
+  
+  .slabMetrics {
+    border-right: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  }
 }
 
 @media (max-width: 768px) {
-  .header {
+  .heroTop {
     flex-direction: column;
-    align-items: flex-start;
     gap: 16px;
-    margin-bottom: 36px;
   }
-
-  .portfolioValue {
-    flex-wrap: wrap;
-    font-size: clamp(2rem, 9vw, 2.6rem);
-    gap: 10px;
-  }
-
-  .delta {
-    font-size: 12px;
-  }
-
-  .glassButton {
+  
+  .actionCluster {
     width: 100%;
+  }
+
+  .secondaryButton,
+  .primaryButton {
+    flex: 1;
     justify-content: center;
+  }
+  
+  .segmentedNav {
+    width: 100%;
+    justify-content: space-between;
   }
 }

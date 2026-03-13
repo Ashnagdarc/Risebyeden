@@ -1,7 +1,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import Sidebar from '@/components/Sidebar';
+import TrendSparkline from '@/components/TrendSparkline';
 import styles from './page.module.css';
 
 type SettingsState = {
@@ -34,9 +36,24 @@ const defaultSettings: SettingsState = {
   dataSharing: 'Limited',
 };
 
+function normalizeSettings(input: Partial<SettingsState> | null | undefined): SettingsState {
+  return {
+    twoFactorEnabled: input?.twoFactorEnabled ?? defaultSettings.twoFactorEnabled,
+    deviceApproval: input?.deviceApproval ?? defaultSettings.deviceApproval,
+    weeklySecurityReports: input?.weeklySecurityReports ?? defaultSettings.weeklySecurityReports,
+    portfolioAlerts: input?.portfolioAlerts ?? defaultSettings.portfolioAlerts,
+    acquisitionOpportunities: input?.acquisitionOpportunities ?? defaultSettings.acquisitionOpportunities,
+    marketReports: input?.marketReports ?? defaultSettings.marketReports,
+    portfolioStrategy: input?.portfolioStrategy || defaultSettings.portfolioStrategy,
+    defaultRegion: input?.defaultRegion || defaultSettings.defaultRegion,
+    dataSharing: input?.dataSharing || defaultSettings.dataSharing,
+  };
+}
+
 export default function SettingsPage() {
   const [user, setUser] = useState<UserState>({ name: '', email: '', role: 'CLIENT' });
   const [settings, setSettings] = useState<SettingsState>(defaultSettings);
+  const [history, setHistory] = useState<Array<{ label: string; value: number }>>([]);
   const [isSaving, setIsSaving] = useState(false);
   const [statusMessage, setStatusMessage] = useState('');
 
@@ -60,10 +77,7 @@ export default function SettingsPage() {
           email: data.user?.email || '',
           role: data.user?.role || 'CLIENT',
         });
-        setSettings({
-          ...defaultSettings,
-          ...data.settings,
-        });
+        setSettings(normalizeSettings(data.settings));
       })
       .catch(() => {
         if (isMounted) {
@@ -75,6 +89,44 @@ export default function SettingsPage() {
       isMounted = false;
     };
   }, []);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    fetch('/api/client/portfolio/history?range=6m')
+      .then(async (res) => {
+        if (!res.ok) {
+          throw new Error('Failed to load history');
+        }
+        return res.json();
+      })
+      .then((payload) => {
+        if (isMounted) {
+          setHistory(payload.history || []);
+        }
+      })
+      .catch(() => {
+        if (isMounted) {
+          setHistory([]);
+        }
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const enabledNotifications = [
+    settings.portfolioAlerts,
+    settings.acquisitionOpportunities,
+    settings.marketReports,
+  ].filter(Boolean).length;
+
+  const securityScore = [
+    settings.twoFactorEnabled,
+    settings.deviceApproval,
+    settings.weeklySecurityReports,
+  ].filter(Boolean).length;
 
   const handleSave = async () => {
     setIsSaving(true);
@@ -104,15 +156,59 @@ export default function SettingsPage() {
       <Sidebar />
 
       <main className={styles.main}>
-        <header className={styles.header}>
-          <div>
-            <p className={styles.kicker}>Settings</p>
-            <h1 className={styles.pageTitle}>Control Center</h1>
-            <p className={styles.subtitle}>Tune account security, notifications, and portfolio preferences.</p>
+        <header className={styles.headerBand}>
+          <div className={styles.headerTop}>
+            <div>
+              <p className={styles.kicker}>Settings</p>
+              <h1 className={styles.pageTitle}>Control Center</h1>
+              <p className={styles.subtitle}>Tune account security, notifications, and portfolio preferences from the same operating shell.</p>
+
+              <div className={styles.segmentedNav}>
+                <Link href="/" className={styles.segmentLink}>Overview</Link>
+                <Link href="/profile" className={styles.segmentLink}>Profile</Link>
+                <Link href="/settings" className={`${styles.segmentLink} ${styles.segmentLinkActive}`}>Settings</Link>
+              </div>
+            </div>
+            <button className={styles.primaryButton} onClick={handleSave} disabled={isSaving}>
+              {isSaving ? 'Saving...' : 'Save Changes'}
+            </button>
           </div>
-          <button className={styles.primaryButton} onClick={handleSave} disabled={isSaving}>
-            {isSaving ? 'Saving...' : 'Save Changes'}
-          </button>
+
+          <div className={styles.headerBottom}>
+            <div className={styles.heroSummary}>
+              <article className={styles.heroCard}>
+                <p className={styles.heroLabel}>Security Score</p>
+                <p className={styles.heroValue}>{securityScore}/3</p>
+                <p className={styles.heroMeta}>Core protections enabled</p>
+              </article>
+              <article className={styles.heroCard}>
+                <p className={styles.heroLabel}>Notifications</p>
+                <p className={styles.heroValue}>{enabledNotifications}/3</p>
+                <p className={styles.heroMeta}>Active delivery channels</p>
+              </article>
+              <article className={styles.heroCard}>
+                <p className={styles.heroLabel}>Strategy</p>
+                <p className={styles.heroValue}>{settings.portfolioStrategy}</p>
+                <p className={styles.heroMeta}>{settings.defaultRegion}</p>
+              </article>
+            </div>
+
+            <div className={styles.trendPanel}>
+              <div className={styles.trendHeader}>
+                <div>
+                  <p className={styles.heroLabel}>6-Month Value Curve</p>
+                  <p className={styles.trendTitle}>Preference context</p>
+                </div>
+              </div>
+              <div className={styles.trendChartShell}>
+                <TrendSparkline
+                  data={history}
+                  ariaLabel="Settings portfolio trend chart"
+                  valueFormat="compactUsd"
+                />
+              </div>
+            </div>
+          </div>
         </header>
 
         <section className={styles.grid}>
@@ -241,6 +337,7 @@ export default function SettingsPage() {
               <select
                 className={styles.selectInput}
                 value={settings.portfolioStrategy}
+                aria-label="Portfolio Strategy"
                 onChange={(event) => setSettings((prev) => ({ ...prev, portfolioStrategy: event.target.value }))}
               >
                 <option value="Balanced">Balanced</option>
@@ -268,6 +365,7 @@ export default function SettingsPage() {
               <select
                 className={styles.selectInput}
                 value={settings.dataSharing}
+                aria-label="Data Sharing"
                 onChange={(event) => setSettings((prev) => ({ ...prev, dataSharing: event.target.value }))}
               >
                 <option value="Limited">Limited</option>

@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth/next';
 import prisma from '@/lib/prisma';
 import { authOptions } from '@/lib/auth';
 import { QUERY_LIMITS } from '@/lib/db/query-limits';
+import { buildPortfolioMonthlyHistory } from '@/lib/portfolio-history';
 
 async function requireUser() {
   const session = await getServerSession(authOptions);
@@ -30,6 +31,7 @@ export async function GET() {
     select: {
       quantity: true,
       purchasePrice: true,
+      purchasedAt: true,
       property: {
         select: {
           id: true,
@@ -47,6 +49,13 @@ export async function GET() {
             select: { url: true },
             take: 1,
           },
+          priceUpdates: {
+            orderBy: { effectiveDate: 'asc' },
+            select: {
+              price: true,
+              effectiveDate: true,
+            },
+          },
         },
       },
     },
@@ -55,6 +64,7 @@ export async function GET() {
   const assets = clientProperties.map((entry) => ({
     id: entry.property.id,
     name: entry.property.name,
+    quantity: entry.quantity || 1,
     location: entry.property.location || '',
     city: entry.property.city || '',
     state: entry.property.state || '',
@@ -63,21 +73,49 @@ export async function GET() {
     capRate: entry.property.capRate || 0,
     valuation: entry.property.basePrice ? Number(entry.property.basePrice) : 0,
     occupancy: entry.property.occupancy || 0,
-    acquired: entry.property.basePrice ? '—' : '—',
+    acquired: entry.purchasedAt.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
     imageUrl: entry.property.documents[0]?.url || null,
   }));
 
-  const totalValue = assets.reduce((sum, asset) => sum + asset.valuation, 0);
+  const totalUnits = clientProperties.reduce((sum, entry) => sum + (entry.quantity || 1), 0);
+  const totalValue = assets.reduce((sum, asset) => sum + asset.valuation * asset.quantity, 0);
+  const investedBasis = clientProperties.reduce((sum, entry) => {
+    const quantity = entry.quantity || 1;
+    const purchasePrice = entry.purchasePrice ? Number(entry.purchasePrice) : null;
+    const basePrice = entry.property.basePrice ? Number(entry.property.basePrice) : 0;
+    return sum + quantity * (purchasePrice ?? basePrice);
+  }, 0);
   const avgOccupancy = assets.length ? assets.reduce((sum, asset) => sum + asset.occupancy, 0) / assets.length : 0;
   const avgCapRate = assets.length ? assets.reduce((sum, asset) => sum + asset.capRate, 0) / assets.length : 0;
   const avgAppreciation = assets.length ? assets.reduce((sum, asset) => sum + asset.appreciation, 0) / assets.length : 0;
+  const portfolioDeltaPercent =
+    investedBasis > 0
+      ? ((totalValue - investedBasis) / investedBasis) * 100
+      : avgAppreciation;
+  const monthlyHistory = buildPortfolioMonthlyHistory(
+    clientProperties.map((entry) => ({
+      quantity: entry.quantity,
+      purchasePrice: entry.purchasePrice ? Number(entry.purchasePrice) : null,
+      purchasedAt: entry.purchasedAt,
+      property: {
+        basePrice: entry.property.basePrice ? Number(entry.property.basePrice) : null,
+        priceUpdates: entry.property.priceUpdates.map((update) => ({
+          price: Number(update.price),
+          effectiveDate: update.effectiveDate,
+        })),
+      },
+    }))
+  );
 
   return NextResponse.json({
     stats: {
+      totalUnits,
       totalValue,
+      portfolioDeltaPercent,
       avgOccupancy,
       avgCapRate,
       avgAppreciation,
+      monthlyHistory,
     },
     assets,
   });
