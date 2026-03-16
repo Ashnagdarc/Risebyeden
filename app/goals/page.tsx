@@ -207,6 +207,8 @@ export default function GoalsPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [statusMessage, setStatusMessage] = useState('');
   const [celebration, setCelebration] = useState<CelebrationState | null>(null);
+  const [editingGoalId, setEditingGoalId] = useState<string | null>(null);
+  const [editingGoal, setEditingGoal] = useState<Partial<GoalFormState> | null>(null);
   const hasLoadedGoalsRef = useRef(false);
   const previousGoalStatusesRef = useRef<Map<string, GoalStatusValue>>(new Map());
   const previousBadgeMetricsRef = useRef<ClientBadgeMetrics | null>(null);
@@ -442,6 +444,48 @@ export default function GoalsPage() {
   async function handleCreateGoal(event: FormEvent) {
     event.preventDefault();
     setStatusMessage('');
+
+    // Validation
+    if (!form.title.trim()) {
+      setStatusMessage('Goal title is required.');
+      return;
+    }
+
+    if (formRequires.requiresTargetValue && !form.targetValue) {
+      setStatusMessage('Target value is required for this goal type.');
+      return;
+    }
+
+    if (formRequires.requiresTargetValue && Number(form.targetValue) <= 0) {
+      setStatusMessage('Target value must be greater than 0.');
+      return;
+    }
+
+    if (formRequires.requiresTargetCount && !form.targetCount) {
+      setStatusMessage('Target count is required for this goal type.');
+      return;
+    }
+
+    if (formRequires.requiresTargetCount && Number(form.targetCount) <= 0) {
+      setStatusMessage('Target count must be at least 1.');
+      return;
+    }
+
+    if (formRequires.requiresTargetPercent && !form.targetPercent) {
+      setStatusMessage('Target ROI is required for this goal type.');
+      return;
+    }
+
+    if (formRequires.requiresProperty && !form.referencePropertyId) {
+      setStatusMessage('A property selection is required for this goal type.');
+      return;
+    }
+
+    if (formRequires.requiresReferenceLabel && !form.referenceLabel.trim()) {
+      setStatusMessage('Project name is required for this goal type.');
+      return;
+    }
+
     setIsSubmitting(true);
 
     const payload: Record<string, unknown> = {
@@ -489,7 +533,7 @@ export default function GoalsPage() {
         type: prev.type,
       }));
       await loadGoals();
-      setStatusMessage('Goal created.');
+      setStatusMessage('Goal created successfully.');
     } catch {
       setStatusMessage('Goal could not be created. Check the fields and try again.');
     } finally {
@@ -551,6 +595,76 @@ export default function GoalsPage() {
       setStatusMessage('Goal archived.');
     } catch {
       setStatusMessage('Unable to archive this goal.');
+    }
+  }
+
+  async function handleEditGoal(goal: GoalItem) {
+    setEditingGoalId(goal.id);
+    setEditingGoal({
+      title: goal.title,
+      description: goal.description || '',
+      type: goal.type,
+      targetValue: goal.targetValue ? goal.targetValue.toString() : '',
+      targetCount: goal.targetCount ? goal.targetCount.toString() : '',
+      targetPercent: goal.targetPercent ? goal.targetPercent.toString() : '',
+      referenceLabel: goal.referenceLabel || '',
+      currentValue: goal.currentValue ? goal.currentValue.toString() : '',
+      targetDate: goal.targetDate ? new Date(goal.targetDate).toISOString().slice(0, 16) : '',
+    });
+  }
+
+  async function handleSaveGoal(goalId: string) {
+    if (!editingGoal || !editingGoal.title?.trim()) {
+      setStatusMessage('Goal title is required.');
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    const payload: Record<string, unknown> = {
+      title: editingGoal.title,
+      description: editingGoal.description || null,
+    };
+
+    if (editingGoal.targetDate) {
+      payload.targetDate = new Date(editingGoal.targetDate).toISOString();
+    }
+
+    if (editingGoal.targetValue) {
+      payload.targetValue = Number(editingGoal.targetValue);
+    }
+    if (editingGoal.targetCount) {
+      payload.targetCount = Number(editingGoal.targetCount);
+    }
+    if (editingGoal.targetPercent) {
+      payload.targetPercent = Number(editingGoal.targetPercent);
+    }
+    if (editingGoal.referenceLabel) {
+      payload.referenceLabel = editingGoal.referenceLabel;
+    }
+    if (editingGoal.currentValue) {
+      payload.currentValue = Number(editingGoal.currentValue);
+    }
+
+    try {
+      const response = await fetch(`/api/client/goals/${goalId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update goal');
+      }
+
+      setEditingGoalId(null);
+      setEditingGoal(null);
+      await loadGoals();
+      setStatusMessage('Goal updated successfully.');
+    } catch {
+      setStatusMessage('Goal could not be updated. Try again.');
+    } finally {
+      setIsSubmitting(false);
     }
   }
 
@@ -804,6 +918,13 @@ export default function GoalsPage() {
                         <button
                           type="button"
                           className={styles.ghostButton}
+                          onClick={() => handleEditGoal(goal)}
+                        >
+                          Edit
+                        </button>
+                        <button
+                          type="button"
+                          className={styles.ghostButton}
                           onClick={() => handleArchive(goal.id)}
                         >
                           Archive
@@ -849,29 +970,33 @@ export default function GoalsPage() {
             </div>
             <form className={styles.form} onSubmit={handleCreateGoal}>
               <label className={styles.label}>
-                Title
+                Goal Title
                 <input
                   className={styles.input}
                   value={form.title}
                   onChange={(event) => setForm((prev) => ({ ...prev, title: event.target.value }))}
-                  placeholder="Buy 5 properties before Q2"
+                  placeholder="e.g., Expand portfolio to 10 units"
                   required
+                  maxLength={100}
                 />
+                <span className={styles.helperText}>What you want to achieve</span>
               </label>
 
               <label className={styles.label}>
-                Type
+                Goal Type
                 <select
                   className={styles.input}
                   value={form.type}
                   onChange={(event) => setForm((prev) => ({ ...prev, type: event.target.value as GoalTypeValue }))}
+                  aria-describedby="goal-type-hint"
                 >
                   <option value="ASSET_VALUE">Asset Value</option>
                   <option value="PROPERTY_COUNT">Property Count</option>
                   <option value="PROPERTY_APPRECIATION">Property ROI</option>
                   <option value="PROJECT_PLOT_COUNT">Project Plot Count</option>
-                  <option value="CUSTOM">Custom</option>
+                  <option value="CUSTOM">Custom Goal</option>
                 </select>
+                <span className={styles.helperText} id="goal-type-hint">Select what metric this goal tracks</span>
               </label>
 
               <label className={styles.label}>
@@ -882,6 +1007,7 @@ export default function GoalsPage() {
                   value={form.targetDate}
                   onChange={(event) => setForm((prev) => ({ ...prev, targetDate: event.target.value }))}
                 />
+                <span className={styles.helperText}>Target completion date for this goal</span>
               </label>
 
               {formRequires.requiresTargetValue && (
@@ -892,11 +1018,12 @@ export default function GoalsPage() {
                     className={styles.input}
                     value={form.targetValue}
                     onChange={(event) => setForm((prev) => ({ ...prev, targetValue: event.target.value }))}
-                    placeholder="10000000000"
+                    placeholder="1000000"
                     min={0}
-                    step="0.01"
-                    required={form.type === 'ASSET_VALUE'}
+                    step="1000"
+                    required={form.type !== 'CUSTOM'}
                   />
+                  <span className={styles.helperText}>Amount you&apos;re targeting (in base currency)</span>
                 </label>
               )}
 
@@ -908,11 +1035,12 @@ export default function GoalsPage() {
                     className={styles.input}
                     value={form.targetCount}
                     onChange={(event) => setForm((prev) => ({ ...prev, targetCount: event.target.value }))}
-                    placeholder="6"
+                    placeholder="10"
                     min={1}
                     step="1"
                     required
                   />
+                  <span className={styles.helperText}>How many units or properties</span>
                 </label>
               )}
 
@@ -924,11 +1052,12 @@ export default function GoalsPage() {
                     className={styles.input}
                     value={form.targetPercent}
                     onChange={(event) => setForm((prev) => ({ ...prev, targetPercent: event.target.value }))}
-                    placeholder="100"
+                    placeholder="15"
                     min={0}
                     step="0.1"
                     required
                   />
+                  <span className={styles.helperText}>Percentage return on investment</span>
                 </label>
               )}
 
@@ -940,14 +1069,16 @@ export default function GoalsPage() {
                     value={form.referencePropertyId}
                     onChange={(event) => setForm((prev) => ({ ...prev, referencePropertyId: event.target.value }))}
                     required
+                    aria-describedby="property-hint"
                   >
-                    <option value="">Select Property</option>
+                    <option value="">Select a property</option>
                     {portfolioOptions.map((option) => (
                       <option key={option.id} value={option.id}>
                         {option.name} {option.location ? `(${option.location})` : ''}
                       </option>
                     ))}
                   </select>
+                  <span className={styles.helperText} id="property-hint">Required for property-specific goals</span>
                 </label>
               )}
 
@@ -958,15 +1089,17 @@ export default function GoalsPage() {
                     className={styles.input}
                     value={form.referenceLabel}
                     onChange={(event) => setForm((prev) => ({ ...prev, referenceLabel: event.target.value }))}
-                    placeholder="Gracefield"
+                    placeholder="e.g., Gracefield Estate"
                     required
+                    maxLength={50}
                   />
+                  <span className={styles.helperText}>Name or identifier of the project</span>
                 </label>
               )}
 
               {formRequires.allowsCurrentValue && (
                 <label className={styles.label}>
-                  Current Value (Optional)
+                  Starting Value (Optional)
                   <input
                     type="number"
                     className={styles.input}
@@ -974,8 +1107,9 @@ export default function GoalsPage() {
                     onChange={(event) => setForm((prev) => ({ ...prev, currentValue: event.target.value }))}
                     placeholder="0"
                     min={0}
-                    step="0.01"
+                    step="1000"
                   />
+                  <span className={styles.helperText}>Beginning amount for custom goal tracking</span>
                 </label>
               )}
 
@@ -985,15 +1119,104 @@ export default function GoalsPage() {
                   className={styles.textarea}
                   value={form.description}
                   onChange={(event) => setForm((prev) => ({ ...prev, description: event.target.value }))}
-                  placeholder="Short motivation or context"
+                  placeholder="Why is this goal important? What&apos;s your motivation?"
+                  rows={3}
+                  maxLength={500}
                 />
+                <span className={styles.helperText}>Context or motivation for this goal</span>
               </label>
 
-              <button className={styles.primaryButton} type="submit" disabled={isSubmitting}>
+              <button 
+                className={styles.primaryButton} 
+                type="submit" 
+                disabled={isSubmitting || !form.title.trim()}
+              >
                 {isSubmitting ? 'Creating...' : 'Create Goal'}
               </button>
             </form>
           </div>
+
+          {editingGoalId && editingGoal && (
+            <div className={styles.panel}>
+              <div className={styles.panelHeader}>
+                <div>
+                  <p className={styles.panelTitle}>Edit Goal</p>
+                  <p className={styles.panelSubtitle}>Update goal details and targets.</p>
+                </div>
+              </div>
+              <form className={styles.form} onSubmit={(e) => {
+                e.preventDefault();
+                handleSaveGoal(editingGoalId);
+              }}>
+                <label className={styles.label}>
+                  Goal Title
+                  <input
+                    className={styles.input}
+                    value={editingGoal.title || ''}
+                    onChange={(event) => setEditingGoal((prev) => ({ ...prev, title: event.target.value }))}
+                    required
+                    maxLength={100}
+                  />
+                </label>
+
+                <label className={styles.label}>
+                  Deadline (Optional)
+                  <input
+                    type="datetime-local"
+                    className={styles.input}
+                    value={editingGoal.targetDate || ''}
+                    onChange={(event) => setEditingGoal((prev) => ({ ...prev, targetDate: event.target.value }))}
+                  />
+                </label>
+
+                {editingGoal.targetValue !== undefined && (
+                  <label className={styles.label}>
+                    Target Value
+                    <input
+                      type="number"
+                      className={styles.input}
+                      value={editingGoal.targetValue || ''}
+                      onChange={(event) => setEditingGoal((prev) => ({ ...prev, targetValue: event.target.value }))}
+                      min={0}
+                      step="1000"
+                    />
+                  </label>
+                )}
+
+                <label className={styles.label}>
+                  Description (Optional)
+                  <textarea
+                    className={styles.textarea}
+                    value={editingGoal.description || ''}
+                    onChange={(event) => setEditingGoal((prev) => ({ ...prev, description: event.target.value }))}
+                    rows={3}
+                    maxLength={500}
+                  />
+                </label>
+
+                <div className={styles.editFormActions}>
+                  <button 
+                    className={styles.primaryButton} 
+                    type="submit" 
+                    disabled={isSubmitting}
+                  >
+                    {isSubmitting ? 'Saving...' : 'Save Changes'}
+                  </button>
+                  <button
+                    type="button"
+                    className={styles.ghostButton}
+                    onClick={() => {
+                      setEditingGoalId(null);
+                      setEditingGoal(null);
+                    }}
+                    disabled={isSubmitting}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            </div>
+          )}
         </section>
 
         {statusMessage && <p className={styles.statusMessage}>{statusMessage}</p>}

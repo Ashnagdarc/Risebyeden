@@ -132,7 +132,7 @@
 
 /* ─── Analytics Band ────────────────────────── */
 .analyticsBand {
-  display: flex;
+  display: none;
   gap: var(--space-md);
   animation: fadeSlideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.1s both;
 }

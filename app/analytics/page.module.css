@@ -541,6 +541,19 @@
   line-height: 1.6;
 }
 
+/* Hide sections for simplified view */
+.metricsRow {
+  display: none;
+}
+
+.performersSection {
+  display: none;
+}
+
+.insightsSection {
+  display: none;
+}
+
 @media (max-width: 1200px) {
   .headerTop,
   .headerBottom,

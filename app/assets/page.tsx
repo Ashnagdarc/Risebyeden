@@ -196,7 +196,7 @@ export default function AssetsPage() {
             <div>
               <p className={styles.kicker}>Portfolio</p>
               <h1 className={styles.pageTitle}>Asset Distribution</h1>
-              <p className={styles.subtitle}>Complete overview of your real estate holdings, capital deployment, and regional spread.</p>
+              <p className={styles.subtitle}>View your real estate holdings and capital allocation.</p>
 
               <div className={styles.segmentedNav}>
                 <Link href="/" className={styles.segmentLink}>Overview</Link>

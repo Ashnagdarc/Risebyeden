@@ -568,6 +568,17 @@
   color: var(--text-secondary);
 }
 
+.helperText {
+  display: block;
+  font-size: 12px;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--text-secondary);
+  font-family: var(--sans-font);
+  margin-top: 4px;
+  font-weight: 400;
+}
+
 .input,
 .textarea {
   border: 1px solid rgba(255, 255, 255, 0.08);
@@ -603,11 +614,37 @@
   letter-spacing: 0.18em;
   text-transform: uppercase;
   cursor: pointer;
+  width: 100%;
 }
 
 .primaryButton:disabled {
   opacity: 0.65;
   cursor: not-allowed;
+}
+
+.editFormActions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.editFormActions .primaryButton {
+  margin-top: 0;
+  width: 100%;
+}
+
+.editFormActions .ghostButton {
+  padding: 13px 16px;
+  border-radius: 8px;
+  border: 1px solid var(--accent-gold);
+  background: transparent;
+  color: var(--accent-gold);
+  font-family: var(--mono-font);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  cursor: pointer;
 }
 
 .placeholder {

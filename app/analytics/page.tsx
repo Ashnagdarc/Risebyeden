@@ -219,7 +219,7 @@ export default function Analytics() {
                 ← Back to Dashboard
               </Link>
               <h1 className={styles.pageTitle}>Portfolio Analytics</h1>
-              <p className={styles.subtitle}>A bento view of allocation, performance, and operating signals across your holdings.</p>
+              <p className={styles.subtitle}>Track portfolio value and asset allocation.</p>
 
               <div className={styles.segmentedNav}>
                 <Link href="/" className={styles.segmentLink}>Overview</Link>

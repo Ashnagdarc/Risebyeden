@@ -163,7 +163,7 @@ export default function ProfilePage() {
             <div>
               <p className={styles.kicker}>User Profile</p>
               <h1 className={styles.pageTitle}>Personal Identity</h1>
-              <p className={styles.subtitle}>Manage your profile, security posture, and portfolio presence from one workspace.</p>
+              <p className={styles.subtitle}>View and manage your profile information.</p>
 
               <div className={styles.segmentedNav}>
                 <Link href="/" className={styles.segmentLink}>Overview</Link>
