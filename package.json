@@ -2,6 +2,7 @@
   "name": "risebyeden",
   "version": "0.1.0",
   "private": true,
+  "description": "Property investment platform with role-based client and administrative workflows.",
   "scripts": {
     "dev": "next dev --turbopack",
     "dev:with-db": "bash scripts/dev-with-db.sh",
